@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/hacienda/:path*", "destination": "https://api.hacienda.go.cr/:path*" },
+    { "source": "/gometa/:path*", "destination": "https://apis.gometa.org/:path*" },
+    { "source": "/indicadores/:path*", "destination": "https://api.hacienda.go.cr/indicadores/:path*" }
+  ]
+}
