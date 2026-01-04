@@ -1,0 +1,40 @@
+/* Reset base necesario para layout centrado correcto */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+/* Tipografía base */
+:root {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Quitar estilos globales que rompen el diseño */
+body {
+  background: transparent;
+}
+
+/* Links (si algún día usás) */
+a {
+  font-weight: 500;
+  color: #8b93ff;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #a5abff;
+}
+
+/* IMPORTANTE:
+   ❌ NO display:flex en body
+   ❌ NO min-height aquí
+   Todo eso lo maneja .page en App.css
+*/
