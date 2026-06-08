@@ -1304,7 +1304,15 @@ tr:hover td { background: var(--slate-50) }
 .xmlMetaItem { display:flex; flex-direction:column; gap:3px; }
 .xmlMetaItem > span:first-child { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:700; }
 .xmlMetaItem > span:last-child { font-size:var(--font-sm); font-weight:600; color:var(--text); }
-.xmlMonTag { display:inline-flex; align-items:center; background:var(--accent); color:#fff; font-size:11px; font-weight:800; padding:2px 9px; border-radius:6px; letter-spacing:.05em; }
+.xmlMonTag { display:inline-flex; align-items:center; font-size:11px; font-weight:800; padding:2px 9px; border-radius:6px; letter-spacing:.05em; border:1px solid transparent; }
+/* CRC → colores neutros/tierra — no confundir con azul de acción */
+.xmlMonTag-crc { background:#fef9c3; color:#854d0e; border-color:#fde68a; }
+/* USD → verde dólar */
+.xmlMonTag-usd { background:#dcfce7; color:#15803d; border-color:#bbf7d0; }
+/* EUR → azul europeo */
+.xmlMonTag-eur { background:#dbeafe; color:#1e40af; border-color:#bfdbfe; }
+/* Cualquier otra moneda → neutro */
+.xmlMonTag:not(.xmlMonTag-crc):not(.xmlMonTag-usd):not(.xmlMonTag-eur) { background:var(--bg-alt); color:var(--text); border-color:var(--border); }
 
 /* ── Tabla de líneas ── */
 .xmlLines { margin-bottom:18px; }

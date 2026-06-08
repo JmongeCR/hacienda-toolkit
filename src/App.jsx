@@ -2331,10 +2331,10 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
           )}
           <div className="xmlMetaItem">
             <span>Moneda</span>
-            <span className="xmlMonTag">{mon}</span>
+            <span className={`xmlMonTag xmlMonTag-${mon.toLowerCase()}`}>{mon}</span>
           </div>
-          {fmtTc && (
-            <div className="xmlMetaItem"><span>Tipo de cambio</span><span className="mono">₡{fmtTc}</span></div>
+          {fmtTc && !(mon === "CRC" && tc === 1) && (
+            <div className="xmlMetaItem"><span>Tipo de cambio</span><span className="mono">{isUsd ? "$" : isEur ? "€" : "₡"}{fmtTc}</span></div>
           )}
           {data.condicionVenta && (
             <div className="xmlMetaItem">
