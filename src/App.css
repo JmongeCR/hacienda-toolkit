@@ -680,6 +680,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 .feExternalBtn:hover { background: rgba(251,191,36,0.16); text-decoration: none; }
 
+.feExternalBtnPrimary {
+  border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.1);
+  color: rgba(52,211,153,0.95);
+}
+.feExternalBtnPrimary:hover { background: rgba(52,211,153,0.18); }
+
 .feRaw {
   font-size: 11px; color: var(--muted); overflow-x: auto;
   white-space: pre-wrap; word-break: break-all;

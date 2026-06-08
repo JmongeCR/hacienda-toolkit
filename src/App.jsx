@@ -865,16 +865,16 @@ export default function App() {
                     <div>
                       <div className="feNotFoundTitle">No disponible en la API pública de Hacienda</div>
                       <div className="feNotFoundDesc">
-                        La API pública de Hacienda no indexa todos los comprobantes — especialmente facturas recientes o emitidas a través de proveedores como ICE, Claro, etc. La información decodificada de arriba sí pertenece a esta clave.
+                        La API pública de Hacienda no indexa todos los comprobantes — especialmente facturas recientes o emitidas por proveedores como ICE, Claro, etc. La información decodificada de arriba sí pertenece a esta clave.
                         <br/><br/>
-                        Para verificar el estado oficial, usá uno de estos servicios:
+                        Para verificar el estado oficial sin necesidad de iniciar sesión, usá <strong>ATV Hacienda</strong> (Administración Tributaria Virtual):
                       </div>
                       <div className="feNotFoundLinks">
+                        <a href="https://atv.hacienda.go.cr/ATV/frmConsultaFactura.aspx" target="_blank" rel="noopener noreferrer" className="feExternalBtn feExternalBtnPrimary">
+                          ATV Hacienda (sin login) ↗
+                        </a>
                         <a href={`https://verificatufactura.com/verificacion-simple`} target="_blank" rel="noopener noreferrer" className="feExternalBtn">
                           VerificaTuFactura.com ↗
-                        </a>
-                        <a href="https://ovitribucr.hacienda.go.cr/ConsultaPublica/" target="_blank" rel="noopener noreferrer" className="feExternalBtn">
-                          OVI Hacienda ↗
                         </a>
                       </div>
                     </div>
