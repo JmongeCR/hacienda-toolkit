@@ -445,3 +445,175 @@ tbody td {
   text-decoration: underline;
   color: rgba(150, 156, 255, 1);
 }
+
+/* ===== Chips con color de estado ===== */
+.chip.chipGood {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.35);
+  color: #4ade80;
+}
+
+.chip.chipBad {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #f87171;
+}
+
+/* ===== Badge de impuesto CABYS ===== */
+.taxBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(120, 126, 255, 0.18);
+  color: rgba(160, 165, 255, 1);
+  border: 1px solid rgba(120, 126, 255, 0.3);
+}
+
+/* ===== Badge activa/inactiva en actividades AE ===== */
+.estadoBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.estadoBadge.activa {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.estadoBadge.inactiva {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.45);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ===== Botón copy flashed ===== */
+.btnGhost.btnFlashed {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+/* ===== Refresh en fxCard ===== */
+.fxTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fxRefresh {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.45);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.fxRefresh:hover { color: rgba(255,255,255,0.9); }
+
+/* ===== Conversor USD / CRC ===== */
+.conversorCard {
+  margin-bottom: 0;
+}
+
+.conversorTitle {
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+
+.conversorRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.conversorInputWrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 140px;
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.conversorPrefix {
+  padding: 0 10px;
+  font-weight: 700;
+  font-size: 15px;
+  color: rgba(255,255,255,0.55);
+  white-space: nowrap;
+}
+
+.conversorInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 11px 12px 11px 0;
+  color: rgba(255,255,255,0.92);
+  font-size: 15px;
+  outline: none;
+  width: 0;
+}
+
+.conversorInput::-webkit-inner-spin-button,
+.conversorInput::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.conversorSwap {
+  background: rgba(120, 126, 255, 0.15);
+  border: 1px solid rgba(120, 126, 255, 0.3);
+  border-radius: 10px;
+  color: rgba(160, 165, 255, 0.9);
+  font-size: 18px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.conversorSwap:hover {
+  background: rgba(120, 126, 255, 0.28);
+}
+
+.conversorResult {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 140px;
+  background: rgba(120, 126, 255, 0.08);
+  border: 1px solid rgba(120, 126, 255, 0.2);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 15px;
+}
+
+.conversorValue {
+  font-weight: 700;
+  font-size: 16px;
+  color: rgba(160, 165, 255, 1);
+  margin-left: 4px;
+}
+
+.conversorHint {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+/* ===== Footer ===== */
+.footer {
+  margin-top: 32px;
+  padding: 16px 0;
+  text-align: center;
+  font-size: 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}

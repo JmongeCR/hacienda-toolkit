@@ -106,29 +106,30 @@ async function fetchJsonSafe(url) {
 /* ============ GOMETA NORMALIZER ============ */
 function normalizeGometaResponse(json) {
   if (!json) return { items: [], raw: json }
-
   if (Array.isArray(json?.results)) {
-    const items = json.results.map((x, i) => ({
-      id: x?.cedula || x?.rawcedula || x?.id || String(i),
-      cedula: x?.cedula || x?.rawcedula || "",
-      nombre: x?.fullname || x?.nombre || x?.name || "",
-      tipo: x?.guess_type || x?.tipo || x?.type || "",
-      extra: x,
-    }))
-    return { items, raw: json }
+    return {
+      items: json.results.map((x, i) => ({
+        id: x?.cedula || x?.rawcedula || x?.id || String(i),
+        cedula: x?.cedula || x?.rawcedula || "",
+        nombre: x?.fullname || x?.nombre || x?.name || "",
+        tipo: x?.guess_type || x?.tipo || x?.type || "",
+        extra: x,
+      })),
+      raw: json,
+    }
   }
-
   if (Array.isArray(json)) {
-    const items = json.map((x, i) => ({
-      id: x?.cedula || x?.id || String(i),
-      cedula: x?.cedula || "",
-      nombre: x?.fullname || x?.nombre || x?.name || "",
-      tipo: x?.guess_type || x?.tipo || x?.type || "",
-      extra: x,
-    }))
-    return { items, raw: json }
+    return {
+      items: json.map((x, i) => ({
+        id: x?.cedula || x?.id || String(i),
+        cedula: x?.cedula || "",
+        nombre: x?.fullname || x?.nombre || x?.name || "",
+        tipo: x?.guess_type || x?.tipo || x?.type || "",
+        extra: x,
+      })),
+      raw: json,
+    }
   }
-
   const one = {
     id: json?.cedula || json?.rawcedula || json?.id || "1",
     cedula: json?.cedula || json?.rawcedula || "",
@@ -143,11 +144,7 @@ function normalizeGometaResponse(json) {
 const HISTORY_MAX = 5
 
 function loadHistory(key) {
-  try {
-    return JSON.parse(localStorage.getItem(key) || "[]")
-  } catch {
-    return []
-  }
+  try { return JSON.parse(localStorage.getItem(key) || "[]") } catch { return [] }
 }
 
 function saveHistory(key, value) {
@@ -174,6 +171,17 @@ function useCopyFlash() {
   return { flashing, flash }
 }
 
+/* ============ CHIP CON COLOR ============ */
+function ChipStatus({ label, value }) {
+  if (!value) return null
+  const val = String(value).toUpperCase()
+  let mod = ""
+  if (val === "NO") mod = "chipGood"
+  else if (val === "SI" || val === "NO INSCRITO") mod = "chipBad"
+  else if (val === "INSCRITO") mod = "chipGood"
+  return <span className={`chip ${mod}`}>{label}: {value}</span>
+}
+
 export default function App() {
   /* ================= API STATUS ================= */
   const [apiStatus, setApiStatus] = useState(null)
@@ -197,22 +205,15 @@ export default function App() {
     setFxError("")
     try {
       const json = await fetchJsonSafe("/hacienda/indicadores/tc")
-
       const pickValor = (x) => (x && typeof x === "object" ? x.valor ?? "" : x ?? "")
       const pickFecha = (x) => (x && typeof x === "object" ? x.fecha ?? "" : x ?? "")
-
-      const compraRaw =
-        json?.compra ?? json?.tipoCambioCompra ?? json?.dolar?.compra ?? json?.data?.tipoCambioCompra
-      const ventaRaw =
-        json?.venta ?? json?.tipoCambioVenta ?? json?.dolar?.venta ?? json?.data?.tipoCambioVenta
-
+      const compraRaw = json?.compra ?? json?.tipoCambioCompra ?? json?.dolar?.compra ?? json?.data?.tipoCambioCompra
+      const ventaRaw  = json?.venta  ?? json?.tipoCambioVenta  ?? json?.dolar?.venta  ?? json?.data?.tipoCambioVenta
       const compra = pickValor(compraRaw)
-      const venta = pickValor(ventaRaw)
-      const fecha =
-        json?.fecha ?? json?.data?.fecha ?? pickFecha(compraRaw) ?? pickFecha(ventaRaw)
-
+      const venta  = pickValor(ventaRaw)
+      const fecha  = json?.fecha ?? json?.data?.fecha ?? pickFecha(compraRaw) ?? pickFecha(ventaRaw)
       if (!compra && !venta) throw new Error("Sin datos de tipo de cambio")
-      setFx({ compra, venta, fecha })
+      setFx({ compra: Number(compra), venta: Number(venta), fecha })
     } catch {
       setFx(null)
       setFxError("Tipo de cambio no disponible")
@@ -228,6 +229,18 @@ export default function App() {
     return () => clearInterval(interval)
   }, [fetchTipoCambio])
 
+  /* ================= CONVERSOR USD / CRC ================= */
+  const [fxInput, setFxInput] = useState("")
+  const [fxDir, setFxDir] = useState("usd2crc") // "usd2crc" | "crc2usd"
+
+  const fxResult = useMemo(() => {
+    if (!fx || fxInput === "") return null
+    const n = parseFloat(fxInput.replace(/,/g, ""))
+    if (isNaN(n) || n < 0) return null
+    if (fxDir === "usd2crc") return (n * fx.venta).toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    return (n / fx.compra).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  }, [fx, fxInput, fxDir])
+
   /* ================= COPY FLASH ================= */
   const { flashing, flash } = useCopyFlash()
 
@@ -235,7 +248,7 @@ export default function App() {
     const active = flashing === id
     return (
       <button
-        className="btnGhost"
+        className={`btnGhost${active ? " btnFlashed" : ""}`}
         onClick={() => flash(id, getText)}
         disabled={disabled || active}
         type="button"
@@ -255,7 +268,6 @@ export default function App() {
   const [cabysLastTopRequested, setCabysLastTopRequested] = useState(0)
   const [cabysSearched, setCabysSearched] = useState(false)
   const [cabysHistory, setCabysHistory] = useState(() => loadHistory("ht_cabys"))
-
   const suggestBoxRef = useRef(null)
 
   const cabysQueryTrim = useMemo(() => cabysQ.trim(), [cabysQ])
@@ -267,27 +279,23 @@ export default function App() {
     return Math.min(50, Math.max(5, n))
   }, [cabysTop])
 
-  async function consultarCabys({ resetPage = false, targetPage = null } = {}) {
-    if (!cabysCanSearch) return
-    const page = targetPage !== null ? targetPage : resetPage ? 0 : cabysPage
-    if (resetPage || targetPage === 0) setCabysPage(0)
-
+  async function consultarCabys({ resetPage = false, queryOverride } = {}) {
+    const q = (queryOverride ?? cabysQueryTrim).trim()
+    if (!q) return
+    if (resetPage) setCabysPage(0)
     setCabysLoading(true)
     setCabysError("")
     setCabysSearched(true)
     try {
+      const page = resetPage ? 0 : cabysPage
       const neededTop = Math.min(50, pageSize * (page + 1))
       setCabysLastTopRequested(neededTop)
-
-      const res = await fetch(
-        `/hacienda/fe/cabys?q=${encodeURIComponent(cabysQueryTrim)}&top=${neededTop}`,
-        { cache: "no-store" }
-      )
+      const res = await fetch(`/hacienda/fe/cabys?q=${encodeURIComponent(q)}&top=${neededTop}`, { cache: "no-store" })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
       setCabysData(json.cabys || [])
       if (resetPage) {
-        saveHistory("ht_cabys", cabysQueryTrim)
+        saveHistory("ht_cabys", q)
         setCabysHistory(loadHistory("ht_cabys"))
         setCabysPage(0)
       }
@@ -302,15 +310,11 @@ export default function App() {
   async function cabysNextPage() {
     const nextPage = cabysPage + 1
     const needTop = Math.min(50, pageSize * (nextPage + 1))
-
     if (cabysData.length < needTop) {
       setCabysLoading(true)
       setCabysError("")
       try {
-        const res = await fetch(
-          `/hacienda/fe/cabys?q=${encodeURIComponent(cabysQueryTrim)}&top=${needTop}`,
-          { cache: "no-store" }
-        )
+        const res = await fetch(`/hacienda/fe/cabys?q=${encodeURIComponent(cabysQueryTrim)}&top=${needTop}`, { cache: "no-store" })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const json = await res.json()
         setCabysData(json.cabys || [])
@@ -328,22 +332,19 @@ export default function App() {
     setCabysPage(nextPage)
   }
 
-  const cabysTotal = cabysData.length
-  const cabysStart = cabysPage * pageSize
-  const cabysEnd = cabysStart + pageSize
+  const cabysTotal    = cabysData.length
+  const cabysStart    = cabysPage * pageSize
+  const cabysEnd      = cabysStart + pageSize
   const cabysPageRows = cabysData.slice(cabysStart, cabysEnd)
-  const cabysHasPrev = cabysPage > 0
-  const cabysHasNext =
-    cabysEnd < cabysTotal || (cabysTotal === cabysLastTopRequested && cabysLastTopRequested < 50)
+  const cabysHasPrev  = cabysPage > 0
+  const cabysHasNext  = cabysEnd < cabysTotal || (cabysTotal === cabysLastTopRequested && cabysLastTopRequested < 50)
 
   function downloadCabysXlsx() {
     if (!cabysPageRows.length) return
-    const rows = cabysPageRows.map((c) => ({
-      codigo: c.codigo,
-      descripcion: c.descripcion,
-      impuesto: `${c.impuesto}%`,
-    }))
-    downloadXlsx("cabys.xlsx", "CABYS", rows, ["codigo", "descripcion", "impuesto"])
+    downloadXlsx("cabys.xlsx", "CABYS",
+      cabysPageRows.map((c) => ({ codigo: c.codigo, descripcion: c.descripcion, impuesto: `${c.impuesto}%` })),
+      ["codigo", "descripcion", "impuesto"]
+    )
   }
 
   /* ================= AE ================= */
@@ -355,19 +356,21 @@ export default function App() {
   const [aeHistory, setAeHistory] = useState(() => loadHistory("ht_ae"))
 
   const aeIdDigits = useMemo(() => onlyDigits(aeId), [aeId])
-  const aeValid = useMemo(() => isValidAeId(aeId), [aeId])
+  const aeValid    = useMemo(() => isValidAeId(aeId), [aeId])
 
-  async function consultarAE() {
-    if (!aeValid) return
+  /* idOverride permite llamar desde el chip de historial sin esperar actualización de estado */
+  async function consultarAE(idOverride) {
+    const digits = idOverride ? onlyDigits(idOverride) : aeIdDigits
+    if (!isValidAeId(digits)) return
     setAeLoading(true)
     setAeError("")
     setAeSearched(true)
     try {
-      const res = await fetch(`/hacienda/fe/ae?identificacion=${aeIdDigits}`, { cache: "no-store" })
+      const res = await fetch(`/hacienda/fe/ae?identificacion=${digits}`, { cache: "no-store" })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
       setAeData(json)
-      saveHistory("ht_ae", aeIdDigits)
+      saveHistory("ht_ae", digits)
       setAeHistory(loadHistory("ht_ae"))
     } catch (e) {
       setAeData(null)
@@ -378,10 +381,8 @@ export default function App() {
   }
 
   const aeJsonId = useMemo(() => {
-    const raw =
-      aeData?.identificacion ?? aeData?.identificacionTributaria ?? aeData?.cedula ?? aeData?.id ?? ""
-    const cleaned = onlyDigits(String(raw))
-    return cleaned || aeIdDigits
+    const raw = aeData?.identificacion ?? aeData?.identificacionTributaria ?? aeData?.cedula ?? aeData?.id ?? ""
+    return onlyDigits(String(raw)) || aeIdDigits
   }, [aeData, aeIdDigits])
 
   function getAeSummaryText() {
@@ -401,24 +402,23 @@ export default function App() {
 
   function getAeActividadesCsvText() {
     if (!aeData?.actividades?.length) return ""
-    const rows = aeData.actividades.map((a) => [
-      a.codigo,
-      a.descripcion,
-      a.tipo === "P" ? "Principal" : "Secundaria",
-      a.estado === "A" ? "Activa" : "Inactiva",
-    ])
-    return toCsv(rows, ["codigo", "descripcion", "tipo", "estado"])
+    return toCsv(
+      aeData.actividades.map((a) => [a.codigo, a.descripcion, a.tipo === "P" ? "Principal" : "Secundaria", a.estado === "A" ? "Activa" : "Inactiva"]),
+      ["codigo", "descripcion", "tipo", "estado"]
+    )
   }
 
   function downloadAeActividadesXlsx() {
     if (!aeData?.actividades?.length) return
-    const rows = aeData.actividades.map((a) => ({
-      codigo: a.codigo,
-      descripcion: a.descripcion,
-      tipo: a.tipo === "P" ? "Principal" : "Secundaria",
-      estado: a.estado === "A" ? "Activa" : "Inactiva",
-    }))
-    downloadXlsx("actividades_ae.xlsx", "Actividades", rows, ["codigo", "descripcion", "tipo", "estado"])
+    downloadXlsx("actividades_ae.xlsx", "Actividades",
+      aeData.actividades.map((a) => ({
+        codigo: a.codigo,
+        descripcion: a.descripcion,
+        tipo: a.tipo === "P" ? "Principal" : "Secundaria",
+        estado: a.estado === "A" ? "Activa" : "Inactiva",
+      })),
+      ["codigo", "descripcion", "tipo", "estado"]
+    )
   }
 
   /* ================= GOMETA CEDULAS ================= */
@@ -432,17 +432,18 @@ export default function App() {
   const cedQueryTrim = useMemo(() => cedQuery.trim(), [cedQuery])
   const cedCanSearch = cedQueryTrim.length > 0
 
-  async function consultarCedulas() {
-    if (!cedCanSearch) return
+  async function consultarCedulas(queryOverride) {
+    const q = (queryOverride ?? cedQueryTrim).trim()
+    if (!q) return
     setCedLoading(true)
     setCedError("")
     setCedItems([])
     setCedSearched(true)
     try {
-      const json = await fetchJsonSafe(`/gometa/cedulas/${encodeURIComponent(cedQueryTrim)}`)
+      const json = await fetchJsonSafe(`/gometa/cedulas/${encodeURIComponent(q)}`)
       const norm = normalizeGometaResponse(json)
       setCedItems(norm.items)
-      saveHistory("ht_ced", cedQueryTrim)
+      saveHistory("ht_ced", q)
       setCedHistory(loadHistory("ht_ced"))
     } catch (e) {
       setCedError(e?.message || "Error consultando Cédulas (gometa)")
@@ -453,8 +454,10 @@ export default function App() {
 
   function downloadCedulasXlsx() {
     if (!cedItems.length) return
-    const rows = cedItems.map((x) => ({ cedula: x.cedula, nombre: x.nombre, tipo: x.tipo }))
-    downloadXlsx("cedulas_gometa.xlsx", "Cedulas", rows, ["cedula", "nombre", "tipo"])
+    downloadXlsx("cedulas_gometa.xlsx", "Cedulas",
+      cedItems.map((x) => ({ cedula: x.cedula, nombre: x.nombre, tipo: x.tipo })),
+      ["cedula", "nombre", "tipo"]
+    )
   }
 
   /* ================= RENDER ================= */
@@ -464,25 +467,28 @@ export default function App() {
         <header className="top">
           <div className="topLeft">
             <h1>Herramienta de consulta</h1>
-            <p>CABYS y consulta de status contribuyente</p>
+            <p>CABYS · Contribuyentes · Cédulas TSE · Tipo de cambio</p>
           </div>
 
           {/* TIPO DE CAMBIO */}
-          <div className="fxCard" title="Tipo de cambio (USD)">
-            <div className="fxTitle">Tipo de cambio</div>
+          <div className="fxCard" title="Tipo de cambio BCCR">
+            <div className="fxTitle">
+              Tipo de cambio
+              <button className="fxRefresh" onClick={fetchTipoCambio} type="button" title="Actualizar">↻</button>
+            </div>
             {fxLoading ? (
               <div className="fxRow muted">Cargando…</div>
             ) : fx ? (
               <>
                 <div className="fxRow">
                   <span className="fxLabel">Compra</span>
-                  <span className="fxValue">₡{fx.compra}</span>
+                  <span className="fxValue">₡{fx.compra.toLocaleString("es-CR")}</span>
                 </div>
                 <div className="fxRow">
                   <span className="fxLabel">Venta</span>
-                  <span className="fxValue">₡{fx.venta}</span>
+                  <span className="fxValue">₡{fx.venta.toLocaleString("es-CR")}</span>
                 </div>
-                <div className="fxDate muted">Actualizado al: {formatFechaCR(fx.fecha)}</div>
+                <div className="fxDate muted">Al {formatFechaCR(fx.fecha)}</div>
               </>
             ) : (
               <div className="fxRow bad">{fxError || "No disponible"}</div>
@@ -495,19 +501,17 @@ export default function App() {
           <div className="apiHead">
             <div>
               <div className="apiTitle">Estado de los APIs</div>
-              <div className="apiSub">Hacienda (proxy /hacienda) — Auto cada 1 minuto</div>
+              <div className="apiSub">Hacienda · Gometa — Auto cada 1 minuto</div>
             </div>
             <button className="btnGhost" onClick={refreshApiStatus} type="button">
-              🔄 Revisar ahora
+              ↻ Revisar ahora
             </button>
           </div>
           <div className="apiBody">
             {apiStatus?.ok ? (
               <div className="apiOk">
                 <span className="dot ok" />
-                <span className="apiLine">
-                  Operacional — respuesta en <b>{apiStatus.ms} ms</b>
-                </span>
+                <span className="apiLine">Operacional — respuesta en <b>{apiStatus.ms} ms</b></span>
               </div>
             ) : (
               <div className="apiBad">
@@ -515,11 +519,52 @@ export default function App() {
                 <span className="apiLine">Sin respuesta</span>
               </div>
             )}
-            {apiStatus?.at && (
-              <div className="muted">Última revisión: {apiStatus.at.toLocaleString()}</div>
-            )}
+            {apiStatus?.at && <div className="muted">Última revisión: {apiStatus.at.toLocaleString()}</div>}
           </div>
         </section>
+
+        {/* CONVERSOR USD / CRC */}
+        {fx && (
+          <section className="card conversorCard">
+            <h2 className="conversorTitle">Conversor USD ↔ CRC</h2>
+            <div className="conversorRow">
+              <div className="conversorInputWrap">
+                <span className="conversorPrefix">{fxDir === "usd2crc" ? "$" : "₡"}</span>
+                <input
+                  className="conversorInput"
+                  type="number"
+                  min="0"
+                  placeholder="0.00"
+                  value={fxInput}
+                  onChange={(e) => setFxInput(e.target.value)}
+                />
+              </div>
+              <button
+                className="conversorSwap"
+                type="button"
+                title="Cambiar dirección"
+                onClick={() => { setFxDir((d) => d === "usd2crc" ? "crc2usd" : "usd2crc"); setFxInput("") }}
+              >
+                ⇄
+              </button>
+              <div className="conversorResult">
+                {fxResult !== null ? (
+                  <>
+                    <span className="conversorPrefix">{fxDir === "usd2crc" ? "₡" : "$"}</span>
+                    <span className="conversorValue">{fxResult}</span>
+                  </>
+                ) : (
+                  <span className="muted">{fxDir === "usd2crc" ? "₡ —" : "$ —"}</span>
+                )}
+              </div>
+            </div>
+            <div className="conversorHint muted">
+              {fxDir === "usd2crc"
+                ? `Usando tipo de cambio venta ₡${fx.venta.toLocaleString("es-CR")}`
+                : `Usando tipo de cambio compra ₡${fx.compra.toLocaleString("es-CR")}`}
+            </div>
+          </section>
+        )}
 
         {/* MAIN GRID */}
         <main className="grid2">
@@ -527,95 +572,57 @@ export default function App() {
           <section className="card">
             <h2>Consulta de CABYS</h2>
 
-            <label>Búsqueda por nombre</label>
+            <label>Búsqueda por nombre o código</label>
             <div className="suggestWrap" ref={suggestBoxRef}>
               <input
                 value={cabysQ}
                 onChange={(e) => { setCabysQ(e.target.value); setCabysPage(0) }}
                 onKeyDown={(e) => { if (e.key === "Enter") consultarCabys({ resetPage: true }) }}
-                placeholder="Ej: arroz"
+                placeholder="Ej: arroz o 1010101010000"
               />
             </div>
 
             {cabysHistory.length > 0 && (
               <div className="historyRow">
                 {cabysHistory.map((h) => (
-                  <button
-                    key={h}
-                    type="button"
-                    className="historyChip"
-                    onClick={() => { setCabysQ(h); setCabysPage(0); setTimeout(() => consultarCabys({ resetPage: true }), 0) }}
-                  >
-                    {h}
-                  </button>
+                  <button key={h} type="button" className="historyChip"
+                    onClick={() => { setCabysQ(h); setCabysPage(0); consultarCabys({ resetPage: true, queryOverride: h }) }}
+                  >{h}</button>
                 ))}
               </div>
             )}
 
             <label>Resultados por página</label>
             <input
-              type="number"
-              min="5"
-              max="50"
-              value={cabysTop}
+              type="number" min="5" max="50" value={cabysTop}
               onChange={(e) => { setCabysTop(e.target.value); setCabysPage(0) }}
             />
 
             <div className="row">
-              <button
-                className="btnPrimary"
-                onClick={() => consultarCabys({ resetPage: true })}
-                disabled={!cabysCanSearch || cabysLoading}
-                type="button"
-              >
+              <button className="btnPrimary" onClick={() => consultarCabys({ resetPage: true })}
+                disabled={!cabysCanSearch || cabysLoading} type="button">
                 {cabysLoading ? "Consultando…" : "Consultar"}
               </button>
-
-              <CopyBtn
-                id="cabys-csv"
-                label="Copiar CSV"
-                getText={() => {
-                  const rows = cabysPageRows.map((c) => [c.codigo, c.descripcion, `${c.impuesto}%`])
-                  return toCsv(rows, ["codigo", "descripcion", "impuesto"])
-                }}
+              <CopyBtn id="cabys-csv" label="Copiar CSV"
+                getText={() => toCsv(cabysPageRows.map((c) => [c.codigo, c.descripcion, `${c.impuesto}%`]), ["codigo", "descripcion", "impuesto"])}
                 disabled={!cabysPageRows.length}
               />
-
-              <button
-                className="btnGhost"
-                onClick={downloadCabysXlsx}
-                disabled={!cabysPageRows.length}
-                type="button"
-              >
+              <button className="btnGhost" onClick={downloadCabysXlsx} disabled={!cabysPageRows.length} type="button">
                 Descargar XLSX
               </button>
             </div>
 
             {cabysError && <div className="alert">⚠️ {cabysError}</div>}
-
             {cabysSearched && !cabysLoading && !cabysError && cabysTotal === 0 && (
               <div className="emptyState">Sin resultados para "{cabysQueryTrim}"</div>
             )}
 
             {cabysTotal > 0 && (
               <div className="pager">
-                <button
-                  className="btnGhost"
-                  disabled={!cabysHasPrev}
-                  onClick={() => setCabysPage((p) => Math.max(0, p - 1))}
-                  type="button"
-                >
-                  ◀ Anterior
-                </button>
-                <div className="muted">
-                  Página {cabysPage + 1} — Mostrando {Math.min(cabysEnd, cabysTotal)} de {cabysTotal}
-                </div>
-                <button
-                  className="btnGhost"
-                  disabled={!cabysHasNext}
-                  onClick={cabysNextPage}
-                  type="button"
-                >
+                <button className="btnGhost" disabled={!cabysHasPrev}
+                  onClick={() => setCabysPage((p) => Math.max(0, p - 1))} type="button">◀ Anterior</button>
+                <div className="muted">Pág. {cabysPage + 1} · {Math.min(cabysEnd, cabysTotal)} de {cabysTotal}</div>
+                <button className="btnGhost" disabled={!cabysHasNext} onClick={cabysNextPage} type="button">
                   Siguiente ▶
                 </button>
               </div>
@@ -624,24 +631,18 @@ export default function App() {
             {cabysPageRows.length > 0 && (
               <table>
                 <thead>
-                  <tr>
-                    <th>Código</th>
-                    <th>Descripción</th>
-                    <th>Impuesto</th>
-                    <th className="thRight">Copiar</th>
-                  </tr>
+                  <tr><th>Código</th><th>Descripción</th><th>Impuesto</th><th className="thRight">Copiar</th></tr>
                 </thead>
                 <tbody>
                   {cabysPageRows.map((c) => (
                     <tr key={c.codigo}>
                       <td className="mono">{c.codigo}</td>
                       <td>{c.descripcion}</td>
-                      <td>{c.impuesto}%</td>
+                      <td><span className="taxBadge">{c.impuesto}%</span></td>
                       <td className="tdRight">
                         <button
                           className={`iconBtn${flashing === `cabys-code-${c.codigo}` ? " flashed" : ""}`}
-                          type="button"
-                          title="Copiar código"
+                          type="button" title="Copiar código"
                           onClick={() => flash(`cabys-code-${c.codigo}`, String(c.codigo || ""))}
                         >
                           {flashing === `cabys-code-${c.codigo}` ? "✓" : "📋"}
@@ -674,54 +675,25 @@ export default function App() {
             {aeHistory.length > 0 && (
               <div className="historyRow">
                 {aeHistory.map((h) => (
-                  <button
-                    key={h}
-                    type="button"
-                    className="historyChip"
-                    onClick={() => { setAeId(h); setTimeout(() => consultarAE(), 0) }}
-                  >
-                    {h}
-                  </button>
+                  <button key={h} type="button" className="historyChip"
+                    onClick={() => { setAeId(h); consultarAE(h) }}
+                  >{h}</button>
                 ))}
               </div>
             )}
 
             <div className="row">
-              <button
-                className="btnPrimary"
-                onClick={consultarAE}
-                disabled={!aeValid || aeLoading}
-                type="button"
-              >
+              <button className="btnPrimary" onClick={() => consultarAE()} disabled={!aeValid || aeLoading} type="button">
                 {aeLoading ? "Consultando…" : "Consultar"}
               </button>
-
-              <CopyBtn
-                id="ae-summary"
-                label="Copiar resumen"
-                getText={getAeSummaryText}
-                disabled={!aeData}
-              />
-
-              <CopyBtn
-                id="ae-csv"
-                label="Copiar CSV actividades"
-                getText={getAeActividadesCsvText}
-                disabled={!aeData?.actividades?.length}
-              />
-
-              <button
-                className="btnGhost"
-                onClick={downloadAeActividadesXlsx}
-                disabled={!aeData?.actividades?.length}
-                type="button"
-              >
-                Descargar XLSX actividades
+              <CopyBtn id="ae-summary" label="Copiar resumen" getText={getAeSummaryText} disabled={!aeData} />
+              <CopyBtn id="ae-csv" label="Copiar CSV" getText={getAeActividadesCsvText} disabled={!aeData?.actividades?.length} />
+              <button className="btnGhost" onClick={downloadAeActividadesXlsx} disabled={!aeData?.actividades?.length} type="button">
+                Descargar XLSX
               </button>
             </div>
 
             {aeError && <div className="alert">⚠️ {aeError}</div>}
-
             {aeSearched && !aeLoading && !aeError && !aeData && (
               <div className="emptyState">No se encontró contribuyente para "{aeIdDigits}"</div>
             )}
@@ -740,47 +712,46 @@ export default function App() {
                     </div>
                     <div className="ae-col">
                       <div className="label">Régimen</div>
-                      <div className="value">{aeData.regimen?.descripcion}</div>
+                      <div className="value">{aeData.regimen?.descripcion || "—"}</div>
                     </div>
                   </div>
                   <div className="ae-chips">
-                    <span className="chip">Estado: {aeData.situacion?.estado}</span>
-                    <span className="chip">Moroso: {aeData.situacion?.moroso}</span>
-                    <span className="chip">Omiso: {aeData.situacion?.omiso}</span>
-                    <span className="chip">AT: {aeData.situacion?.administracionTributaria}</span>
+                    <ChipStatus label="Estado"  value={aeData.situacion?.estado} />
+                    <ChipStatus label="Moroso"  value={aeData.situacion?.moroso} />
+                    <ChipStatus label="Omiso"   value={aeData.situacion?.omiso} />
+                    {aeData.situacion?.administracionTributaria && (
+                      <span className="chip">AT: {aeData.situacion.administracionTributaria}</span>
+                    )}
                   </div>
                   <div className="ae-link">
-                    <a
-                      href={`https://www.hacienda.go.cr/ATV/frmConsultaContribuyentes.aspx`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="linkExterno"
-                    >
+                    <a href="https://www.hacienda.go.cr/ATV/frmConsultaContribuyentes.aspx"
+                      target="_blank" rel="noopener noreferrer" className="linkExterno">
                       Ver en Hacienda ↗
                     </a>
                   </div>
                 </div>
 
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Código</th>
-                      <th>Descripción</th>
-                      <th>Tipo</th>
-                      <th>Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(aeData.actividades || []).map((a) => (
-                      <tr key={`${a.codigo}-${a.tipo}-${a.estado}`}>
-                        <td className="mono">{a.codigo}</td>
-                        <td>{a.descripcion}</td>
-                        <td>{a.tipo === "P" ? "Principal" : "Secundaria"}</td>
-                        <td>{a.estado === "A" ? "Activa" : "Inactiva"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {aeData.actividades?.length > 0 && (
+                  <table>
+                    <thead>
+                      <tr><th>Código</th><th>Descripción</th><th>Tipo</th><th>Estado</th></tr>
+                    </thead>
+                    <tbody>
+                      {aeData.actividades.map((a) => (
+                        <tr key={`${a.codigo}-${a.tipo}-${a.estado}`}>
+                          <td className="mono">{a.codigo}</td>
+                          <td>{a.descripcion}</td>
+                          <td>{a.tipo === "P" ? "Principal" : "Secundaria"}</td>
+                          <td>
+                            <span className={a.estado === "A" ? "estadoBadge activa" : "estadoBadge inactiva"}>
+                              {a.estado === "A" ? "Activa" : "Inactiva"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </>
             )}
           </section>
@@ -789,51 +760,34 @@ export default function App() {
           <section className="card">
             <h2>Consulta de cédula TSE</h2>
 
-            <label>Búsqueda</label>
+            <label>Búsqueda por cédula o nombre</label>
             <input
               value={cedQuery}
               onChange={(e) => setCedQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") consultarCedulas() }}
-              placeholder="Cédula física/jurídica o palabras"
+              placeholder="Ej: 116740278 o Juan Pérez"
             />
 
             {cedHistory.length > 0 && (
               <div className="historyRow">
                 {cedHistory.map((h) => (
-                  <button
-                    key={h}
-                    type="button"
-                    className="historyChip"
-                    onClick={() => { setCedQuery(h); setTimeout(() => consultarCedulas(), 0) }}
-                  >
-                    {h}
-                  </button>
+                  <button key={h} type="button" className="historyChip"
+                    onClick={() => { setCedQuery(h); consultarCedulas(h) }}
+                  >{h}</button>
                 ))}
               </div>
             )}
 
             <div className="row">
-              <button
-                className="btnPrimary"
-                onClick={consultarCedulas}
-                disabled={!cedCanSearch || cedLoading}
-                type="button"
-              >
+              <button className="btnPrimary" onClick={() => consultarCedulas()} disabled={!cedCanSearch || cedLoading} type="button">
                 {cedLoading ? "Consultando…" : "Consultar"}
               </button>
-
-              <button
-                className="btnGhost"
-                onClick={downloadCedulasXlsx}
-                disabled={!cedItems.length}
-                type="button"
-              >
+              <button className="btnGhost" onClick={downloadCedulasXlsx} disabled={!cedItems.length} type="button">
                 Descargar XLSX
               </button>
             </div>
 
             {cedError && <div className="alert">⚠️ {cedError}</div>}
-
             {cedSearched && !cedLoading && !cedError && cedItems.length === 0 && (
               <div className="emptyState">Sin resultados para "{cedQueryTrim}"</div>
             )}
@@ -841,12 +795,7 @@ export default function App() {
             {cedItems.length > 0 && (
               <table>
                 <thead>
-                  <tr>
-                    <th>Cédula</th>
-                    <th>Nombre</th>
-                    <th>Tipo</th>
-                    <th className="thRight">Copiar</th>
-                  </tr>
+                  <tr><th>Cédula</th><th>Nombre</th><th>Tipo</th><th className="thRight">Copiar</th></tr>
                 </thead>
                 <tbody>
                   {cedItems.map((x) => (
@@ -857,8 +806,7 @@ export default function App() {
                       <td className="tdRight">
                         <button
                           className={`iconBtn${flashing === `ced-${x.id}` ? " flashed" : ""}`}
-                          type="button"
-                          title="Copiar cédula"
+                          type="button" title="Copiar cédula"
                           onClick={() => flash(`ced-${x.id}`, String(x.cedula || ""))}
                         >
                           {flashing === `ced-${x.id}` ? "✓" : "📋"}
@@ -872,7 +820,9 @@ export default function App() {
           </section>
         </main>
 
-        <footer className="muted footer"></footer>
+        <footer className="footer muted">
+          Datos: Ministerio de Hacienda · BCCR · TSE
+        </footer>
       </div>
     </div>
   )
