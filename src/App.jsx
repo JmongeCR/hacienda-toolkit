@@ -129,11 +129,11 @@ function EmptyState({ msg }) {
 function PageHeader({ icon, title, description }) {
   return (
     <div className="pageHeader">
-      <div className="pageHeaderIcon">{icon}</div>
-      <div>
+      <div className="pageHeaderTop">
+        <div className="pageHeaderIcon">{icon}</div>
         <h1 className="pageTitle">{title}</h1>
-        <p className="pageDesc">{description}</p>
       </div>
+      {description && <p className="pageDesc">{description}</p>}
     </div>
   )
 }
@@ -424,8 +424,11 @@ export default function App() {
       <aside className={`sidebar${sideOpen?" sideOpen":""}`}>
         <div className="sideTop">
           <div className="sideBrand">
-            <span className="sideLogo">⚡</span>
-            <span className="sideName">HaciendaKit</span>
+            <div className="sideLogo">⚡</div>
+            <div>
+              <div className="sideName">HaciendaKit</div>
+              <div className="sideTagline">Herramientas CR</div>
+            </div>
           </div>
         </div>
 
@@ -436,7 +439,6 @@ export default function App() {
               onClick={() => navigate(n.id)}>
               <span className="navIcon">{n.icon}</span>
               <span className="navLabel">{n.label}</span>
-              {page===n.id && <span className="navDot"/>}
             </button>
           ))}
         </nav>
@@ -473,7 +475,10 @@ export default function App() {
           {/* ══ INICIO ══ */}
           {page === "home" && (
             <div className="pageWrap">
-              <PageHeader icon="⊞" title="Inicio" description="Panel general — estado del sistema y tipo de cambio en tiempo real." />
+              <div className="homeHero">
+                <div className="homeHeroTitle">Herramientas Tributarias CR</div>
+                <p className="homeHeroSub">Consultá CABYS, contribuyentes, cédulas, tipo de cambio y facturas electrónicas — todo en un solo lugar.</p>
+              </div>
 
               <div className="homeGrid">
                 {/* API status */}
