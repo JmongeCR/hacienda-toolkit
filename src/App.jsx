@@ -1334,9 +1334,10 @@ export default function App() {
             {IC.search}
             <span className="cmdTriggerLabel">Búsqueda rápida</span>
           </button>
-          <button type="button" className="sideCollapseBtn" onClick={() => setSideCollapsed(c => !c)}>
+          <button type="button" className="sideCollapseBtn"
+            onClick={() => setSideCollapsed(c => !c)}
+            data-tip={sideCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}>
             {sideCollapsed ? IC.expandRight : IC.collapseLeft}
-            <span className="collapseBtnLabel">Colapsar</span>
           </button>
           <div className={`apiPill${apiStatus == null ? "" : apiStatus.ok ? " apiPillOk" : " apiPillBad"}`}>
             <span className={`dot${apiStatus?.ok ? " ok" : apiStatus == null ? " loading" : " bad"}`} />
