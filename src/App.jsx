@@ -302,6 +302,11 @@ const IC = {
   cmd:          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M3 1a2 2 0 1 0 0 4h6a2 2 0 1 0 0-4H3zM3 7a2 2 0 1 0 0 4h6a2 2 0 1 0 0-4H3z"/><path d="M3 5v2M9 5v2"/></svg>,
   arrowRight:   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="m5 2 5 4-5 4M2 6h8"/></svg>,
   x:            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m3 3 8 8M11 3 3 11"/></svg>,
+  bot:          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="12" height="9" rx="2"/><path d="M6 7V5a3 3 0 016 0v2M6 11.5h.01M12 11.5h.01M1 11h2M15 11h2M9 2v2"/></svg>,
+  send:         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2L2 7.5l5 1.5L9 14l5-12z"/></svg>,
+  upload:       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M8 10V3M5 6l3-3 3 3"/><path d="M3 13h10"/></svg>,
+  chat:         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h14a1 1 0 011 1v9a1 1 0 01-1 1H5l-3 2V4a1 1 0 011-1z"/></svg>,
+  xml:          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l-3 3 3 3M14 6l3 3-3 3M11 3L7 15"/></svg>,
 }
 
 const ACT_ICONS  = { cabys: IC.search, contribuyente: IC.user, cedulas: IC.id, factura: IC.receipt, tipocambio: IC.currency, exoneraciones: IC.shield }
@@ -330,6 +335,140 @@ const CABYS_SUGERENCIAS = [
   { label: "Agricultura",           q: "productos agricolas cultivos" },
   { label: "Legal / Asesoría",      q: "servicios juridicos legales asesoria" },
 ]
+
+/* ─── matchAeTopN: devuelve los N mejores matches de AE con score ─── */
+function matchAeTopN(desc, n = 3) {
+  const d = desc.toLowerCase()
+  return AE_MAP
+    .map(ae => ({ ...ae, score: ae.kw.filter(k => d.includes(k)).length }))
+    .filter(ae => ae.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, n)
+    .map(ae => ({ ...ae, pct: Math.round(Math.min(ae.score / Math.max(ae.kw.length, 1), 1) * 100) }))
+}
+
+/* ─── XML FE parser (DOMParser, sin librerías) ─── */
+function parseXmlFe(xmlStr) {
+  const dp = new DOMParser()
+  const doc = dp.parseFromString(xmlStr, "application/xml")
+  const err = doc.querySelector("parsererror")
+  if (err) throw new Error("XML inválido: " + err.textContent.slice(0, 120))
+  const get = (sel) => doc.querySelector(sel)?.textContent?.trim() || ""
+  const rootTag = doc.documentElement.localName
+  const clave         = get("Clave")
+  const numConsecutivo= get("NumeroConsecutivo")
+  const fecha         = get("FechaEmision")
+  const emisor = {
+    nombre:    get("Emisor > Nombre"),
+    comercial: get("Emisor > NombreComercial"),
+    cedula:    get("Emisor > Identificacion > Numero"),
+    tipoCed:   get("Emisor > Identificacion > Tipo"),
+    correo:    get("Emisor > CorreoElectronico"),
+  }
+  const receptor = {
+    nombre: get("Receptor > Nombre"),
+    cedula: get("Receptor > Identificacion > Numero"),
+    correo: get("Receptor > CorreoElectronico"),
+  }
+  const moneda    = get("CodigoTipoMoneda > Codigo") || get("Moneda") || "CRC"
+  const tipoCambio= get("CodigoTipoMoneda > TipoCambio") || ""
+  const resumen = {
+    total:          get("TotalComprobante"),
+    totalImpuesto:  get("TotalImpuesto") || get("TotalImpuestoVenta"),
+    totalVenta:     get("TotalVentaNeta") || get("TotalVenta"),
+    totalDesc:      get("TotalDescuentos"),
+    moneda, tipoCambio,
+  }
+  const lines = [...doc.querySelectorAll("LineaDetalle")].map(el => {
+    const g = sel => el.querySelector(sel)?.textContent?.trim() || ""
+    return {
+      descripcion: g("Descripcion"),
+      cantidad:    g("Cantidad"),
+      unidad:      g("UnidadMedida"),
+      precio:      g("PrecioUnitario"),
+      subtotal:    g("SubTotal"),
+      cabys:       g("CodigoComercial > Codigo") || g("Codigo"),
+      ivaPct:      g("Impuesto > Tarifa") || g("Tarifa"),
+      ivaMoneto:   g("Impuesto > Monto"),
+      total:       g("MontoTotalLinea"),
+    }
+  })
+  const tiposDoc = { FacturaElectronica:"Factura Electrónica", TiqueteElectronico:"Tiquete Electrónico",
+    NotaDebitoElectronica:"Nota de Débito", NotaCreditoElectronica:"Nota de Crédito",
+    FacturaElectronicaCompra:"FE de Compra", FacturaElectronicaExportacion:"FE de Exportación" }
+  return { rootTag, tipoDoc: tiposDoc[rootTag] || rootTag, clave, numConsecutivo, fecha, emisor, receptor, resumen, lines }
+}
+
+/* ─── Base de conocimientos tributaria CR ─── */
+const TAX_KB = [
+  { id:"iva-tarifas", kw:["iva","impuesto","tasa","tarifa","porcentaje","cuánto","cuanto","tari"],
+    q:"¿Cuáles son las tarifas de IVA?",
+    a:"En Costa Rica el IVA tiene 6 tarifas:\n• **0%** — Canasta básica, medicamentos esenciales, educación pública, exportaciones\n• **1%** — Primas de seguros\n• **2%** — Boletos de avión internacional\n• **4%** — Servicios de salud privada, veterinarios, algunos alimentos procesados\n• **8%** — Planes de salud, seguros médicos privados\n• **13%** — Tarifa general (mayoría de bienes y servicios)\n• **15%** — Licores, cervezas, cigarrillos y tabaco",
+    src:["Ley 6826 mod. por Ley 9635","Art. 10 LIVA"], acts:[{label:"Buscar CABYS",page:"cabys"}] },
+  { id:"barberia", kw:["barberia","barbería","peluqueria","peluquería","belleza","estetica","estética","manicure","salon","salón"],
+    q:"¿Qué CABYS aplica para barberías?",
+    a:"Para barberías y salones de belleza:\n• **Servicio de peluquería/barbería** — búscalo en CABYS como 'peluqueria barberia belleza' (13% IVA)\n• Actividad económica CIIU: **9602 — Peluquería y tratamientos de belleza**\n\nLos servicios de belleza en general tributan al 13% IVA.",
+    src:["CABYS Hacienda","CIIU Rev.4"], acts:[{label:"Buscar CABYS barbería",page:"cabys",q:"peluqueria barberia belleza estetica"}] },
+  { id:"software", kw:["software","programacion","programación","desarrollo","sistemas","tecnologia","tecnología","app","ti","informatica"],
+    q:"¿Qué CABYS aplica para software?",
+    a:"Para servicios tecnológicos y software:\n• **Desarrollo de software** — buscar 'servicios software programacion' (13% IVA)\n• **Consultoría TI** — buscar 'consultoria informatica tecnologia'\n• **Mantenimiento de sistemas** — buscar 'mantenimiento software sistemas'\n\nActividad económica CIIU: **6201 — Actividades de programación informática**.",
+    src:["CABYS Hacienda","CIIU 6201"], acts:[{label:"Buscar CABYS software",page:"cabys",q:"servicios software programacion tecnologia informatica"}] },
+  { id:"restaurante", kw:["restaurante","soda","comida","alimentacion","cafeteria","cafetería","almuerzo","cena"],
+    q:"¿Qué CABYS aplica para restaurantes?",
+    a:"Para restaurantes y sodas:\n• **Servicio de comidas** — buscar 'servicio comidas restaurante' (13% IVA)\n• Actividad económica CIIU: **5610 — Restaurantes y servicio móvil de comidas**\n\n📌 Los **alimentos de canasta básica sin procesar** (frijoles, arroz, verduras crudas) tienen 0% IVA si se venden en supermercados, no en restaurantes preparados.",
+    src:["CABYS Hacienda","CIIU 5610"], acts:[{label:"Buscar CABYS restaurante",page:"cabys",q:"servicio comidas restaurante alimentacion"}] },
+  { id:"exento", kw:["exento","exenta","exencion","exención","no paga","sin iva","canasta","basica","básica","cero"],
+    q:"¿Qué está exento de IVA?",
+    a:"Los principales bienes/servicios con 0% IVA:\n• Productos de la canasta básica (arroz, frijoles, leche, pan, carne, etc.)\n• Medicamentos y productos farmacéuticos esenciales\n• Servicios educativos públicos\n• Servicios de la CCSS\n• Exportaciones de bienes y servicios\n• Arrendamiento de vivienda\n• Intereses bancarios y servicios financieros básicos\n• Seguros de vida",
+    src:["Anexo 1 Ley 6826","LIVA Art. 8"], acts:[] },
+  { id:"actividad-economica", kw:["actividad","económica","economica","ciiu","registro","inscripcion","inscripción","hacienda"],
+    q:"¿Qué actividad económica debo usar?",
+    a:"La actividad económica (CIIU) se asigna al inscribirse en Hacienda. Actividades comunes:\n• **5610** — Restaurantes\n• **6201** — Programación / software\n• **6920** — Contabilidad y auditoría\n• **9602** — Peluquería y belleza\n• **4100** — Construcción\n• **7311** — Publicidad y marketing\n• **8621** — Médicos y odontólogos\n• **4771** — Comercio ropa y calzado\n\nPodés verificar el régimen actual en la sección Contribuyentes.",
+    src:["CIIU Rev.4","Hacienda CR"], acts:[{label:"Verificar contribuyente",page:"contribuyente"}] },
+  { id:"factura-electronica", kw:["factura","electronica","electrónica","comprobante","clave","obligacion","obligación","emitir","tiquete"],
+    q:"¿Quiénes deben emitir factura electrónica?",
+    a:"**Todos los contribuyentes inscritos** en Hacienda están obligados a emitir comprobantes electrónicos:\n• **Factura Electrónica (FE)** — ventas a personas jurídicas o que la soliciten\n• **Tiquete Electrónico** — ventas de mostrador al consumidor final\n• **Nota de Débito/Crédito** — ajustes a facturas emitidas\n\nLa clave del comprobante tiene **50 dígitos**. Podés validar cualquier factura en la sección correspondiente.",
+    src:["Resolución DGT-R-48-2016","Hacienda CR"], acts:[{label:"Validar factura",page:"factura"}] },
+  { id:"regimen", kw:["simplificado","régimen","regimen","pequeño","contribuyente","trad"],
+    q:"¿Qué es el régimen simplificado?",
+    a:"El **Régimen de Tributación Simplificada** aplica cuando los ingresos anuales son menores a ~₡106 millones:\n• Pago trimestral según factor de tributación (2.5%–5.5%)\n• No se cobra IVA por separado (ya incluido)\n• Obligado a emitir factura electrónica\n\n**Régimen Tradicional**: aplica cuando superás el límite o decidís inscribirte voluntariamente. Se declara IVA mensual y Renta anual.",
+    src:["Decreto 37672-H","DGT-CR"], acts:[{label:"Verificar régimen",page:"contribuyente"}] },
+  { id:"renta", kw:["renta","income","utilidades","ganancia","beneficio","tasa renta","impuesto renta"],
+    q:"¿Cuánto es el impuesto sobre la renta?",
+    a:"**Impuesto sobre la Renta** en Costa Rica:\n\n**Personas Jurídicas:**\n• Hasta ₡119M de ingresos: 5%\n• ₡119M a ₡238M: 10%\n• ₡238M a ₡476M: 15%\n• Más de ₡476M: 30%\n\n**Personas Físicas con actividad lucrativa:**\n• Tramos progresivos del 10% al 25% según ingresos\n\n*Los tramos se actualizan anualmente por decreto.*",
+    src:["Ley 7092 reformada","DGT-CR"], acts:[] },
+  { id:"salud", kw:["medico","médico","clinica","clínica","salud","doctor","consulta","hospital","veterinario"],
+    q:"¿Qué IVA aplica para servicios de salud?",
+    a:"Servicios de salud — tarifas diferenciadas:\n• **CCSS / salud pública** → 0% IVA\n• **Consulta médica privada** → 4% IVA\n• **Hospital privado** → 4% IVA\n• **Medicamentos esenciales** → 0% IVA\n• **Medicamentos no esenciales** → 4% IVA\n• **Seguros/planes de salud privados** → 8% IVA\n• **Servicios veterinarios** → 4% IVA\n\nActividad económica: **8621 — Médicos y odontólogos**.",
+    src:["LIVA Art. 10","Anexo 2 LIVA"], acts:[{label:"Buscar CABYS salud",page:"cabys",q:"servicios medicos salud clinica consulta"}] },
+  { id:"construccion", kw:["construccion","construcción","obra","edificacion","contratista","plomero","electricista"],
+    q:"¿Qué CABYS aplica para construcción?",
+    a:"Para servicios de construcción:\n• **Construcción general** — buscar 'servicios construccion' (13% IVA)\n• **Instalaciones eléctricas** — buscar 'instalacion electrica'\n• **Plomería** — buscar 'servicios plomeria'\n\nActividad CIIU: **4100 — Construcción de edificios** / **4321 — Instalaciones eléctricas**\n\n📌 Los **materiales de construcción** (cemento, varilla, pintura) también tienen 13% IVA.",
+    src:["CABYS Hacienda","CIIU 4100"], acts:[{label:"Buscar CABYS construcción",page:"cabys",q:"servicios construccion obra instalacion"}] },
+  { id:"exoneraciones", kw:["exoneracion","exoneración","exonerado","libre","dispensa","exenta"],
+    q:"¿Cómo verificar exoneraciones?",
+    a:"Las **exoneraciones** permiten a ciertas entidades no pagar IVA:\n• Entidades del Estado y autónomas\n• Misiones diplomáticas\n• ONGs autorizadas\n• Zonas Francas\n• Instituciones educativas reconocidas\n\nPodés verificar si una empresa tiene exoneración ingresando su cédula en la sección Exoneraciones.",
+    src:["Ley 6826 Art. 8","Hacienda CR"], acts:[{label:"Verificar exoneración",page:"exoneraciones"}] },
+  { id:"contabilidad", kw:["contabilidad","contador","auditoria","auditoría","fiscal","contable"],
+    q:"¿Qué CABYS aplica para contabilidad?",
+    a:"Para servicios contables y de auditoría:\n• **Servicios de contabilidad** — buscar 'servicios contables auditoria' (13% IVA)\n• **Auditoría financiera** — buscar 'auditoria contable'\n• Actividad CIIU: **6920 — Actividades de contabilidad y auditoría**\n\n📌 Los servicios profesionales (abogados, contadores, ingenieros) tributan al 13% en general.",
+    src:["CABYS Hacienda","CIIU 6920"], acts:[{label:"Buscar CABYS contabilidad",page:"cabys",q:"servicios contables auditoria contabilidad"}] },
+]
+
+function queryAssistant(q) {
+  const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+  const low = norm(q)
+  let best = null, bestScore = 0
+  for (const entry of TAX_KB) {
+    const score = entry.kw.filter(k => low.includes(norm(k))).length
+    if (score > bestScore) { best = entry; bestScore = score }
+  }
+  if (!best || bestScore === 0) return {
+    a:"No encontré una respuesta específica en mi base de conocimientos tributarios. Te recomiendo:\n• Buscar el código exacto en **Asistente CABYS**\n• Consultar **hacienda.go.cr** para información oficial\n• Contactar a tu **contador o asesor tributario** para casos específicos",
+    src:[], acts:[{label:"Buscar CABYS",page:"cabys"}]
+  }
+  return { a: best.a, src: best.src, acts: best.acts || [] }
+}
 
 /* ─────────────────────────────────────────────
    COMPONENTS
@@ -678,13 +817,14 @@ const NAV = [
   { id: "tipocambio",     icon: IC.currency,  label: "Tipo de Cambio" },
   { id: "factura",        icon: IC.receipt,   label: "Factura Electrónica" },
   { id: "exoneraciones",  icon: IC.shield,    label: "Exoneraciones" },
+  { id: "asistente",      icon: IC.chat,      label: "Asistente IA" },
 ]
 const NAV_MAP = Object.fromEntries(NAV.map(n => [n.id, n]))
 const NAV_GROUPS = [
   { items: ["home", "cabys"] },
   { label: "Consultas",  items: ["contribuyente", "cedulas"] },
   { label: "Finanzas",   items: ["tipocambio", "factura"] },
-  { label: "Tributario", items: ["exoneraciones"] },
+  { label: "Tributario", items: ["exoneraciones", "asistente"] },
 ]
 
 /* ═════════════════════════════════════════════
@@ -1038,12 +1178,16 @@ export default function App() {
   }
 
   /* ─── FACTURA ─── */
+  const [feTab,      setFeTab]      = useState("clave") // "clave" | "xml"
   const [feKey,      setFeKey]      = useState("")
   const [feData,     setFeData]     = useState(null)
   const [feNotFound, setFeNotFound] = useState(false)
   const [feLoading,  setFeLoading]  = useState(false)
   const [feError,    setFeError]    = useState("")
   const [feSearched, setFeSearched] = useState(false)
+  const [feXmlData,  setFeXmlData]  = useState(null)
+  const [feXmlError, setFeXmlError] = useState("")
+  const [feXmlDrag,  setFeXmlDrag]  = useState(false)
 
   const feClean = useMemo(() => onlyDigits(feKey), [feKey])
   const feValid = feClean.length === 50
@@ -1079,6 +1223,36 @@ export default function App() {
       feData?.receptor?.nombre ? `Receptor: ${feData.receptor.nombre}` : "",
       feData?.totalComprobante ? `Total: ₡${Number(feData.totalComprobante).toLocaleString("es-CR", { minimumFractionDigits: 2 })}` : "",
     ].filter(Boolean).join("\n")
+  }
+
+  /* ─── XML FE ─── */
+  const handleXmlFile = (file) => {
+    if (!file) return
+    if (!file.name.endsWith(".xml") && file.type !== "text/xml" && file.type !== "application/xml") {
+      setFeXmlError("Solo se aceptan archivos XML de factura electrónica."); return
+    }
+    setFeXmlError(""); setFeXmlData(null)
+    const reader = new FileReader()
+    reader.onload = e => {
+      try { setFeXmlData(parseXmlFe(e.target.result)) }
+      catch (err) { setFeXmlError(err.message) }
+    }
+    reader.readAsText(file, "utf-8")
+  }
+
+  const printXmlFe = () => {
+    const area = document.getElementById("xmlPrintArea")
+    if (!area) return
+    const w = window.open("", "_blank", "width=800,height=900")
+    w.document.write(`<!DOCTYPE html><html><head><title>Factura</title>
+      <style>body{font-family:system-ui,sans-serif;font-size:13px;color:#111;padding:32px}
+      table{width:100%;border-collapse:collapse}th,td{padding:7px 6px;border-bottom:1px solid #eee;text-align:left}
+      th{font-size:11px;text-transform:uppercase;color:#666;font-weight:700}
+      .head{margin-bottom:12px}.label{font-size:10px;text-transform:uppercase;color:#888;font-weight:700}
+      .total-final{font-size:18px;font-weight:700;border-top:2px solid #111;padding-top:8px}
+      @media print{button{display:none}}</style></head>
+      <body>${area.innerHTML}<br><button onclick="window.print()">🖨 Imprimir</button></body></html>`)
+    w.document.close()
   }
 
   /* ─── EXONERACIONES ─── */
@@ -1667,10 +1841,21 @@ export default function App() {
           {/* ══ FACTURA ══ */}
           {page === "factura" && (
             <div className="pageWrap pageCentered">
-              <PageHeader icon={IC.receipt} title="Validación de Factura Electrónica"
-                description="Verificá si un comprobante fue aceptado o rechazado por Hacienda. Ingresá los 50 dígitos de la clave."
-                onClear={(feData || feError || feNotFound) ? () => { setFeData(null); setFeKey(""); setFeError(""); setFeSearched(false); setFeNotFound(false) } : null} />
-              <div className="toolCard">
+              <PageHeader icon={IC.receipt} title="Factura Electrónica"
+                description="Validá facturas por clave numérica o subí el XML para ver todos los detalles."
+                onClear={(feData || feError || feNotFound || feXmlData || feXmlError) ? () => { setFeData(null); setFeKey(""); setFeError(""); setFeSearched(false); setFeNotFound(false); setFeXmlData(null); setFeXmlError("") } : null} />
+
+              {/* Tabs */}
+              <div className="feTabRow">
+                <button type="button" className={`feTabBtn${feTab==="clave"?" active":""}`} onClick={() => setFeTab("clave")}>
+                  # Por clave (50 dígitos)
+                </button>
+                <button type="button" className={`feTabBtn${feTab==="xml"?" active":""}`} onClick={() => setFeTab("xml")}>
+                  {IC.xml} Cargar XML
+                </button>
+              </div>
+              {/* ── Tab: Por clave ── */}
+              {feTab === "clave" && <div className="toolCard">
                 <div className="toolSection">
                   <label className="lbl">Clave numérica del comprobante (50 dígitos)</label>
                   <div className="inputRow">
@@ -1744,7 +1929,44 @@ export default function App() {
                   <div className="infoTitle">¿Cómo encontrar la clave?</div>
                   <div className="infoText">La clave de 50 dígitos aparece en el PDF de tu factura bajo "Clave" o "Número de clave".</div>
                 </div>
-              </div>
+              </div>}
+
+              {/* ── Tab: XML ── */}
+              {feTab === "xml" && (
+                <div className="toolCard">
+                  {!feXmlData && (
+                    <div
+                      className={`xmlDropZone${feXmlDrag?" dragOver":""}`}
+                      onDragOver={e => { e.preventDefault(); setFeXmlDrag(true) }}
+                      onDragLeave={() => setFeXmlDrag(false)}
+                      onDrop={e => { e.preventDefault(); setFeXmlDrag(false); handleXmlFile(e.dataTransfer.files[0]) }}
+                      onClick={() => document.getElementById("xmlFileInput").click()}
+                    >
+                      <div className="xmlDropIcon">📄</div>
+                      <div className="xmlDropLabel">Arrastrá o hacé clic para subir el XML</div>
+                      <div className="xmlDropSub">Factura, tiquete, nota de débito/crédito en formato XML de Hacienda</div>
+                      <input id="xmlFileInput" type="file" accept=".xml,text/xml,application/xml" style={{display:"none"}}
+                        onChange={e => handleXmlFile(e.target.files[0])} />
+                      <div className="xmlDropBtn">{IC.upload} Seleccionar archivo XML</div>
+                    </div>
+                  )}
+                  {feXmlError && <div className="alertBox">{IC.warning} {feXmlError}</div>}
+                  {feXmlData && (
+                    <XmlFacturaResult
+                      data={feXmlData}
+                      fl={fl} flash={flash}
+                      onPrint={printXmlFe}
+                      onReset={() => { setFeXmlData(null); setFeXmlError("") }}
+                      onExcelDownload={() => {
+                        if (!feXmlData.lines.length) return
+                        downloadXlsx("factura_detalle.xlsx", "Detalle",
+                          feXmlData.lines.map(l => ({ descripcion:l.descripcion, cantidad:l.cantidad, unidad:l.unidad, precio:l.precio, iva:`${l.ivaPct}%`, total:l.total, cabys:l.cabys })),
+                          ["descripcion","cantidad","unidad","precio","iva","total","cabys"])
+                      }}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -1753,7 +1975,7 @@ export default function App() {
             <div className="pageWrap pageCentered" style={{ maxWidth: 760 }}>
               <PageHeader icon={IC.shield} title="Exoneraciones"
                 description="Verificá si una entidad tiene exoneración de impuestos registrada en Hacienda."
-                onClear={(exoData || exoError) ? () => { setExoData(null); setExoNum(""); setExoError(""); setExoSearched(false) } : null} />
+                onClear={(exoData || exoError) ? () => { setExoData(null); setExoQ(""); setExoError(""); setExoSearched(false) } : null} />
 
               <div className="toolCard">
                 <div className="toolRow">
@@ -1816,11 +2038,250 @@ export default function App() {
             </div>
           )}
 
+          {/* ══ ASISTENTE IA ══ */}
+          {page === "asistente" && (
+            <TaxAssistantPage
+              navigate={navigate}
+              setCabysQ={setCabysQ}
+              consultarCabysRef={consultarCabysRef}
+            />
+          )}
+
         </main>
 
         <footer className="footerBar">
           Datos: Ministerio de Hacienda · BCCR · TSE · Gometa
         </footer>
+      </div>
+    </div>
+  )
+}
+
+/* ─── XmlFacturaResult ─── */
+function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }) {
+  const fmtM = (v, mon) => {
+    const n = parseFloat(v || 0)
+    const sym = mon === "USD" ? "$" : mon === "EUR" ? "€" : "₡"
+    return `${sym}${n.toLocaleString("es-CR",{minimumFractionDigits:2,maximumFractionDigits:2})}`
+  }
+  return (
+    <div>
+      <div className="xmlResult" id="xmlPrintArea">
+        {/* Header */}
+        <div className="xmlResultHead">
+          <div className="xmlDocType">{data.tipoDoc}</div>
+          {data.numConsecutivo && <div className="xmlConsec mono">Consecutivo: {data.numConsecutivo}</div>}
+          {data.clave && <div className="xmlClave">Clave: {data.clave}</div>}
+        </div>
+
+        {/* Partes */}
+        <div className="xmlParties">
+          <div className="xmlParty">
+            <div className="xmlPartyLabel">Emisor</div>
+            <div className="xmlPartyName">{data.emisor.nombre || "—"}</div>
+            {data.emisor.comercial && <div className="xmlPartyComm">{data.emisor.comercial}</div>}
+            {data.emisor.cedula && <div className="xmlPartyCed">{data.emisor.cedula}</div>}
+            {data.emisor.correo && <div className="xmlPartyCed">{data.emisor.correo}</div>}
+          </div>
+          {(data.receptor.nombre || data.receptor.cedula) && (
+            <div className="xmlParty">
+              <div className="xmlPartyLabel">Receptor</div>
+              <div className="xmlPartyName">{data.receptor.nombre || "—"}</div>
+              {data.receptor.cedula && <div className="xmlPartyCed">{data.receptor.cedula}</div>}
+              {data.receptor.correo && <div className="xmlPartyCed">{data.receptor.correo}</div>}
+            </div>
+          )}
+        </div>
+
+        {/* Meta */}
+        <div className="xmlMeta">
+          {data.fecha && <div className="xmlMetaItem"><span>Fecha</span><span>{formatFechaCR(data.fecha)}</span></div>}
+          <div className="xmlMetaItem"><span>Moneda</span><span>{data.resumen.moneda}</span></div>
+          {data.resumen.tipoCambio && parseFloat(data.resumen.tipoCambio) > 0 && (
+            <div className="xmlMetaItem"><span>Tipo cambio</span><span>₡{parseFloat(data.resumen.tipoCambio).toLocaleString("es-CR",{minimumFractionDigits:2})}</span></div>
+          )}
+        </div>
+
+        {/* Líneas */}
+        {data.lines.length > 0 && (
+          <div className="xmlLines">
+            <div className="xmlLinesTitle">Detalle de líneas ({data.lines.length})</div>
+            <div className="xmlTableWrap">
+              <table className="xmlLinesTable">
+                <thead>
+                  <tr>
+                    <th>Descripción</th>
+                    <th>Cant.</th>
+                    <th>Precio unit.</th>
+                    <th>IVA</th>
+                    <th>Total</th>
+                    <th>CABYS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.lines.map((l, i) => (
+                    <tr key={i}>
+                      <td>{l.descripcion}</td>
+                      <td className="mono">{l.cantidad} {l.unidad}</td>
+                      <td className="mono">{l.precio ? fmtM(l.precio, data.resumen.moneda) : "—"}</td>
+                      <td>{l.ivaPct ? <span className={`taxBadgeV2 ${taxClass(l.ivaPct)}`}>{l.ivaPct}%</span> : "—"}</td>
+                      <td className="mono">{l.total ? fmtM(l.total, data.resumen.moneda) : "—"}</td>
+                      <td className="mono xmlCabysCell">{l.cabys || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Totales */}
+        <div className="xmlTotals">
+          {data.resumen.totalVenta && parseFloat(data.resumen.totalVenta) > 0 &&
+            <div className="xmlTotalRow"><span>Total venta neta</span><span>{fmtM(data.resumen.totalVenta,data.resumen.moneda)}</span></div>}
+          {data.resumen.totalDesc && parseFloat(data.resumen.totalDesc) > 0 &&
+            <div className="xmlTotalRow"><span>Descuentos</span><span>− {fmtM(data.resumen.totalDesc,data.resumen.moneda)}</span></div>}
+          {data.resumen.totalImpuesto && parseFloat(data.resumen.totalImpuesto) > 0 &&
+            <div className="xmlTotalRow"><span>IVA</span><span>{fmtM(data.resumen.totalImpuesto,data.resumen.moneda)}</span></div>}
+          {data.resumen.total && (
+            <div className="xmlTotalRow xmlTotalFinal">
+              <span>TOTAL</span>
+              <span>{fmtM(data.resumen.total,data.resumen.moneda)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="xmlActions">
+        <button type="button" className="btn btnPrimary" onClick={onPrint}>🖨 Imprimir / PDF</button>
+        <CopyBtn id="xml-copy" label="Copiar resumen" fl={fl} flash={flash} disabled={false}
+          getText={() => [data.tipoDoc, `Emisor: ${data.emisor.nombre}`, data.receptor.nombre?`Receptor: ${data.receptor.nombre}`:"",
+            data.fecha?`Fecha: ${formatFechaCR(data.fecha)}`:"",
+            data.resumen.total?`Total: ${fmtM(data.resumen.total,data.resumen.moneda)}`:"",
+            data.clave?`Clave: ${data.clave}`:""].filter(Boolean).join("\n")} />
+        {data.lines.length > 0 && (
+          <button type="button" className="btn btnGhost" onClick={onExcelDownload}>Exportar Excel</button>
+        )}
+        <button type="button" className="btn btnGhost" onClick={onReset}>← Cargar otro XML</button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── TaxAssistantPage ─── */
+function TaxAssistantPage({ navigate, setCabysQ, consultarCabysRef }) {
+  const [msgs, setMsgs] = useState([
+    { role:"bot", text:"¡Hola! Soy el **Asistente Tributario** de HaciendaKit. Puedo ayudarte con preguntas sobre IVA, CABYS, factura electrónica, regímenes tributarios y más en Costa Rica.\n\n¿En qué te puedo ayudar hoy?", src:[], acts:[] }
+  ])
+  const [input, setInput] = useState("")
+  const [loading, setLoading] = useState(false)
+  const bottomRef = useRef(null)
+  const inputRef  = useRef(null)
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }) }, [msgs, loading])
+
+  const sendMsg = () => {
+    const q = input.trim(); if (!q || loading) return
+    setMsgs(prev => [...prev, { role:"user", text:q }])
+    setInput(""); setLoading(true)
+    setTimeout(() => {
+      const res = queryAssistant(q)
+      setMsgs(prev => [...prev, { role:"bot", text:res.a, src:res.src, acts:res.acts }])
+      setLoading(false)
+    }, 350 + Math.random() * 500)
+  }
+
+  const handleAct = (act) => {
+    if (act.page === "cabys" && act.q) {
+      navigate("cabys")
+      setTimeout(() => { setCabysQ(act.q); consultarCabysRef.current?.({ reset:true, q:act.q }) }, 60)
+    } else { navigate(act.page) }
+  }
+
+  const renderText = (text) => text.split("\n").map((line, i) => {
+    const parts = line.split(/\*\*(.*?)\*\*/g)
+    const rendered = parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)
+    if (line.startsWith("•") || line.startsWith("-"))
+      return <div key={i} className="chatBullet">{rendered}</div>
+    if (/^[📌⚠️📝]/.test(line))
+      return <div key={i} className="chatNote">{rendered}</div>
+    return <div key={i} className={line ? "chatLine" : "chatLineBreak"}>{rendered.every(r => r === "") ? <>&nbsp;</> : rendered}</div>
+  })
+
+  const SUGGS = [
+    "¿Qué tarifas de IVA existen en Costa Rica?",
+    "¿Qué CABYS aplica para una barbería?",
+    "¿Cuándo debo emitir factura electrónica?",
+    "¿Qué actividad económica uso para un restaurante?",
+  ]
+
+  return (
+    <div className="chatWrap">
+      <div className="chatHeader">
+        <div className="chatHeaderIcon">{IC.bot}</div>
+        <div className="chatHeaderInfo">
+          <div className="chatHeaderTitle">Asistente Tributario IA</div>
+          <div className="chatHeaderSub">IVA · CABYS · Factura Electrónica · Regímenes · Actividades</div>
+        </div>
+        <span className="chatHeaderBadge">Beta</span>
+      </div>
+
+      <div className="chatBody">
+        {msgs.map((m, i) => (
+          <div key={i} className={`chatMsg chatMsg${m.role === "user" ? "User" : "Bot"}`}>
+            {m.role === "bot" && <div className="chatAvatar">{IC.bot}</div>}
+            <div className="chatBubble">
+              <div className="chatBubbleText">{renderText(m.text)}</div>
+              {m.src?.length > 0 && (
+                <div className="chatSources">
+                  <span className="chatSourcesLabel">Fuentes:</span>
+                  {m.src.map((s, j) => <span key={j} className="chatSourceChip">{s}</span>)}
+                </div>
+              )}
+              {m.acts?.length > 0 && (
+                <div className="chatActions">
+                  {m.acts.map((a, j) => (
+                    <button key={j} type="button" className="chatActionBtn" onClick={() => handleAct(a)}>
+                      {a.label} {IC.arrowRight}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="chatMsg chatMsgBot">
+            <div className="chatAvatar">{IC.bot}</div>
+            <div className="chatBubble chatBubbleLoading"><span/><span/><span/></div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {msgs.length === 1 && (
+        <div className="chatSuggs">
+          {SUGGS.map((s, i) => (
+            <button key={i} type="button" className="chatSuggChip"
+              onClick={() => { setInput(s); setTimeout(() => inputRef.current?.focus(), 10) }}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="chatInputWrap">
+        <input ref={inputRef} className="chatInput" value={input}
+          placeholder="Preguntá sobre IVA, CABYS, factura electrónica..."
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMsg() } }} />
+        <button type="button" className="chatSendBtn" onClick={sendMsg} disabled={!input.trim() || loading}>
+          {IC.send}
+        </button>
+      </div>
+      <div className="chatDisclaimer">
+        ⚠️ Base de conocimientos local. Para asesoría fiscal oficial consultá a un contador certificado o a Hacienda.
       </div>
     </div>
   )
