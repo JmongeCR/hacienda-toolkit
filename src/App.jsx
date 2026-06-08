@@ -1150,29 +1150,6 @@ export default function App() {
                 ))}
               </div>
 
-              {activities.length > 0 && (
-                <div className="spotlightRecent">
-                  <div className="spotlightRecentHeader">
-                    <span className="spotlightRecentTitle">Recientes</span>
-                    <button type="button" className="btn btnGhost btnSm"
-                      onClick={() => { localStorage.removeItem(ACT_KEY); setActivities([]) }}>Limpiar</button>
-                  </div>
-                  {activities.slice(0, 5).map((a, i) => (
-                    <button key={i} type="button" className="spotlightRecentItem"
-                      onClick={() => {
-                        if (a.type === "cabys") { setCabysQ(a.q); navigate("cabys"); setTimeout(() => consultarCabys({ reset: true, q: a.q }), 50) }
-                        else if (a.type === "contribuyente") { setAeId(a.q); navigate("contribuyente"); setTimeout(() => consultarAE(a.q), 50) }
-                        else if (a.type === "cedulas") { setCedQ(a.q); navigate("cedulas"); setTimeout(() => consultarCed(a.q), 50) }
-                        else navigate(a.type)
-                      }}>
-                      <span className="spotlightRecentIcon">{ACT_ICONS[a.type] || IC.search}</span>
-                      <span className="spotlightRecentQ">{a.q}</span>
-                      <span className="spotlightRecentTool">{ACT_LABELS[a.type]}</span>
-                      <span className="spotlightRecentTime">{relTime(a.ts)}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           )}
 
