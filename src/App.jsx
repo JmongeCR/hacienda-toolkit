@@ -347,6 +347,7 @@ export default function App() {
   /* ─── FACTURA ─── */
   const [feKey,      setFeKey]     = useState("")
   const [feData,     setFeData]    = useState(null)
+  const [feNotFound, setFeNotFound]= useState(false)
   const [feLoading,  setFeLoading] = useState(false)
   const [feError,    setFeError]   = useState("")
   const [feSearched, setFeSearched]= useState(false)
@@ -354,15 +355,40 @@ export default function App() {
   const feClean = useMemo(() => onlyDigits(feKey), [feKey])
   const feValid = feClean.length === 50
 
+  /* Decodifica los campos de la clave numérica de 50 dígitos */
+  const feDecoded = useMemo(() => {
+    if (feClean.length !== 50) return null
+    const tipos = { "01":"Factura Electrónica","02":"Nota de Débito","03":"Nota de Crédito","04":"Tiquete Electrónico","08":"FE de Compra","09":"FE de Exportación" }
+    const tipo    = feClean.slice(0, 2)
+    const dia     = feClean.slice(2, 4)
+    const mes     = feClean.slice(4, 6)
+    const anio    = feClean.slice(6, 8)
+    const cedula  = feClean.slice(8, 21).replace(/^0+/, "")
+    const consec  = feClean.slice(21, 41)
+    const situacion = feClean.slice(41, 42)
+    const seguridad = feClean.slice(42, 50)
+    const sits = { "1":"Normal","2":"Contingencia","3":"Sin internet" }
+    return {
+      tipo: tipos[tipo] || `Tipo ${tipo}`,
+      fecha: `${dia}/${mes}/20${anio}`,
+      cedula,
+      consecutivo: consec.replace(/^0+/, ""),
+      situacion: sits[situacion] || situacion,
+      seguridad,
+    }
+  }, [feClean])
+
   const consultarFe = async () => {
     if(!feValid) return
-    setFeLoading(true); setFeError(""); setFeSearched(true); setFeData(null)
+    setFeLoading(true); setFeError(""); setFeSearched(true); setFeData(null); setFeNotFound(false)
     try {
       const res = await fetch(`/hacienda/fe/documento?clave=${feClean}`,{cache:"no-store"})
-      if(res.status===404) throw new Error("Factura no encontrada — verificá la clave")
+      if(res.status===404) { setFeNotFound(true); return }
       if(!res.ok) throw new Error(`HTTP ${res.status}`)
-      setFeData(await res.json())
-    } catch(e) { setFeError(e?.message||"Error") }
+      const json = await res.json()
+      if(json?.code===404) { setFeNotFound(true); return }
+      setFeData(json)
+    } catch(e) { setFeError(e?.message||"Error consultando la API") }
     finally { setFeLoading(false) }
   }
 
@@ -807,7 +833,38 @@ export default function App() {
                 )}
 
                 {feError && <div className="alertBox">⚠️ {feError}</div>}
-                {feSearched && !feLoading && !feError && !feData && <EmptyState msg="No se encontró comprobante para esa clave" />}
+
+                {/* Info decodificada de la clave — siempre visible si es válida */}
+                {feValid && feDecoded && (
+                  <div className="feDecodedBox">
+                    <div className="feDecodedTitle">Información de la clave</div>
+                    <div className="feDecodedGrid">
+                      <div className="feField"><div className="lbl">Tipo</div><div className="feVal">{feDecoded.tipo}</div></div>
+                      <div className="feField"><div className="lbl">Fecha emisión</div><div className="feVal">{feDecoded.fecha}</div></div>
+                      <div className="feField"><div className="lbl">Cédula emisor</div><div className="feVal mono">{feDecoded.cedula}</div></div>
+                      <div className="feField"><div className="lbl">Consecutivo</div><div className="feVal mono">{feDecoded.consecutivo}</div></div>
+                      <div className="feField"><div className="lbl">Situación</div><div className="feVal">{feDecoded.situacion}</div></div>
+                      <div className="feField"><div className="lbl">Código seguridad</div><div className="feVal mono">{feDecoded.seguridad}</div></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* No encontrado en Hacienda */}
+                {feNotFound && (
+                  <div className="feNotFound">
+                    <div className="feNotFoundIcon">○</div>
+                    <div>
+                      <div className="feNotFoundTitle">No encontrado en el sistema de Hacienda</div>
+                      <div className="feNotFoundDesc">
+                        Este comprobante no aparece en la API de Hacienda. Puede deberse a que aún está en proceso, fue emitido en contingencia, o la clave no corresponde a un comprobante registrado.
+                        <br/><br/>
+                        <a href="https://ovitribucr.hacienda.go.cr/ConsultaPublica/" target="_blank" rel="noopener noreferrer" className="linkExterno">
+                          Verificar directamente en OVI Hacienda ↗
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {feData && (
                   <div className="feBox">
