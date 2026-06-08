@@ -241,6 +241,16 @@ const H = 5
 const loadH = k => { try { return JSON.parse(localStorage.getItem(k) || "[]") } catch { return [] } }
 const saveH = (k, v) => { if (!v?.trim()) return; const p = loadH(k); localStorage.setItem(k, JSON.stringify([v, ...p.filter(x => x !== v)].slice(0, H))) }
 
+/* ─── Home Favoritos ─── */
+const HOME_FAVS_KEY = "hk_home_favs"
+const HOME_FAVS_DEFAULT = [
+  { id: "dev-sw",   label: "Desarrollo software",     type: "cabys", query: "desarrollo software programacion" },
+  { id: "srv-prof", label: "Servicios profesionales",  type: "cabys", query: "servicios profesionales consultoria" },
+  { id: "rest",     label: "Restaurante / Soda",       type: "cabys", query: "restaurante soda comidas alimentacion" },
+]
+const loadHomeFavs = () => { try { const s = JSON.parse(localStorage.getItem(HOME_FAVS_KEY)); return s?.length ? s : HOME_FAVS_DEFAULT } catch { return HOME_FAVS_DEFAULT } }
+const saveHomeFavs = (f) => localStorage.setItem(HOME_FAVS_KEY, JSON.stringify(f))
+
 /* ─── Activity log ─── */
 const ACT_KEY = "hk_activity"
 const loadActs = () => { try { return JSON.parse(localStorage.getItem(ACT_KEY) || "[]") } catch { return [] } }
@@ -690,6 +700,8 @@ export default function App() {
   const [cmdOpen,       setCmdOpen]       = useState(false)
   const [cabysF_avs,    setCabysF_avs]    = useState(() => loadFavs())
   const [cabysAeMatch,  setCabysAeMatch]  = useState(null)
+  const [homeSearch,    setHomeSearch]    = useState("")
+  const [homeFavs,      setHomeFavs]      = useState(() => loadHomeFavs())
 
   const navigate = (id) => { setPage(id); setSideOpen(false); setSearchQ(""); setSearchFocus(false); setCmdOpen(false) }
 
@@ -716,6 +728,32 @@ export default function App() {
     appendAct(type, q)
     setActivities(loadActs())
   }, [])
+
+  /* ─── Home smart search ─── */
+  const homeSearchIntent = useMemo(() => {
+    const q = homeSearch.trim()
+    if (!q) return null
+    const digits = q.replace(/[-\s]/g, "")
+    if (/^\d{9,11}$/.test(digits)) return { type: "cedula",  label: "Verificar contribuyente",      icon: "user" }
+    if (/^\d{30,50}$/.test(digits)) return { type: "factura", label: "Validar factura electrónica", icon: "receipt" }
+    if (q.length >= 2)              return { type: "cabys",   label: "Buscar en Asistente CABYS",   icon: "search" }
+    return null
+  }, [homeSearch])
+
+  const executeHomeSearch = useCallback(() => {
+    const q = homeSearch.trim(); if (!q || !homeSearchIntent) return
+    if (homeSearchIntent.type === "cedula") {
+      const digits = q.replace(/[-\s]/g, "")
+      setAeId(digits); navigate("contribuyente")
+      setTimeout(() => consultarAE(digits), 80)
+    } else if (homeSearchIntent.type === "factura") {
+      setFeKey(q.replace(/\D/g, "")); navigate("factura")
+    } else {
+      navigate("cabys")
+      setTimeout(() => { setCabysQ(q); setCabysPage(0); consultarCabysRef.current?.({ reset: true, q }) }, 50)
+    }
+    setHomeSearch("")
+  }, [homeSearch, homeSearchIntent])
 
   /* ─── Navigate to CABYS with pre-filled query ─── */
   const navigateToCabys = useCallback((q) => {
@@ -1165,40 +1203,117 @@ export default function App() {
 
           {/* ══ INICIO — Spotlight ══ */}
           {page === "home" && (
-            <div className="spotlightWrap">
-              <div className="spotlightHero">
-                <div className="spotlightGreeting">{saludo()}</div>
-                <h1 className="spotlightTitle">¿Qué deseas consultar?</h1>
-                <button type="button" className="spotlightSearchBox" onClick={() => setCmdOpen(true)}>
-                  <span className="spotlightSearchIcon">{IC.search}</span>
-                  <span className="spotlightSearchText">Buscá empresa, CABYS, factura electrónica…</span>
-                </button>
-                {fx && (
-                  <div className="spotlightFx">
-                    <span>USD · Compra <strong>₡{fx.compra.toLocaleString("es-CR")}</strong></span>
-                    <span className="spotlightFxSep">·</span>
-                    <span>Venta <strong>₡{fx.venta.toLocaleString("es-CR")}</strong></span>
-                  </div>
-                )}
+            <div className="homeWrap">
+
+              {/* ── Hero ── */}
+              <div className="homeHero">
+                <div className="homeGreeting">{saludo()}</div>
+                <h1 className="homeTitle">¿Qué desea consultar?</h1>
+                <p className="homeSub">Busque empresas, contribuyentes, actividades económicas, CABYS o facturas electrónicas.</p>
               </div>
 
-              <div className="spotlightQuickGrid">
+              {/* ── Buscador inteligente ── */}
+              <div className="homeSearchWrap">
+                <div className="homeSearchBar">
+                  <span className="homeSearchIcon">{IC.search}</span>
+                  <input
+                    className="homeSearchInput"
+                    value={homeSearch}
+                    placeholder="Buscar empresa, CABYS, actividad económica o factura..."
+                    onChange={e => setHomeSearch(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") executeHomeSearch() }}
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button" className="homeSearchBtn"
+                    onClick={executeHomeSearch}
+                    disabled={!homeSearchIntent}
+                  >
+                    {IC.arrowRight} Buscar
+                  </button>
+                </div>
+                <div className="homeSearchHint">
+                  {homeSearchIntent ? (
+                    <>
+                      <span className="homeSearchHintDot" />
+                      {homeSearchIntent.type === "cedula"  && <>{IC.user}    Cédula detectada → <strong>Verificar contribuyente</strong></>}
+                      {homeSearchIntent.type === "factura" && <>{IC.receipt} Clave FE detectada → <strong>Validar factura</strong></>}
+                      {homeSearchIntent.type === "cabys"   && <>{IC.search}  Texto libre → <strong>Buscar en Asistente CABYS</strong></>}
+                    </>
+                  ) : (
+                    <span className="homeSearchHintEmpty">Ingrese una cédula, clave de factura o cualquier término</span>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Accesos rápidos ── */}
+              <div className="homeSectionTitle">Accesos rápidos</div>
+              <div className="homeQuickGrid">
                 {[
-                  { id:"cabys",        emoji:"⚡", label:"Asistente CABYS",    desc:"Encontrá el código correcto" },
-                  { id:"contribuyente",emoji:"🏢", label:"Verificar empresa",   desc:"Estado fiscal y actividades" },
-                  { id:"factura",      emoji:"📋", label:"Validar factura",     desc:"Comprobantes electrónicos" },
-                  { id:"tipocambio",   emoji:"💱", label:"Tipo de cambio",      desc:"USD/CRC del BCCR" },
+                  { id:"cabys",         icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L5 11h4v7l6-9h-4L10 2z" fill="currentColor"/></svg>,
+                    label:"Asistente CABYS",    desc:"Códigos y tarifas de IVA",         color:"#f0f9ff", iconColor:"#2563eb" },
+                  { id:"contribuyente",  icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="7" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="1.7"/><path d="M7 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>,
+                    label:"Contribuyentes",      desc:"Estado fiscal y actividades",       color:"#f0fdf4", iconColor:"#16a34a" },
+                  { id:"factura",        icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="2" width="12" height="16" rx="2" stroke="currentColor" strokeWidth="1.7"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+                    label:"Facturas",            desc:"Validar comprobantes electrónicos", color:"#fefce8", iconColor:"#ca8a04" },
+                  { id:"tipocambio",     icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 8h12M13 5l3 3-3 3M16 12H4M7 15l-3-3 3-3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+                    label:"Tipo de Cambio",      desc:"USD y EUR en tiempo real",          color:"#fdf4ff", iconColor:"#9333ea" },
                 ].map(q => (
-                  <button key={q.id} type="button" className="spotlightQuickBtn" onClick={() => navigate(q.id)}>
-                    <span className="spotlightQuickEmoji">{q.emoji}</span>
-                    <div>
-                      <div className="spotlightQuickLabel">{q.label}</div>
-                      <div className="spotlightQuickDesc">{q.desc}</div>
-                    </div>
-                    <span className="spotlightQuickArrow">{IC.arrowRight}</span>
+                  <button key={q.id} type="button" className="homeQuickCard" onClick={() => navigate(q.id)}>
+                    <div className="homeQuickIcon" style={{ background: q.color, color: q.iconColor }}>{q.icon}</div>
+                    <div className="homeQuickLabel">{q.label}</div>
+                    <div className="homeQuickDesc">{q.desc}</div>
                   </button>
                 ))}
               </div>
+
+              {/* ── Favoritos ── */}
+              <div className="homeSectionTitle">
+                ⭐ Favoritos
+              </div>
+              <div className="homeFavsRow">
+                {homeFavs.map(f => (
+                  <button key={f.id} type="button" className="homeFavChip"
+                    onClick={() => { navigate("cabys"); setTimeout(() => { setCabysQ(f.query); setCabysPage(0); consultarCabysRef.current?.({ reset: true, q: f.query }) }, 50) }}>
+                    <span className="homeFavIcon">⭐</span>
+                    <span>{f.label}</span>
+                    <span className="homeFavRemove" onClick={e => {
+                      e.stopPropagation()
+                      const next = homeFavs.filter(x => x.id !== f.id)
+                      setHomeFavs(next); saveHomeFavs(next)
+                    }}>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                    </span>
+                  </button>
+                ))}
+                {homeFavs.length === 0 && (
+                  <button type="button" className="homeFavChip homeFavReset" onClick={() => { setHomeFavs(HOME_FAVS_DEFAULT); saveHomeFavs(HOME_FAVS_DEFAULT) }}>
+                    Restaurar favoritos por defecto
+                  </button>
+                )}
+              </div>
+
+              {/* ── Recientes ── */}
+              {activities.length > 0 && (
+                <>
+                  <div className="homeSectionTitle" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <span>🕒 Recientes</span>
+                    <button type="button" className="homeClearBtn" onClick={() => { localStorage.removeItem(ACT_KEY); setActivities([]) }}>Limpiar</button>
+                  </div>
+                  <div className="homeRecentList">
+                    {activities.slice(0, 7).map((a, i) => (
+                      <button key={i} type="button" className="homeRecentItem" onClick={() => navigate(a.type)}>
+                        <span className="homeRecentIcon">{ACT_ICONS[a.type] || IC.search}</span>
+                        <div className="homeRecentBody">
+                          <div className="homeRecentLabel">{a.q}</div>
+                          <div className="homeRecentType">{ACT_LABELS[a.type]}</div>
+                        </div>
+                        <span className="homeRecentTime">{relTime(a.ts)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
 
             </div>
           )}
