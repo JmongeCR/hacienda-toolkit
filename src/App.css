@@ -1266,6 +1266,21 @@ tr:hover td { background: var(--slate-50) }
 .xmlDropBtn { display:inline-flex; align-items:center; gap:7px; margin-top:20px; padding:9px 22px; background:var(--accent); color:#fff; border-radius:9px; border:none; cursor:pointer; font-size:var(--font-sm); font-weight:500; transition:background var(--t-fast); }
 .xmlDropBtn:hover { background:var(--accent-hover,#1d4ed8); }
 
+/* ── XML Summary Card ── */
+.xmlSummaryCard { display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between; background:var(--accent); border-radius:14px; padding:18px 20px; margin-bottom:20px; color:#fff; }
+.xmlSummaryMon { display:flex; align-items:center; gap:12px; }
+.xmlSummaryMonFlag { font-size:28px; line-height:1; }
+.xmlSummaryMonCode { font-size:1.1rem; font-weight:800; letter-spacing:.04em; }
+.xmlSummaryTc { font-size:11px; opacity:.8; margin-top:2px; }
+.xmlSummaryNums { display:flex; flex-wrap:wrap; gap:20px; }
+.xmlSummaryNum { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+.xmlSummaryNumLabel { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; opacity:.75; }
+.xmlSummaryNumVal { font-size:var(--font-md); font-weight:700; }
+.xmlSummaryDisc { opacity:.85; }
+.xmlSummaryTotal { border-left:1px solid rgba(255,255,255,.3); padding-left:20px; }
+.xmlSummaryTotal .xmlSummaryNumVal { font-size:1.2rem; font-weight:800; }
+@media(max-width:540px){ .xmlSummaryCard { flex-direction:column; align-items:flex-start; } .xmlSummaryNums { gap:14px; } .xmlSummaryNum { align-items:flex-start; } .xmlSummaryTotal { border-left:none; padding-left:0; border-top:1px solid rgba(255,255,255,.3); padding-top:10px; } }
+
 /* ── XML Result ── */
 .xmlResult { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:16px; }
 .xmlResultHead { margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border); }

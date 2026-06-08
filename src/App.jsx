@@ -371,8 +371,9 @@ function parseXmlFe(xmlStr) {
     cedula: get("Receptor > Identificacion > Numero"),
     correo: get("Receptor > CorreoElectronico"),
   }
-  const moneda    = get("CodigoTipoMoneda > Codigo") || get("Moneda") || "CRC"
-  const tipoCambio= get("CodigoTipoMoneda > TipoCambio") || ""
+  // Schema v4.3: CodigoTipoMoneda > CodigoMoneda; versiones anteriores usan Codigo
+  const moneda    = get("CodigoTipoMoneda > CodigoMoneda") || get("CodigoTipoMoneda > Codigo") || get("CodigoMoneda") || "CRC"
+  const tipoCambio= get("CodigoTipoMoneda > TipoCambio") || get("TipoCambio") || ""
   const resumen = {
     total:          get("TotalComprobante"),
     totalImpuesto:  get("TotalImpuesto") || get("TotalImpuestoVenta"),
@@ -2222,19 +2223,75 @@ function AcercaPage({ activities }) {
 
 /* ─── XmlFacturaResult ─── */
 function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }) {
-  const fmtM = (v, mon) => {
+  const mon = data.resumen.moneda || "CRC"
+  const tc  = data.resumen.tipoCambio ? parseFloat(data.resumen.tipoCambio) : null
+  const isUsd = mon === "USD", isEur = mon === "EUR"
+
+  // Formatea monto en la moneda ORIGINAL del XML — sin convertir
+  const fmtM = (v) => {
     const n = parseFloat(v || 0)
-    const sym = mon === "USD" ? "$" : mon === "EUR" ? "€" : "₡"
-    return `${sym}${n.toLocaleString("es-CR",{minimumFractionDigits:2,maximumFractionDigits:2})}`
+    if (isNaN(n)) return "—"
+    const f = new Intl.NumberFormat("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 })
+    if (isUsd) return `$${f.format(n)}`
+    if (isEur) return `€${f.format(n)}`
+    return `₡${f.format(n)}`
   }
+
+  // Porcentaje sin ceros innecesarios: 13.00000 → "13%", 2.50000 → "2.5%"
+  const fmtPct = (v) => {
+    if (!v) return null
+    const n = parseFloat(v)
+    return isNaN(n) ? null : `${parseFloat(n.toFixed(4))}%`
+  }
+
+  const MON_FLAGS = { CRC:"🇨🇷", USD:"🇺🇸", EUR:"🇪🇺" }
+
   return (
     <div>
       <div className="xmlResult" id="xmlPrintArea">
+
         {/* Header */}
         <div className="xmlResultHead">
           <div className="xmlDocType">{data.tipoDoc}</div>
           {data.numConsecutivo && <div className="xmlConsec mono">Consecutivo: {data.numConsecutivo}</div>}
           {data.clave && <div className="xmlClave">Clave: {data.clave}</div>}
+        </div>
+
+        {/* ── Tarjeta resumen ── */}
+        <div className="xmlSummaryCard">
+          <div className="xmlSummaryMon">
+            <span className="xmlSummaryMonFlag">{MON_FLAGS[mon] || "💱"}</span>
+            <div>
+              <div className="xmlSummaryMonCode">{mon}</div>
+              {tc && tc > 0 && <div className="xmlSummaryTc">Tipo de cambio informado: ₡{new Intl.NumberFormat("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}).format(tc)}</div>}
+            </div>
+          </div>
+          <div className="xmlSummaryNums">
+            {data.resumen.totalVenta && parseFloat(data.resumen.totalVenta) > 0 && (
+              <div className="xmlSummaryNum">
+                <span className="xmlSummaryNumLabel">Subtotal</span>
+                <span className="xmlSummaryNumVal">{fmtM(data.resumen.totalVenta)}</span>
+              </div>
+            )}
+            {data.resumen.totalDesc && parseFloat(data.resumen.totalDesc) > 0 && (
+              <div className="xmlSummaryNum">
+                <span className="xmlSummaryNumLabel">Descuentos</span>
+                <span className="xmlSummaryNumVal xmlSummaryDisc">− {fmtM(data.resumen.totalDesc)}</span>
+              </div>
+            )}
+            {data.resumen.totalImpuesto && parseFloat(data.resumen.totalImpuesto) > 0 && (
+              <div className="xmlSummaryNum">
+                <span className="xmlSummaryNumLabel">IVA</span>
+                <span className="xmlSummaryNumVal">{fmtM(data.resumen.totalImpuesto)}</span>
+              </div>
+            )}
+            {data.resumen.total && (
+              <div className="xmlSummaryNum xmlSummaryTotal">
+                <span className="xmlSummaryNumLabel">Total</span>
+                <span className="xmlSummaryNumVal">{fmtM(data.resumen.total)}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Partes */}
@@ -2259,10 +2316,8 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
         {/* Meta */}
         <div className="xmlMeta">
           {data.fecha && <div className="xmlMetaItem"><span>Fecha</span><span>{formatFechaCR(data.fecha)}</span></div>}
-          <div className="xmlMetaItem"><span>Moneda</span><span>{data.resumen.moneda}</span></div>
-          {data.resumen.tipoCambio && parseFloat(data.resumen.tipoCambio) > 0 && (
-            <div className="xmlMetaItem"><span>Tipo cambio</span><span>₡{parseFloat(data.resumen.tipoCambio).toLocaleString("es-CR",{minimumFractionDigits:2})}</span></div>
-          )}
+          <div className="xmlMetaItem"><span>Moneda</span><span>{mon}</span></div>
+          {data.numConsecutivo && <div className="xmlMetaItem"><span>Consecutivo</span><span className="mono">{data.numConsecutivo}</span></div>}
         </div>
 
         {/* Líneas */}
@@ -2277,21 +2332,24 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
                     <th>Cant.</th>
                     <th>Precio unit.</th>
                     <th>IVA</th>
-                    <th>Total</th>
+                    <th>Total línea</th>
                     <th>CABYS</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.lines.map((l, i) => (
-                    <tr key={i}>
-                      <td>{l.descripcion}</td>
-                      <td className="mono">{l.cantidad} {l.unidad}</td>
-                      <td className="mono">{l.precio ? fmtM(l.precio, data.resumen.moneda) : "—"}</td>
-                      <td>{l.ivaPct ? <span className={`taxBadgeV2 ${taxClass(l.ivaPct)}`}>{l.ivaPct}%</span> : "—"}</td>
-                      <td className="mono">{l.total ? fmtM(l.total, data.resumen.moneda) : "—"}</td>
-                      <td className="mono xmlCabysCell">{l.cabys || "—"}</td>
-                    </tr>
-                  ))}
+                  {data.lines.map((l, i) => {
+                    const pct = fmtPct(l.ivaPct)
+                    return (
+                      <tr key={i}>
+                        <td>{l.descripcion}</td>
+                        <td className="mono">{l.cantidad} {l.unidad}</td>
+                        <td className="mono">{l.precio ? fmtM(l.precio) : "—"}</td>
+                        <td>{pct ? <span className={`taxBadgeV2 ${taxClass(parseFloat(l.ivaPct))}`}>{pct}</span> : "—"}</td>
+                        <td className="mono">{l.total ? fmtM(l.total) : "—"}</td>
+                        <td className="mono xmlCabysCell">{l.cabys || "—"}</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -2301,15 +2359,15 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
         {/* Totales */}
         <div className="xmlTotals">
           {data.resumen.totalVenta && parseFloat(data.resumen.totalVenta) > 0 &&
-            <div className="xmlTotalRow"><span>Total venta neta</span><span>{fmtM(data.resumen.totalVenta,data.resumen.moneda)}</span></div>}
+            <div className="xmlTotalRow"><span>Subtotal</span><span>{fmtM(data.resumen.totalVenta)}</span></div>}
           {data.resumen.totalDesc && parseFloat(data.resumen.totalDesc) > 0 &&
-            <div className="xmlTotalRow"><span>Descuentos</span><span>− {fmtM(data.resumen.totalDesc,data.resumen.moneda)}</span></div>}
+            <div className="xmlTotalRow"><span>Descuentos</span><span>− {fmtM(data.resumen.totalDesc)}</span></div>}
           {data.resumen.totalImpuesto && parseFloat(data.resumen.totalImpuesto) > 0 &&
-            <div className="xmlTotalRow"><span>IVA</span><span>{fmtM(data.resumen.totalImpuesto,data.resumen.moneda)}</span></div>}
+            <div className="xmlTotalRow"><span>IVA</span><span>{fmtM(data.resumen.totalImpuesto)}</span></div>}
           {data.resumen.total && (
             <div className="xmlTotalRow xmlTotalFinal">
               <span>TOTAL</span>
-              <span>{fmtM(data.resumen.total,data.resumen.moneda)}</span>
+              <span>{fmtM(data.resumen.total)}</span>
             </div>
           )}
         </div>
@@ -2319,10 +2377,13 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
       <div className="xmlActions">
         <button type="button" className="btn btnPrimary" onClick={onPrint}>🖨 Imprimir / PDF</button>
         <CopyBtn id="xml-copy" label="Copiar resumen" fl={fl} flash={flash} disabled={false}
-          getText={() => [data.tipoDoc, `Emisor: ${data.emisor.nombre}`, data.receptor.nombre?`Receptor: ${data.receptor.nombre}`:"",
-            data.fecha?`Fecha: ${formatFechaCR(data.fecha)}`:"",
-            data.resumen.total?`Total: ${fmtM(data.resumen.total,data.resumen.moneda)}`:"",
-            data.clave?`Clave: ${data.clave}`:""].filter(Boolean).join("\n")} />
+          getText={() => [data.tipoDoc,
+            `Emisor: ${data.emisor.nombre}`,
+            data.receptor.nombre ? `Receptor: ${data.receptor.nombre}` : "",
+            data.fecha ? `Fecha: ${formatFechaCR(data.fecha)}` : "",
+            data.resumen.total ? `Total: ${fmtM(data.resumen.total)}` : "",
+            data.clave ? `Clave: ${data.clave}` : "",
+          ].filter(Boolean).join("\n")} />
         {data.lines.length > 0 && (
           <button type="button" className="btn btnGhost" onClick={onExcelDownload}>Exportar Excel</button>
         )}
