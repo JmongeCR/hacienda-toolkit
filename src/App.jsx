@@ -1061,10 +1061,15 @@ export default function App() {
     setCabysNorm(q !== rawQ ? q : "")
     if (reset) setCabysPage(0)
     setCabysLoading(true); setCabysError(""); setCabysSearched(true)
+    // Si el query es numérico (código CABYS) → usar ?codigo=  |  si es texto → usar ?q=
+    const esCodigo = /^\d{5,13}$/.test(rawQ.replace(/\s/g, ""))
     try {
       const pg = reset ? 0 : cabysPage
       const top = Math.min(50, pageSize * (pg + 1)); setCabysLastTop(top)
-      const res = await fetch(`/hacienda/fe/cabys?q=${encodeURIComponent(q)}&top=${top}`, { cache: "no-store" })
+      const url = esCodigo
+        ? `/hacienda/fe/cabys?codigo=${encodeURIComponent(rawQ.replace(/\s/g, ""))}`
+        : `/hacienda/fe/cabys?q=${encodeURIComponent(q)}&top=${top}`
+      const res = await fetch(url, { cache: "no-store" })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json(); setCabysData(json.cabys || [])
       if (reset) { saveH("ht_cabys", rawQ); setCabysHist(loadH("ht_cabys")); setCabysPage(0); logActivity("cabys", rawQ) }
@@ -1090,7 +1095,8 @@ export default function App() {
     if (cabysData.length < need) {
       setCabysLoading(true); setCabysError("")
       try {
-        const res = await fetch(`/hacienda/fe/cabys?q=${encodeURIComponent(cabysQ_)}&top=${need}`, { cache: "no-store" })
+        const esCod = /^\d{5,13}$/.test(cabysQ_.replace(/\s/g,""))
+        const res = await fetch(esCod ? `/hacienda/fe/cabys?codigo=${encodeURIComponent(cabysQ_)}` : `/hacienda/fe/cabys?q=${encodeURIComponent(cabysQ_)}&top=${need}`, { cache: "no-store" })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const json = await res.json(); setCabysData(json.cabys || []); setCabysLastTop(need)
       } catch (e) { setCabysError(e?.message || "Error"); setCabysLoading(false); return }
