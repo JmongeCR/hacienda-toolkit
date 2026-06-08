@@ -2097,7 +2097,6 @@ function AcercaPage({ activities }) {
     { name:"React 19",     color:"#0891b2", bg:"#ecfeff" },
     { name:"Vite 7",       color:"#7c3aed", bg:"#f5f3ff" },
     { name:"JavaScript",   color:"#b45309", bg:"#fffbeb" },
-    { name:"CSS3",         color:"#1d4ed8", bg:"#eff6ff" },
   ]
 
   const STATS = [
@@ -2209,8 +2208,7 @@ function AcercaPage({ activities }) {
               {t.name}
             </div>
           ))}
-          <div className="acercaTechBadge" style={{ background:"#f0fdf4", color:"#16a34a" }}>Open Source APIs</div>
-          <div className="acercaTechBadge" style={{ background:"#fff7ed", color:"#c2410c" }}>localStorage</div>
+          <div className="acercaTechBadge" style={{ background:"#f0fdf4", color:"#16a34a" }}>APIs Públicas CR</div>
         </div>
         <p className="acercaFootNote">
           Aplicación de página única (SPA) sin backend propio. Todas las consultas se realizan directamente a las APIs públicas de las instituciones costarricenses. Los datos se almacenan únicamente en el dispositivo del usuario.
