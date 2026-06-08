@@ -89,6 +89,26 @@ function useCopyFlash() {
   return { fl, flash }
 }
 
+/* ─── SVG Icons ─── */
+const IC = {
+  dashboard: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg>,
+  search: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="7" cy="7" r="4.5"/><path d="m11 11 3 3"/></svg>,
+  user: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="8" cy="5.5" r="2.5"/><path d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/></svg>,
+  id: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><rect x="1" y="4" width="14" height="9" rx="1.5"/><circle cx="5.5" cy="8.5" r="1.5"/><path d="M9 7h4M9 10h3"/></svg>,
+  currency: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5v7M5.5 6.5c0-1.1.9-2 2.5-2s2.5.9 2.5 2-1.8 1.5-2.5 1.5-2.5.6-2.5 2 1.1 2 2.5 2 2.5-.9 2.5-2"/></svg>,
+  receipt: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 1.5h10v13l-2-1.5-2 1.5-2-1.5-2 1.5z"/><path d="M6 5.5h4M6 8.5h4M6 11.5h2"/></svg>,
+  chevronRight: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m5 3 4 4-4 4"/></svg>,
+  refresh: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M12 7A5 5 0 1 1 9.5 2.5L12 2"/><path d="M12 2v3.5H8.5"/></svg>,
+  warning: <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M7.5 2L14 13H1L7.5 2z"/><path d="M7.5 6v3.5"/><circle cx="7.5" cy="11" r=".6" fill="currentColor" stroke="none"/></svg>,
+  empty: <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="10" cy="10" r="8"/><path d="M7 10h6M10 7v6"/></svg>,
+  bolt: <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M9.5 1L3 9.5h5L5.5 15 13 6.5H8L9.5 1z"/></svg>,
+}
+
+/* ─── Skeleton ─── */
+function Skeleton({ h = 16, w = "100%", rounded = false }) {
+  return <span className="skeleton" style={{ height: h, width: w, borderRadius: rounded ? 999 : 4, display: "block" }} />
+}
+
 /* ─── Chip con color ─── */
 function ChipStatus({ label, value }) {
   if (!value) return null
@@ -122,7 +142,12 @@ function HistoryRow({ items, onSelect }) {
 
 /* ─── EmptyState ─── */
 function EmptyState({ msg }) {
-  return <div className="emptyState"><span className="emptyIcon">○</span><span>{msg}</span></div>
+  return (
+    <div className="emptyState">
+      <div className="emptyIcon">{IC.empty}</div>
+      <span className="emptyText">{msg}</span>
+    </div>
+  )
 }
 
 /* ─── PageHeader ─── */
@@ -142,12 +167,12 @@ function PageHeader({ icon, title, description }) {
    NAV CONFIG
 ───────────────────────────────────────────── */
 const NAV = [
-  { id: "home",          icon: "⊞",  label: "Inicio" },
-  { id: "cabys",         icon: "🔍", label: "CABYS" },
-  { id: "contribuyente", icon: "👤", label: "Contribuyente" },
-  { id: "cedulas",       icon: "🪪",  label: "Cédulas TSE" },
-  { id: "tipocambio",    icon: "💱", label: "Tipo de Cambio" },
-  { id: "factura",       icon: "🧾", label: "Factura Electrónica" },
+  { id: "home",          icon: IC.dashboard, label: "Dashboard" },
+  { id: "cabys",         icon: IC.search,    label: "CABYS" },
+  { id: "contribuyente", icon: IC.user,      label: "Contribuyente" },
+  { id: "cedulas",       icon: IC.id,        label: "Cédulas TSE" },
+  { id: "tipocambio",    icon: IC.currency,  label: "Tipo de Cambio" },
+  { id: "factura",       icon: IC.receipt,   label: "Factura Electrónica" },
 ]
 
 /* ═════════════════════════════════════════════
@@ -424,15 +449,13 @@ export default function App() {
       <aside className={`sidebar${sideOpen?" sideOpen":""}`}>
         <div className="sideTop">
           <div className="sideBrand">
-            <div className="sideLogo">⚡</div>
-            <div>
-              <div className="sideName">HaciendaKit</div>
-              <div className="sideTagline">Herramientas CR</div>
-            </div>
+            <div className="sideLogo">{IC.bolt}</div>
+            <span className="sideName">HaciendaKit</span>
           </div>
         </div>
 
         <nav className="sideNav">
+          <div className="navSection">Herramientas</div>
           {NAV.map(n => (
             <button key={n.id} type="button"
               className={`navItem${page===n.id?" navActive":""}`}
@@ -444,9 +467,9 @@ export default function App() {
         </nav>
 
         <div className="sideBottom">
-          <div className={`apiPill${apiStatus?.ok?" apiPillOk":" apiPillBad"}`}>
+          <div className={`apiPill${apiStatus==null?"":(apiStatus.ok?" apiPillOk":" apiPillBad")}`}>
             <span className={`dot${apiStatus?.ok?" ok":" bad"}`}/>
-            <span>{apiStatus?.ok ? `API OK · ${apiStatus.ms}ms` : "API sin respuesta"}</span>
+            <span>{apiStatus==null ? "Verificando…" : apiStatus.ok ? `Hacienda · ${apiStatus.ms}ms` : "Sin respuesta"}</span>
           </div>
         </div>
       </aside>
@@ -455,71 +478,92 @@ export default function App() {
       <div className="mainArea">
         {/* Topbar */}
         <header className="topbar">
-          <button className="menuBtn" type="button" onClick={()=>setSideOpen(s=>!s)}>☰</button>
+          <button className="menuBtn" type="button" onClick={()=>setSideOpen(s=>!s)} aria-label="Menú">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M2 4.5h14M2 9h14M2 13.5h14"/>
+            </svg>
+          </button>
           <div className="topbarBread">
             <span className="topbarApp">HaciendaKit</span>
-            <span className="topbarSep">›</span>
+            <span className="topbarSep">/</span>
             <span className="topbarPage">{NAV.find(n=>n.id===page)?.label}</span>
           </div>
-          {fx && (
-            <div className="topbarFx">
-              <span className="topbarFxLabel">USD/CRC</span>
-              <span className="topbarFxVal">₡{fx.venta.toLocaleString("es-CR")}</span>
-            </div>
-          )}
+          <div className="topbarRight">
+            {apiStatus != null && (
+              <span className={`topbarBadge ${apiStatus.ok?"topbarBadgeOk":"topbarBadgeBad"}`}>
+                <span className={`dot${apiStatus.ok?" ok":" bad"}`}/>
+                {apiStatus.ok ? "API Operacional" : "API Sin respuesta"}
+              </span>
+            )}
+            {fx && (
+              <div className="topbarFx">
+                <span className="topbarFxLabel">USD</span>
+                <span className="topbarFxVal">₡{fx.venta.toLocaleString("es-CR")}</span>
+              </div>
+            )}
+          </div>
         </header>
 
         {/* Page content */}
         <main className="content">
 
-          {/* ══ INICIO ══ */}
+          {/* ══ DASHBOARD ══ */}
           {page === "home" && (
             <div className="pageWrap">
-              <div className="homeHero">
-                <div className="homeHeroTitle">Herramientas Tributarias CR</div>
-                <p className="homeHeroSub">Consultá CABYS, contribuyentes, cédulas, tipo de cambio y facturas electrónicas — todo en un solo lugar.</p>
+              <div className="homeHeader">
+                <div className="homeTitle">Dashboard</div>
+                <div className="homeSub">Estado del sistema y datos en tiempo real — Hacienda CR · BCCR · TSE</div>
               </div>
 
-              <div className="homeGrid">
-                {/* API status */}
-                <div className="statCard">
-                  <div className="statLabel">Estado API Hacienda</div>
-                  <div className={`statVal${apiStatus?.ok?" statGood":" statBad"}`}>
-                    {apiStatus == null ? "Verificando…" : apiStatus.ok ? "Operacional" : "Sin respuesta"}
+              <div className="kpiGrid">
+                <div className="kpiCard">
+                  <div className="kpiLabel">Estado API Hacienda</div>
+                  {apiStatus == null ? (
+                    <>
+                      <Skeleton h={28} w={120} />
+                      <Skeleton h={13} w={160} style={{marginTop:8}} />
+                    </>
+                  ) : (
+                    <>
+                      <div className={`kpiVal ${apiStatus.ok?"kpiValGood":"kpiValBad"}`}>
+                        {apiStatus.ok ? "Operacional" : "Sin respuesta"}
+                      </div>
+                      <div className="kpiSub">{apiStatus.ok ? `${apiStatus.ms} ms latencia · ${apiStatus.at.toLocaleTimeString()}` : "No se pudo conectar"}</div>
+                    </>
+                  )}
+                  <div className="kpiAction">
+                    <button className="btn btnGhost" style={{fontSize:12,padding:"5px 10px"}} onClick={refreshApi} type="button">
+                      {IC.refresh} Verificar
+                    </button>
                   </div>
-                  {apiStatus?.ok && <div className="statSub">{apiStatus.ms} ms · última revisión {apiStatus.at.toLocaleTimeString()}</div>}
-                  <button className="btn btnGhost" style={{marginTop:12}} onClick={refreshApi} type="button">↻ Revisar ahora</button>
                 </div>
 
-                {/* TC compra */}
-                <div className="statCard">
-                  <div className="statLabel">Tipo de cambio — Compra</div>
-                  <div className="statVal statPurple">
-                    {fxLoading ? "…" : fx ? `₡${fx.compra.toLocaleString("es-CR")}` : "—"}
-                  </div>
-                  {fx && <div className="statSub">Al {formatFechaCR(fx.fecha)}</div>}
+                <div className="kpiCard">
+                  <div className="kpiLabel">TC Compra — USD/CRC</div>
+                  {fxLoading ? <Skeleton h={28} w={110} /> : (
+                    <div className="kpiVal">{fx ? `₡${fx.compra.toLocaleString("es-CR")}` : "—"}</div>
+                  )}
+                  <div className="kpiSub">{fx ? `Al ${formatFechaCR(fx.fecha)}` : "Cargando…"}</div>
                 </div>
 
-                {/* TC venta */}
-                <div className="statCard">
-                  <div className="statLabel">Tipo de cambio — Venta</div>
-                  <div className="statVal statPurple">
-                    {fxLoading ? "…" : fx ? `₡${fx.venta.toLocaleString("es-CR")}` : "—"}
-                  </div>
-                  {fx && <div className="statSub">Fuente: BCCR</div>}
+                <div className="kpiCard">
+                  <div className="kpiLabel">TC Venta — USD/CRC</div>
+                  {fxLoading ? <Skeleton h={28} w={110} /> : (
+                    <div className="kpiVal kpiValBlue">{fx ? `₡${fx.venta.toLocaleString("es-CR")}` : "—"}</div>
+                  )}
+                  <div className="kpiSub">Fuente: Banco Central CR</div>
                 </div>
+              </div>
 
-                {/* Accesos rápidos */}
-                <div className="quickCard">
-                  <div className="statLabel" style={{marginBottom:12}}>Acceso rápido</div>
-                  <div className="quickGrid">
-                    {NAV.filter(n=>n.id!=="home").map(n=>(
-                      <button key={n.id} type="button" className="quickBtn" onClick={()=>navigate(n.id)}>
-                        <span className="quickIcon">{n.icon}</span>
-                        <span>{n.label}</span>
-                      </button>
-                    ))}
-                  </div>
+              <div className="quickCard">
+                <div className="quickCardTitle">Acceso rápido</div>
+                <div className="quickGrid">
+                  {NAV.filter(n=>n.id!=="home").map(n=>(
+                    <button key={n.id} type="button" className="quickBtn" onClick={()=>navigate(n.id)}>
+                      <span className="quickIcon">{n.icon}</span>
+                      <span>{n.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -571,7 +615,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {cabysError && <div className="alertBox">⚠️ {cabysError}</div>}
+                {cabysError && <div className="alertBox">{IC.warning} {cabysError}</div>}
                 {cabysSearched && !cabysLoading && !cabysError && !cabysTotal && <EmptyState msg={`Sin resultados para "${cabysQ_}"`} />}
 
                 {cabysTotal > 0 && (
@@ -641,7 +685,7 @@ export default function App() {
                   </div>
                 )}
 
-                {aeError && <div className="alertBox">⚠️ {aeError}</div>}
+                {aeError && <div className="alertBox">{IC.warning} {aeError}</div>}
                 {aeSearched && !aeLoading && !aeError && !aeData && <EmptyState msg={`No se encontró contribuyente para "${aeDigits}"`} />}
 
                 {aeData && (
@@ -715,7 +759,7 @@ export default function App() {
                   </div>
                 )}
 
-                {cedError && <div className="alertBox">⚠️ {cedError}</div>}
+                {cedError && <div className="alertBox">{IC.warning} {cedError}</div>}
                 {cedSearched && !cedLoading && !cedError && !cedItems.length && <EmptyState msg={`Sin resultados para "${cedQ_}"`} />}
 
                 {cedItems.length > 0 && (
@@ -799,7 +843,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {tcError && <div className="alertBox">⚠️ {tcError}</div>}
+                  {tcError && <div className="alertBox">{IC.warning} {tcError}</div>}
                   {tcSearched && !tcLoading && !tcError && !tcData && <EmptyState msg="Sin datos para esa fecha" />}
 
                   {tcData && (
@@ -846,7 +890,7 @@ export default function App() {
                   </div>
                 )}
 
-                {feError && <div className="alertBox">⚠️ {feError}</div>}
+                {feError && <div className="alertBox">{IC.warning} {feError}</div>}
 
                 {/* Info decodificada de la clave — siempre visible si es válida */}
                 {feValid && feDecoded && (

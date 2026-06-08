@@ -2,13 +2,13 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: #07090f;
+  background: #F8FAFC;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
