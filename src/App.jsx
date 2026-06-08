@@ -366,7 +366,7 @@ function EmptyState({ msg }) {
   )
 }
 
-function PageHeader({ icon, title, description }) {
+function PageHeader({ icon, title, description, onClear }) {
   return (
     <div className="pageHeader">
       <div className="pageHeaderTop">
@@ -374,6 +374,12 @@ function PageHeader({ icon, title, description }) {
         <h1 className="pageTitle">{title}</h1>
       </div>
       {description && <p className="pageDesc">{description}</p>}
+      {onClear && (
+        <button type="button" className="clearResultsBtn" onClick={onClear}>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 1l11 11M12 1L1 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          Nueva consulta
+        </button>
+      )}
     </div>
   )
 }
@@ -1289,9 +1295,19 @@ export default function App() {
                 </div>
               )}
 
-              {cabysError && <div className="alertBox" style={{ marginTop: 16 }}>{IC.warning} {cabysError}</div>}
+              {cabysError && (
+                <div className="alertBox" style={{ marginTop: 16 }}>
+                  {IC.warning} {cabysError}
+                  <button type="button" className="clearInlineBtn" onClick={() => { setCabysData([]); setCabysError(""); setCabysSearched(false); setCabysQ(""); setCabysAeMatch(null) }}>✕ Limpiar</button>
+                </div>
+              )}
               {cabysSearched && !cabysLoading && !cabysError && !cabysTotal && (
-                <EmptyState msg={`Sin resultados para "${cabysQ_}" — intentá con términos más generales`} />
+                <div>
+                  <EmptyState msg={`Sin resultados para "${cabysQ_}" — intentá con términos más generales`} />
+                  <div style={{ textAlign:"center", marginTop: 12 }}>
+                    <button type="button" className="newQueryBtn" onClick={() => { setCabysData([]); setCabysSearched(false); setCabysQ(""); setCabysAeMatch(null) }}>← Nueva búsqueda</button>
+                  </div>
+                </div>
               )}
 
               {cabysTotal > 0 && (
@@ -1301,6 +1317,7 @@ export default function App() {
                       <strong>{cabysTotal}</strong> resultado{cabysTotal !== 1 ? "s" : ""} para "<strong>{cabysNorm || cabysQ_}</strong>"
                     </span>
                     <div className="resultsHeaderActions">
+                      <button type="button" className="newQueryBtn" onClick={() => { setCabysData([]); setCabysSearched(false); setCabysQ(""); setCabysAeMatch(null) }}>← Nueva búsqueda</button>
                       <div className="viewModeToggle">
                         <button type="button" className={`viewModeBtn${cabysView === "cards" ? " active" : ""}`}
                           onClick={() => setCabysView("cards")}>{IC.grid}</button>
@@ -1376,7 +1393,8 @@ export default function App() {
           {page === "contribuyente" && (
             <div className="pageWrap pageCentered">
               <PageHeader icon={IC.user} title="Verificar Contribuyente"
-                description="Consultá el estado fiscal, régimen y actividades económicas. Desde una actividad podés buscar sus códigos CABYS directamente." />
+                description="Consultá el estado fiscal, régimen y actividades económicas. Desde una actividad podés buscar sus códigos CABYS directamente."
+                onClear={(aeData || aeError) ? () => { setAeData(null); setAeId(""); setAeError("") } : null} />
               <div className="toolCard">
                 <div className="toolSection">
                   <label className="lbl">Cédula, NITE o número de identificación</label>
@@ -1420,7 +1438,8 @@ export default function App() {
           {page === "cedulas" && (
             <div className="pageWrap pageCentered">
               <PageHeader icon={IC.id} title="Búsqueda de Cédulas TSE"
-                description="Personas físicas y jurídicas registradas en el Tribunal Supremo de Elecciones." />
+                description="Personas físicas y jurídicas registradas en el Tribunal Supremo de Elecciones."
+                onClear={(cedItems.length > 0 || cedError) ? () => { setCedItems([]); setCedQ(""); setCedError(""); setCedSearched(false) } : null} />
               <div className="toolCard">
                 <div className="toolSection">
                   <label className="lbl">Número de cédula o nombre</label>
@@ -1534,7 +1553,8 @@ export default function App() {
           {page === "factura" && (
             <div className="pageWrap pageCentered">
               <PageHeader icon={IC.receipt} title="Validación de Factura Electrónica"
-                description="Verificá si un comprobante fue aceptado o rechazado por Hacienda. Ingresá los 50 dígitos de la clave." />
+                description="Verificá si un comprobante fue aceptado o rechazado por Hacienda. Ingresá los 50 dígitos de la clave."
+                onClear={(feData || feError || feNotFound) ? () => { setFeData(null); setFeKey(""); setFeError(""); setFeSearched(false); setFeNotFound(false) } : null} />
               <div className="toolCard">
                 <div className="toolSection">
                   <label className="lbl">Clave numérica del comprobante (50 dígitos)</label>
@@ -1616,7 +1636,9 @@ export default function App() {
           {/* ══ EXONERACIONES ══ */}
           {page === "exoneraciones" && (
             <div className="pageWrap pageCentered" style={{ maxWidth: 760 }}>
-              <PageHeader icon={IC.shield} title="Exoneraciones" subtitle="Verificá si una entidad tiene exoneración de impuestos registrada en Hacienda" />
+              <PageHeader icon={IC.shield} title="Exoneraciones"
+                description="Verificá si una entidad tiene exoneración de impuestos registrada en Hacienda."
+                onClear={(exoData || exoError) ? () => { setExoData(null); setExoNum(""); setExoError(""); setExoSearched(false) } : null} />
 
               <div className="toolCard">
                 <div className="toolRow">
