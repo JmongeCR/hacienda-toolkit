@@ -354,6 +354,7 @@ export default function App() {
   const [aeError, setAeError] = useState("")
   const [aeSearched, setAeSearched] = useState(false)
   const [aeHistory, setAeHistory] = useState(() => loadHistory("ht_ae"))
+  const aeLastQueried = useRef("")  // ID de la última consulta exitosa, no cambia al borrar el input
 
   const aeIdDigits = useMemo(() => onlyDigits(aeId), [aeId])
   const aeValid    = useMemo(() => isValidAeId(aeId), [aeId])
@@ -370,6 +371,7 @@ export default function App() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
       setAeData(json)
+      aeLastQueried.current = digits
       saveHistory("ht_ae", digits)
       setAeHistory(loadHistory("ht_ae"))
     } catch (e) {
@@ -382,8 +384,8 @@ export default function App() {
 
   const aeJsonId = useMemo(() => {
     const raw = aeData?.identificacion ?? aeData?.identificacionTributaria ?? aeData?.cedula ?? aeData?.id ?? ""
-    return onlyDigits(String(raw)) || aeIdDigits
-  }, [aeData, aeIdDigits])
+    return onlyDigits(String(raw)) || aeLastQueried.current
+  }, [aeData])
 
   function getAeSummaryText() {
     if (!aeData) return ""
