@@ -2257,43 +2257,6 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
           {data.clave && <div className="xmlClave">Clave: {data.clave}</div>}
         </div>
 
-        {/* ── Tarjeta resumen ── */}
-        <div className="xmlSummaryCard">
-          <div className="xmlSummaryMon">
-            <span className="xmlSummaryMonFlag">{MON_FLAGS[mon] || "💱"}</span>
-            <div>
-              <div className="xmlSummaryMonCode">{mon}</div>
-              {tc && tc > 0 && <div className="xmlSummaryTc">Tipo de cambio informado: ₡{new Intl.NumberFormat("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}).format(tc)}</div>}
-            </div>
-          </div>
-          <div className="xmlSummaryNums">
-            {data.resumen.totalVenta && parseFloat(data.resumen.totalVenta) > 0 && (
-              <div className="xmlSummaryNum">
-                <span className="xmlSummaryNumLabel">Subtotal</span>
-                <span className="xmlSummaryNumVal">{fmtM(data.resumen.totalVenta)}</span>
-              </div>
-            )}
-            {data.resumen.totalDesc && parseFloat(data.resumen.totalDesc) > 0 && (
-              <div className="xmlSummaryNum">
-                <span className="xmlSummaryNumLabel">Descuentos</span>
-                <span className="xmlSummaryNumVal xmlSummaryDisc">− {fmtM(data.resumen.totalDesc)}</span>
-              </div>
-            )}
-            {data.resumen.totalImpuesto && parseFloat(data.resumen.totalImpuesto) > 0 && (
-              <div className="xmlSummaryNum">
-                <span className="xmlSummaryNumLabel">IVA</span>
-                <span className="xmlSummaryNumVal">{fmtM(data.resumen.totalImpuesto)}</span>
-              </div>
-            )}
-            {data.resumen.total && (
-              <div className="xmlSummaryNum xmlSummaryTotal">
-                <span className="xmlSummaryNumLabel">Total</span>
-                <span className="xmlSummaryNumVal">{fmtM(data.resumen.total)}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Partes */}
         <div className="xmlParties">
           <div className="xmlParty">
