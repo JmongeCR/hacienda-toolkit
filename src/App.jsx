@@ -300,6 +300,7 @@ const IC = {
   star:         <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1l1.8 3.6L13 5.4l-3 2.9.7 4.1L7 10.4l-3.7 2 .7-4.1-3-2.9 4.2-.8z"/></svg>,
   starOff:      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M7 1l1.8 3.6L13 5.4l-3 2.9.7 4.1L7 10.4l-3.7 2 .7-4.1-3-2.9 4.2-.8z"/></svg>,
   cmd:          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M3 1a2 2 0 1 0 0 4h6a2 2 0 1 0 0-4H3zM3 7a2 2 0 1 0 0 4h6a2 2 0 1 0 0-4H3z"/><path d="M3 5v2M9 5v2"/></svg>,
+  info:         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="9" cy="9" r="7.5"/><path d="M9 8.5v4.5"/><circle cx="9" cy="6" r=".7" fill="currentColor" stroke="none"/></svg>,
   arrowRight:   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="m5 2 5 4-5 4M2 6h8"/></svg>,
   x:            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m3 3 8 8M11 3 3 11"/></svg>,
   bot:          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="12" height="9" rx="2"/><path d="M6 7V5a3 3 0 016 0v2M6 11.5h.01M12 11.5h.01M1 11h2M15 11h2M9 2v2"/></svg>,
@@ -818,6 +819,7 @@ const NAV = [
   { id: "factura",        icon: IC.receipt,   label: "Factura Electrónica" },
   { id: "exoneraciones",  icon: IC.shield,    label: "Exoneraciones" },
   { id: "asistente",      icon: IC.chat,      label: "Asistente IA" },
+  { id: "acerca",         icon: IC.info,      label: "Acerca de" },
 ]
 const NAV_MAP = Object.fromEntries(NAV.map(n => [n.id, n]))
 const NAV_GROUPS = [
@@ -1321,6 +1323,13 @@ export default function App() {
         </nav>
 
         <div className="sideBottom">
+          <button type="button"
+            className={`navItem navItemAcerca${page === "acerca" ? " navActive" : ""}`}
+            onClick={() => navigate("acerca")}>
+            <span className="navIcon">{IC.info}</span>
+            <span className="navLabel">Acerca de</span>
+          </button>
+          <div className="sideBottomSep" />
           <button type="button" className="cmdTriggerBtn" onClick={() => setCmdOpen(true)}>
             {IC.search}
             <span className="cmdTriggerLabel">Búsqueda rápida</span>
@@ -2047,12 +2056,167 @@ export default function App() {
             />
           )}
 
+          {/* ══ ACERCA DE ══ */}
+          {page === "acerca" && <AcercaPage activities={activities} />}
+
         </main>
 
         <footer className="footerBar">
           Datos: Ministerio de Hacienda · BCCR · TSE · Gometa
         </footer>
       </div>
+    </div>
+  )
+}
+
+/* ─── AcercaPage ─── */
+function AcercaPage({ activities }) {
+  const favCount   = loadFavs().length
+  const actCount   = activities.length
+  const histCount  = ["ht_cabys","ht_ae","ht_ced"].reduce((n,k) => n + loadH(k).length, 0)
+
+  const TOOLS = [
+    { icon:IC.search,   name:"Asistente CABYS",          desc:"Búsqueda de códigos por producto, actividad o descripción de negocio" },
+    { icon:IC.user,     name:"Consulta de Contribuyentes",desc:"Estado fiscal, régimen tributario y actividades económicas registradas" },
+    { icon:IC.receipt,  name:"Facturas Electrónicas",     desc:"Validación de comprobantes por clave numérica de 50 dígitos" },
+    { icon:IC.xml,      name:"Validación XML",            desc:"Análisis completo de archivos XML con detalle de líneas y CABYS" },
+    { icon:IC.currency, name:"Tipo de Cambio",            desc:"USD y EUR en tiempo real con historial 30 días y conversor 3 divisas" },
+    { icon:IC.shield,   name:"Exoneraciones",             desc:"Verificación de exoneraciones de impuestos registradas en Hacienda" },
+    { icon:IC.chat,     name:"Asistente Tributario",      desc:"Consultas sobre IVA, CABYS y normativa fiscal costarricense" },
+    { icon:IC.star,     name:"Favoritos CABYS",           desc:"Guardado y acceso rápido a los códigos CABYS más usados" },
+    { icon:IC.clock,    name:"Historial Inteligente",     desc:"Registro de consultas recientes para retomar cualquier búsqueda" },
+  ]
+
+  const SOURCES = [
+    { name:"Ministerio de Hacienda de Costa Rica", url:"api.hacienda.go.cr",       desc:"CABYS, Contribuyentes, Facturas, Exoneraciones, Tipo de Cambio",  color:"#f0fdf4", dot:"#16a34a" },
+    { name:"Banco Central de Costa Rica (BCCR)",   url:"gee.bccr.fi.cr",           desc:"Indicadores económicos, tipo de cambio histórico USD/CRC",         color:"#eff6ff", dot:"#2563eb" },
+    { name:"Tribunal Supremo de Elecciones",       url:"apis.gometa.org (Gometa)", desc:"Búsqueda de cédulas de personas físicas y jurídicas",              color:"#fdf4ff", dot:"#9333ea" },
+  ]
+
+  const TECH = [
+    { name:"React 19",     color:"#0891b2", bg:"#ecfeff" },
+    { name:"Vite 7",       color:"#7c3aed", bg:"#f5f3ff" },
+    { name:"JavaScript",   color:"#b45309", bg:"#fffbeb" },
+    { name:"CSS3",         color:"#1d4ed8", bg:"#eff6ff" },
+  ]
+
+  const STATS = [
+    { label:"Consultas realizadas", value:actCount,  icon:"🔍", desc:"registradas en esta sesión" },
+    { label:"Favoritos guardados",  value:favCount,  icon:"⭐", desc:"códigos CABYS en favoritos" },
+    { label:"Historial almacenado", value:histCount, icon:"🕒", desc:"búsquedas en historial local" },
+  ]
+
+  return (
+    <div className="pageWrap pageCentered acercaWrap">
+
+      {/* ── Hero Card ── */}
+      <div className="acercaHero">
+        <div className="acercaHeroLeft">
+          <div className="acercaLogo">
+            {IC.bolt}
+          </div>
+          <div>
+            <h1 className="acercaAppName">HaciendaKit</h1>
+            <p className="acercaTagline">Plataforma de consulta tributaria y herramientas fiscales para Costa Rica.</p>
+          </div>
+        </div>
+        <div className="acercaMeta">
+          <div className="acercaMetaItem">
+            <span className="acercaMetaLabel">Versión</span>
+            <span className="acercaVersionBadge">v1.0.0</span>
+          </div>
+          <div className="acercaMetaItem">
+            <span className="acercaMetaLabel">Última actualización</span>
+            <span className="acercaMetaVal">Junio 2026</span>
+          </div>
+          <div className="acercaMetaItem">
+            <span className="acercaMetaLabel">Desarrollado por</span>
+            <span className="acercaMetaVal acercaAuthor">Jean Monge</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Herramientas disponibles ── */}
+      <div className="acercaSection">
+        <div className="acercaSectionHeader">
+          <div className="acercaSectionTitle">Herramientas disponibles</div>
+          <span className="acercaBadgeCount">{TOOLS.length}</span>
+        </div>
+        <div className="acercaToolsGrid">
+          {TOOLS.map((t, i) => (
+            <div key={i} className="acercaToolCard">
+              <div className="acercaToolIcon">{t.icon}</div>
+              <div>
+                <div className="acercaToolName">{t.name}</div>
+                <div className="acercaToolDesc">{t.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Estadísticas ── */}
+      <div className="acercaSection">
+        <div className="acercaSectionHeader">
+          <div className="acercaSectionTitle">Estadísticas de uso</div>
+          <span className="acercaMetaLabel">datos locales · este dispositivo</span>
+        </div>
+        <div className="acercaStatsRow">
+          {STATS.map((s, i) => (
+            <div key={i} className="acercaStatCard">
+              <div className="acercaStatIcon">{s.icon}</div>
+              <div className="acercaStatVal">{s.value}</div>
+              <div className="acercaStatLabel">{s.label}</div>
+              <div className="acercaStatDesc">{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Fuentes de información ── */}
+      <div className="acercaSection">
+        <div className="acercaSectionHeader">
+          <div className="acercaSectionTitle">Fuentes de información</div>
+        </div>
+        <div className="acercaSourcesList">
+          {SOURCES.map((s, i) => (
+            <div key={i} className="acercaSourceCard" style={{ background: s.color }}>
+              <div className="acercaSourceDot" style={{ background: s.dot }} />
+              <div>
+                <div className="acercaSourceName">{s.name}</div>
+                <div className="acercaSourceUrl">{s.url}</div>
+                <div className="acercaSourceDesc">{s.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="acercaDisclaimer">
+          <div className="acercaDisclaimerIcon">{IC.warning}</div>
+          <p>
+            <strong>HaciendaKit</strong> no es un producto oficial del Ministerio de Hacienda ni del Banco Central de Costa Rica. La información mostrada proviene de fuentes públicas y <strong>debe verificarse para procesos oficiales</strong>. Para trámites formales, consultá directamente con Hacienda o un profesional tributario certificado.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Tecnologías ── */}
+      <div className="acercaSection">
+        <div className="acercaSectionHeader">
+          <div className="acercaSectionTitle">Tecnologías utilizadas</div>
+        </div>
+        <div className="acercaTechRow">
+          {TECH.map((t, i) => (
+            <div key={i} className="acercaTechBadge" style={{ background: t.bg, color: t.color }}>
+              {t.name}
+            </div>
+          ))}
+          <div className="acercaTechBadge" style={{ background:"#f0fdf4", color:"#16a34a" }}>Open Source APIs</div>
+          <div className="acercaTechBadge" style={{ background:"#fff7ed", color:"#c2410c" }}>localStorage</div>
+        </div>
+        <p className="acercaFootNote">
+          Aplicación de página única (SPA) sin backend propio. Todas las consultas se realizan directamente a las APIs públicas de las instituciones costarricenses. Los datos se almacenan únicamente en el dispositivo del usuario.
+        </p>
+      </div>
+
     </div>
   )
 }

@@ -1171,6 +1171,73 @@ tr:hover td { background: var(--slate-50) }
 }
 
 /* ══════════════════════════════════════════════
+   SIDEBAR — Acerca de (bottom item)
+══════════════════════════════════════════════ */
+.sideBottomSep { height:1px; background:var(--border); margin:6px 0; }
+.navItemAcerca { width:100%; margin-bottom:2px; }
+
+/* ══════════════════════════════════════════════
+   ACERCA DE
+══════════════════════════════════════════════ */
+.acercaWrap { max-width: 800px; }
+
+/* Hero */
+.acercaHero { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:28px; display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start; margin-bottom:24px; }
+.acercaHeroLeft { display:flex; align-items:center; gap:16px; flex:1; min-width:240px; }
+.acercaLogo { width:52px; height:52px; background:var(--accent); color:#fff; border-radius:16px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:22px; }
+.acercaAppName { font-size:1.6rem; font-weight:800; color:var(--text); margin:0 0 4px; letter-spacing:-.02em; }
+.acercaTagline { font-size:var(--font-sm); color:var(--muted); margin:0; line-height:1.5; max-width:320px; }
+.acercaMeta { display:flex; flex-wrap:wrap; gap:16px 28px; }
+.acercaMetaItem { display:flex; flex-direction:column; gap:4px; }
+.acercaMetaLabel { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); }
+.acercaMetaVal { font-size:var(--font-sm); font-weight:600; color:var(--text); }
+.acercaVersionBadge { display:inline-flex; align-items:center; background:var(--accent); color:#fff; font-size:12px; font-weight:700; padding:3px 10px; border-radius:99px; width:fit-content; }
+.acercaAuthor { color:var(--accent); }
+
+/* Secciones */
+.acercaSection { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:16px; }
+.acercaSectionHeader { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+.acercaSectionTitle { font-size:var(--font-md); font-weight:700; color:var(--text); }
+.acercaBadgeCount { background:var(--bg-alt); border:1px solid var(--border); color:var(--muted); font-size:11px; font-weight:700; padding:2px 8px; border-radius:99px; }
+
+/* Herramientas grid */
+.acercaToolsGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+.acercaToolCard { display:flex; align-items:flex-start; gap:12px; background:var(--bg-alt); border:1px solid var(--border); border-radius:12px; padding:12px 14px; transition:border-color var(--t-fast); }
+.acercaToolCard:hover { border-color:var(--accent); }
+.acercaToolIcon { width:32px; height:32px; background:var(--surface); border:1px solid var(--border); border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--accent); }
+.acercaToolName { font-size:var(--font-sm); font-weight:600; color:var(--text); margin-bottom:2px; }
+.acercaToolDesc { font-size:11px; color:var(--muted); line-height:1.4; }
+
+/* Stats */
+.acercaStatsRow { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.acercaStatCard { background:var(--bg-alt); border:1px solid var(--border); border-radius:14px; padding:20px 16px; text-align:center; }
+.acercaStatIcon { font-size:22px; margin-bottom:8px; }
+.acercaStatVal { font-size:2rem; font-weight:800; color:var(--accent); letter-spacing:-.03em; margin-bottom:4px; line-height:1; }
+.acercaStatLabel { font-size:var(--font-sm); font-weight:600; color:var(--text); margin-bottom:3px; }
+.acercaStatDesc { font-size:11px; color:var(--muted); }
+
+/* Sources */
+.acercaSourcesList { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+.acercaSourceCard { display:flex; align-items:flex-start; gap:14px; border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+.acercaSourceDot { width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+.acercaSourceName { font-size:var(--font-sm); font-weight:700; color:var(--text); margin-bottom:2px; }
+.acercaSourceUrl { font-size:11px; font-family:var(--font-mono,monospace); color:var(--muted); margin-bottom:3px; }
+.acercaSourceDesc { font-size:11px; color:var(--muted); line-height:1.4; }
+.acercaDisclaimer { display:flex; gap:12px; align-items:flex-start; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:14px 16px; font-size:var(--font-sm); color:#78350f; line-height:1.55; }
+.acercaDisclaimerIcon { flex-shrink:0; margin-top:1px; color:#b45309; }
+
+/* Tech badges */
+.acercaTechRow { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.acercaTechBadge { font-size:12px; font-weight:700; padding:5px 14px; border-radius:99px; border:1px solid transparent; }
+.acercaFootNote { font-size:var(--font-sm); color:var(--muted); line-height:1.6; margin:0; }
+
+@media(max-width:640px) {
+  .acercaHero { flex-direction:column; }
+  .acercaStatsRow { grid-template-columns:1fr; }
+  .acercaToolsGrid { grid-template-columns:1fr; }
+}
+
+/* ══════════════════════════════════════════════
    FACTURA — TABS (Sprint 7)
 ══════════════════════════════════════════════ */
 .feTabRow { display:flex; gap:6px; margin-bottom:20px; }
