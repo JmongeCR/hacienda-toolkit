@@ -384,7 +384,7 @@ function parseXmlFe(xmlStr) {
   const lines = [...doc.querySelectorAll("LineaDetalle")].map(el => {
     const g = sel => el.querySelector(sel)?.textContent?.trim() || ""
     return {
-      descripcion: g("Descripcion"),
+      descripcion: g("Detalle") || g("Descripcion"),
       cantidad:    g("Cantidad"),
       unidad:      g("UnidadMedida"),
       precio:      g("PrecioUnitario"),
