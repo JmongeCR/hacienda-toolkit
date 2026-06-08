@@ -34,6 +34,160 @@ function taxClass(imp) { const n = Number(imp); return `t${n === 0 ? 0 : n <= 1 
 function nameInitials(name) { return (name || "?").split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase() }
 function saludo() { const h = new Date().getHours(); return h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches" }
 
+/* ─── Tildes: mapa de palabras sin acento → con acento ─── */
+const ACCENT_MAP = {
+  // terminaciones -ería
+  papeleria:"papelería",ferreteria:"ferretería",carniceria:"carnicería",
+  panaderia:"panadería",libreria:"librería",zapateria:"zapatería",
+  joyeria:"joyería",perfumeria:"perfumería",carpinteria:"carpintería",
+  relojeria:"relojería",tortilleria:"tortillería",verduleria:"verdulería",
+  fruteria:"frutería",licoreria:"licorería",merceria:"mercería",
+  barberia:"barbería",peluqueria:"peluquería",
+  // terminaciones -ción
+  construccion:"construcción",comunicacion:"comunicación",
+  administracion:"administración",educacion:"educación",
+  informacion:"información",programacion:"programación",
+  produccion:"producción",distribucion:"distribución",
+  comercializacion:"comercialización",reparacion:"reparación",
+  instalacion:"instalación",importacion:"importación",
+  exportacion:"exportación",elaboracion:"elaboración",
+  fabricacion:"fabricación",inspeccion:"inspección",
+  recoleccion:"recolección",investigacion:"investigación",
+  operacion:"operación",aplicacion:"aplicación",
+  generacion:"generación",contaminacion:"contaminación",
+  renovacion:"renovación",prestacion:"prestación",
+  recepcion:"recepción",intervencion:"intervención",
+  conexion:"conexión",gestion:"gestión",
+  revision:"revisión",emision:"emisión",
+  transmision:"transmisión",inversion:"inversión",
+  provision:"provisión",television:"televisión",
+  region:"región",pension:"pensión",
+  sesion:"sesión",profesion:"profesión",
+  ampliacion:"ampliación",fundacion:"fundación",
+  traduccion:"traducción",proteccion:"protección",
+  reduccion:"reducción",conduccion:"conducción",
+  destruccion:"destrucción",reproduccion:"reproducción",
+  // terminaciones -ía / técnico / orgánico
+  consultoria:"consultoría",auditoria:"auditoría",
+  farmacia:"farmacia",
+  juridico:"jurídico",juridica:"jurídica",
+  medico:"médico",medica:"médica",
+  tecnico:"técnico",tecnica:"técnica",tecnicas:"técnicas",tecnicos:"técnicos",
+  electronico:"electrónico",electronica:"electrónica",
+  quimico:"químico",quimica:"química",
+  organico:"orgánico",organica:"orgánica",
+  plastico:"plástico",plastica:"plástica",plasticos:"plásticos",
+  ceramica:"cerámica",mecanica:"mecánica",mecanico:"mecánico",
+  economico:"económico",economica:"económica",
+  agricola:"agrícola",maritimo:"marítimo",
+  energetico:"energético",energetica:"energética",
+  fotografico:"fotográfico",grafico:"gráfico",
+  acustico:"acústico",optico:"óptico",optica:"óptica",
+  estetico:"estético",estetica:"estética",
+  ortopedico:"ortopédico",farmaceutico:"farmacéutico",farmaceutica:"farmacéutica",
+  // artículos / sustantivos comunes
+  articulo:"artículo",articulos:"artículos",
+  maquina:"máquina",maquinas:"máquinas",
+  catalogo:"catálogo",catalogos:"catálogos",
+  calculo:"cálculo",calculos:"cálculos",
+  cafe:"café",salmon:"salmón",
+  jabon:"jabón",carbon:"carbón",
+  salon:"salón",camion:"camión",
+  limon:"limón",melon:"melón",
+  avion:"avión",boton:"botón",
+  corazon:"corazón",pinon:"piñón",
+  // otros frecuentes en CABYS
+  polimero:"polímero",polimeros:"polímeros",
+  oxigeno:"oxígeno",hidrogeno:"hidrógeno",
+  petroleo:"petróleo",
+  acido:"ácido",acidos:"ácidos",
+  electrico:"eléctrico",electrica:"eléctrica",
+  opcion:"opción",codigo:"código",codigos:"códigos",
+  publico:"público",publica:"pública",
+  automatico:"automático",automatica:"automática",
+  basico:"básico",basica:"básica",
+  logistica:"logística",logistico:"logístico",
+  informatica:"informática",informatico:"informático",
+}
+
+function restoreAccents(query) {
+  return query.toLowerCase().trim()
+    .split(/\s+/)
+    .map(w => ACCENT_MAP[w] || w)
+    .join(" ")
+}
+
+/* ─── Extrae palabras clave de una descripción de AE ─── */
+const STOP_WORDS = new Set([
+  "de","del","la","las","los","el","y","e","en","con","para","por",
+  "a","al","o","u","se","que","como","su","sus","un","una","unos","unas",
+  "este","esta","estos","estas","no","ni","si","otras","otros","otro","otra",
+  "ncp","nep","n.c.p","n.e.p","mediante","través","tipo","tipos","clase",
+  "clases","actividad","actividades","servicio","servicios","excepto",
+  "salvo","incluye","incluido","incluidos","incluida","incluidas",
+])
+function extractAeTerms(desc) {
+  return desc.toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z\s]/g," ")
+    .split(/\s+/)
+    .filter(w => w.length > 3 && !STOP_WORDS.has(w))
+    .slice(0, 5)
+    .join(" ")
+}
+
+/* ─── AE → CABYS bridge: mapa de actividades económicas comunes ─── */
+const AE_MAP = [
+  { kw:["restaurante","soda","comida","almuerzo","cena","cafeteria","cafetería"],        ciiu:"5610", label:"Restaurantes y servicio móvil de comidas",         q:"servicios restaurante comidas alimentacion" },
+  { kw:["pulperia","pulpería","abarrotes","tienda","minisuper","colmado"],               ciiu:"4711", label:"Comercio al por menor en almacenes no especializados", q:"comercio minorista abarrotes productos" },
+  { kw:["software","programacion","programación","desarrollo","sistemas","informatica"], ciiu:"6201", label:"Actividades de programación informática",             q:"servicios software programacion tecnologia" },
+  { kw:["contabilidad","contador","auditoria","auditoría","fiscal","financiero"],        ciiu:"6920", label:"Actividades de contabilidad y auditoría",              q:"servicios contables auditoria contabilidad" },
+  { kw:["abogado","juridico","jurídico","legal","notario","derecho"],                   ciiu:"6910", label:"Actividades jurídicas",                                q:"servicios juridicos legales abogado" },
+  { kw:["construccion","construcción","obra","edificacion","contratista"],               ciiu:"4100", label:"Construcción de edificios",                           q:"servicios construccion obra edificacion" },
+  { kw:["transporte","taxi","uber","carga","flete","logistica","logística"],             ciiu:"4921", label:"Transporte de pasajeros",                             q:"transporte pasajeros carga flete" },
+  { kw:["medico","médico","clinica","clínica","salud","doctor","enfermeria"],            ciiu:"8621", label:"Actividades de médicos y odontólogos",                q:"servicios medicos salud clinica" },
+  { kw:["farmacia","medicamento","drogueria","droguería"],                               ciiu:"4773", label:"Comercio al por menor de productos farmacéuticos",    q:"medicamentos farmacia salud" },
+  { kw:["ferreteria","ferretería","herramienta","pintura","materiales"],                 ciiu:"4752", label:"Comercio de artículos de ferretería",                 q:"materiales ferreteria herramientas" },
+  { kw:["ropa","vestir","calzado","moda","textil","confeccion","confección"],            ciiu:"4771", label:"Comercio al por menor de prendas de vestir",          q:"prendas vestir ropa calzado moda" },
+  { kw:["agricultura","agricola","agrícola","cultivo","cosecha","finca"],               ciiu:"0111", label:"Cultivo de cereales y otros cultivos",                q:"productos agricolas cultivos cosecha" },
+  { kw:["educacion","educación","escuela","academia","colegio","enseñanza","tutoria"],   ciiu:"8542", label:"Enseñanza superior y técnica",                       q:"servicios educacion ensenanza capacitacion" },
+  { kw:["hotel","hospedaje","hostal","alquiler","airbnb","turismo"],                     ciiu:"5510", label:"Actividades de alojamiento",                         q:"hospedaje alojamiento hotel turismo" },
+  { kw:["publicidad","marketing","diseño","grafico","gráfico","agencia","branding"],    ciiu:"7311", label:"Agencias de publicidad",                              q:"servicios publicidad marketing diseno" },
+  { kw:["limpieza","aseo","conserje","janitorial","mantenimiento"],                      ciiu:"8121", label:"Limpieza general de edificios",                       q:"servicios limpieza aseo mantenimiento" },
+  { kw:["mecanica","mecánica","taller","automovil","automóvil","vehiculo","vehículo"],  ciiu:"4520", label:"Mantenimiento y reparación de vehículos",             q:"reparacion mantenimiento vehiculos taller" },
+  { kw:["electricista","electrico","eléctrico","instalacion","instalación"],             ciiu:"4321", label:"Instalaciones eléctricas",                           q:"instalacion electrica servicios electricos" },
+  { kw:["peluqueria","peluquería","barberia","barbería","salon","salón","estetica"],    ciiu:"9602", label:"Peluquería y tratamientos de belleza",                q:"servicios peluqueria estetica belleza" },
+  { kw:["veterinario","veterinaria","mascota","animal","clinica veterinaria"],           ciiu:"7500", label:"Actividades veterinarias",                           q:"servicios veterinarios animales mascotas" },
+  { kw:["supermercado","autoservicio","hipermercado","maxi"],                            ciiu:"4711", label:"Comercio al por menor en supermercados",             q:"supermercado productos consumo" },
+  { kw:["panaderia","panadería","reposteria","repostería","pasteleria","pastelería"],   ciiu:"1071", label:"Elaboración de pan y productos de panadería",        q:"pan panaderia reposteria productos horneados" },
+  { kw:["importacion","importación","exportacion","exportación","comercio","aduanas"],  ciiu:"4690", label:"Comercio al por mayor no especializado",              q:"comercio importacion exportacion productos" },
+  { kw:["fotografia","fotografía","video","audiovisual","produccion audiovisual"],       ciiu:"7420", label:"Actividades de fotografía",                          q:"servicios fotografia video audiovisual" },
+  { kw:["seguridad","vigilancia","guardia","custodia"],                                  ciiu:"8010", label:"Actividades de seguridad privada",                   q:"servicios seguridad vigilancia" },
+]
+
+function matchAe(desc) {
+  const d = desc.toLowerCase()
+  let best = null, bestScore = 0
+  for (const ae of AE_MAP) {
+    const score = ae.kw.filter(k => d.includes(k)).length
+    if (score > bestScore) { best = ae; bestScore = score }
+  }
+  return best
+}
+
+function scoreMatch(query, descripcion) {
+  const qWords = query.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+    .split(/\s+/).filter(w => w.length > 2)
+  if (!qWords.length) return 0
+  const desc = descripcion.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+  const matches = qWords.filter(w => desc.includes(w)).length
+  return Math.round((matches / qWords.length) * 100)
+}
+
+/* ─── Favoritos localStorage ─── */
+const FAV_KEY = "hk_favs"
+const loadFavs = () => { try { return JSON.parse(localStorage.getItem(FAV_KEY) || "[]") } catch { return [] } }
+const saveFavs = (items) => localStorage.setItem(FAV_KEY, JSON.stringify(items.slice(0, 30)))
+
 async function copyText(text) {
   try { await navigator.clipboard.writeText(text); return true } catch {}
   try {
@@ -132,18 +286,25 @@ const IC = {
   table:        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="1" width="12" height="12" rx="1"/><path d="M1 5h12M5 5v8"/></svg>,
   grid:         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>,
   external:     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M7 1h4v4M11 1 6 6"/><path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V8"/></svg>,
+  shield:       <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 2L3 5v5c0 3.3 2.5 6.4 6 7.3 3.5-.9 6-4 6-7.3V5L9 2z"/><path d="M6.5 9l2 2 3-3.5"/></svg>,
+  star:         <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1l1.8 3.6L13 5.4l-3 2.9.7 4.1L7 10.4l-3.7 2 .7-4.1-3-2.9 4.2-.8z"/></svg>,
+  starOff:      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M7 1l1.8 3.6L13 5.4l-3 2.9.7 4.1L7 10.4l-3.7 2 .7-4.1-3-2.9 4.2-.8z"/></svg>,
+  cmd:          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M3 1a2 2 0 1 0 0 4h6a2 2 0 1 0 0-4H3zM3 7a2 2 0 1 0 0 4h6a2 2 0 1 0 0-4H3z"/><path d="M3 5v2M9 5v2"/></svg>,
+  arrowRight:   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="m5 2 5 4-5 4M2 6h8"/></svg>,
+  x:            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m3 3 8 8M11 3 3 11"/></svg>,
 }
 
-const ACT_ICONS  = { cabys: IC.search, contribuyente: IC.user, cedulas: IC.id, factura: IC.receipt, tipocambio: IC.currency }
-const ACT_LABELS = { cabys: "CABYS", contribuyente: "Contribuyente", cedulas: "Cédula TSE", factura: "Factura", tipocambio: "Tipo de Cambio" }
+const ACT_ICONS  = { cabys: IC.search, contribuyente: IC.user, cedulas: IC.id, factura: IC.receipt, tipocambio: IC.currency, exoneraciones: IC.shield }
+const ACT_LABELS = { cabys: "CABYS", contribuyente: "Contribuyente", cedulas: "Cédula TSE", factura: "Factura", tipocambio: "Tipo de Cambio", exoneraciones: "Exoneraciones" }
 
 /* ─── Hub cards config ─── */
 const HUB_CARDS = [
-  { id: "cabys",         icon: IC.search,   color: "blue",   title: "Asistente CABYS",        desc: "Encontrá el código correcto para tus productos y servicios" },
-  { id: "contribuyente", icon: IC.user,     color: "green",  title: "Verificar Contribuyente", desc: "Estado fiscal, régimen y actividades económicas de cualquier contribuyente" },
-  { id: "cedulas",       icon: IC.id,       color: "amber",  title: "Búsqueda de Cédulas",     desc: "Personas físicas y jurídicas registradas en el TSE" },
-  { id: "tipocambio",    icon: IC.currency, color: "slate",  title: "Tipo de Cambio",          desc: "BCCR en tiempo real, histórico y conversor USD/CRC" },
-  { id: "factura",       icon: IC.receipt,  color: "violet", title: "Factura Electrónica",      desc: "Validá si un comprobante fue aceptado o rechazado por Hacienda" },
+  { id: "cabys",          icon: IC.search,   color: "blue",    title: "Asistente CABYS",        desc: "Encontrá el código correcto para tus productos y servicios" },
+  { id: "contribuyente",  icon: IC.user,     color: "green",   title: "Verificar Contribuyente", desc: "Estado fiscal, régimen y actividades económicas de cualquier contribuyente" },
+  { id: "cedulas",        icon: IC.id,       color: "amber",   title: "Búsqueda de Cédulas",     desc: "Personas físicas y jurídicas registradas en el TSE" },
+  { id: "tipocambio",     icon: IC.currency, color: "slate",   title: "Tipo de Cambio",          desc: "BCCR en tiempo real, histórico y conversor USD/CRC" },
+  { id: "factura",        icon: IC.receipt,  color: "violet",  title: "Factura Electrónica",     desc: "Validá si un comprobante fue aceptado o rechazado por Hacienda" },
+  { id: "exoneraciones",  icon: IC.shield,   color: "purple",  title: "Exoneraciones",           desc: "Verificá si una entidad tiene exoneración de impuestos en Hacienda" },
 ]
 
 /* ─── CABYS suggested searches ─── */
@@ -229,82 +390,263 @@ function SortableTH({ col, sort, onSort, children, right }) {
   )
 }
 
-/* ─── CABYS result card (recommendation format) ─── */
-function CabysCard({ item, fl, flash }) {
-  const id = `cabys-${item.codigo}`
+/* ─── CABYS result card (enriched) ─── */
+function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
+  const isFav = favs?.some(f => f.codigo === item.codigo)
+  const idCode = `cc-${item.codigo}`, idDesc = `cd-${item.codigo}`, idBoth = `cb-${item.codigo}`
   return (
-    <div className="cabysCard">
-      <div className="cabysCardCode">{item.codigo}</div>
+    <div className={`cabysCard${isFav ? " cabysCardFav" : ""}`}>
+      <div className="cabysCardHead">
+        <span className="cabysCardCode">{item.codigo}</span>
+        <div className="cabysCardHeadRight">
+          {score != null && score > 0 && (
+            <span className={`scoreBar score${score >= 80 ? "Hi" : score >= 50 ? "Mid" : "Lo"}`}>
+              {score}%
+            </span>
+          )}
+          <button className={`favBtn${isFav ? " favBtnOn" : ""}`} type="button"
+            title={isFav ? "Quitar favorito" : "Guardar favorito"}
+            onClick={() => onToggleFav(item)}>
+            {isFav ? IC.star : IC.starOff}
+          </button>
+        </div>
+      </div>
       <div className="cabysCardName">{item.descripcion}</div>
       <div className="cabysCardFoot">
-        <span className={`taxBadgeV2 ${taxClass(item.impuesto)}`}>{item.impuesto}%</span>
-        <button className={`btn btnGhost btnSm${fl === id ? " btnFlashed" : ""}`} type="button"
-          onClick={() => flash(id, String(item.codigo))}>
-          {fl === id ? "✓ Copiado" : "Copiar código"}
-        </button>
+        <span className={`taxBadgeV2 ${taxClass(item.impuesto)}`}>{item.impuesto}% IVA</span>
+        <div className="cabysCardCopyGroup">
+          <button className={`copyBtn${fl === idCode ? " copied" : ""}`} type="button"
+            title="Copiar código" onClick={() => flash(idCode, String(item.codigo))}>
+            {fl === idCode ? "✓" : "# Código"}
+          </button>
+          <button className={`copyBtn${fl === idDesc ? " copied" : ""}`} type="button"
+            title="Copiar descripción" onClick={() => flash(idDesc, item.descripcion)}>
+            {fl === idDesc ? "✓" : "T Descripción"}
+          </button>
+          <button className={`copyBtn copyBtnBoth${fl === idBoth ? " copied" : ""}`} type="button"
+            title="Copiar código y descripción"
+            onClick={() => flash(idBoth, `${item.codigo} — ${item.descripcion}`)}>
+            {fl === idBoth ? "✓ Copiado" : "Copiar ambos"}
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
-/* ─── Ficha de Contribuyente ─── */
-function FichaContribuyente({ data, aeJsonId, onBuscarCabys, fl, flash, aeResumen, aeActCsv, downloadActs }) {
-  const sit = data?.situacion || {}
-  const initials = nameInitials(data.nombre)
+/* ─── Command Palette ─── */
+function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consultarCabysRef, setAeId, consultarAE, setCedQ, consultarCed }) {
+  const [q, setQ] = useState("")
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (open) { setQ(""); setTimeout(() => inputRef.current?.focus(), 30) }
+  }, [open])
+
+  const actions = [
+    { id:"cabys",         icon: IC.search,   label: "Asistente CABYS",         desc: "Buscá códigos por actividad o producto" },
+    { id:"contribuyente", icon: IC.user,     label: "Verificar Contribuyente",  desc: "Estado fiscal y actividades económicas" },
+    { id:"cedulas",       icon: IC.id,       label: "Búsqueda de Cédulas TSE",  desc: "Personas físicas y jurídicas" },
+    { id:"tipocambio",    icon: IC.currency, label: "Tipo de Cambio",           desc: "USD/CRC en tiempo real" },
+    { id:"factura",       icon: IC.receipt,  label: "Validar Factura",          desc: "Verificá si fue aceptada por Hacienda" },
+    { id:"exoneraciones", icon: IC.shield,   label: "Exoneraciones",            desc: "Verificá exoneraciones de impuestos" },
+  ]
+
+  const isLikelyCedula = (s) => /^\d{9,11}$/.test(s.replace(/[-\s]/g,""))
+  const isLikelyFe     = (s) => /^\d{30,50}$/.test(s.replace(/\s/g,""))
+
+  const smartActions = useMemo(() => {
+    const t = q.trim()
+    if (!t) return []
+    const results = []
+    if (isLikelyCedula(t)) {
+      results.push({ type:"smart", icon: IC.user,   label: `Consultar contribuyente: ${t}`, action: () => { setAeId(t); navigate("contribuyente"); setTimeout(() => consultarAE(t), 50) } })
+      results.push({ type:"smart", icon: IC.id,     label: `Buscar cédula TSE: ${t}`,       action: () => { setCedQ(t); navigate("cedulas");        setTimeout(() => consultarCed(t), 50) } })
+    } else if (isLikelyFe(t)) {
+      results.push({ type:"smart", icon: IC.receipt, label: `Validar factura electrónica`, action: () => navigate("factura") })
+    } else {
+      results.push({ type:"smart", icon: IC.search,  label: `Buscar CABYS: "${t}"`, action: () => { navigate("cabys"); setTimeout(() => { setCabysQ(t); consultarCabysRef.current?.({ reset:true, q:t }) }, 50) } })
+    }
+    return results
+  }, [q])
+
+  const filteredActions = useMemo(() => {
+    if (!q.trim()) return actions
+    const low = q.toLowerCase()
+    return actions.filter(a => a.label.toLowerCase().includes(low) || a.desc.toLowerCase().includes(low))
+  }, [q])
+
+  const recentItems = useMemo(() => {
+    if (!activities?.length) return []
+    return activities.slice(0, 5)
+  }, [activities])
+
+  const handleAction = (fn) => { fn(); onClose() }
+
+  if (!open) return null
   return (
-    <div className="fichaWrap">
-      <div className="fichaHeader">
-        <div className="fichaAvatarBox">{initials}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="fichaName">{data.nombre}</div>
-          <div className="fichaMeta">
-            <span className="mono">{aeJsonId}</span>
-            {data.regimen?.descripcion && <> · {data.regimen.descripcion}</>}
-          </div>
-          <div className="fichaStatusRow">
-            <ChipStatus label="Estado" value={sit.estado} />
-            <ChipStatus label="Moroso" value={sit.moroso} />
-            <ChipStatus label="Omiso"  value={sit.omiso} />
-            {sit.administracionTributaria && <span className="chip">AT: {sit.administracionTributaria}</span>}
+    <div className="cmdOverlay" onClick={onClose}>
+      <div className="cmdModal" onClick={e => e.stopPropagation()}>
+        <div className="cmdSearch">
+          <span className="cmdSearchIcon">{IC.search}</span>
+          <input ref={inputRef} className="cmdInput" value={q}
+            placeholder="Buscar empresa, CABYS, factura…"
+            onChange={e => setQ(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Escape") onClose()
+              if (e.key === "Enter" && smartActions.length) handleAction(smartActions[0].action)
+            }} />
+          <button className="cmdClose" type="button" onClick={onClose}>{IC.x}</button>
+        </div>
+
+        <div className="cmdBody">
+          {smartActions.length > 0 && (
+            <div className="cmdSection">
+              <div className="cmdSectionLabel">Acción directa</div>
+              {smartActions.map((a, i) => (
+                <button key={i} className="cmdItem cmdItemSmart" type="button" onClick={() => handleAction(a.action)}>
+                  <span className="cmdItemIcon">{a.icon}</span>
+                  <span className="cmdItemLabel">{a.label}</span>
+                  <span className="cmdItemHint">{IC.arrowRight}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {filteredActions.length > 0 && (
+            <div className="cmdSection">
+              <div className="cmdSectionLabel">{q.trim() ? "Herramientas" : "Acciones rápidas"}</div>
+              {filteredActions.map(a => (
+                <button key={a.id} className="cmdItem" type="button" onClick={() => handleAction(() => navigate(a.id))}>
+                  <span className="cmdItemIcon">{a.icon}</span>
+                  <div className="cmdItemText">
+                    <span className="cmdItemLabel">{a.label}</span>
+                    <span className="cmdItemDesc">{a.desc}</span>
+                  </div>
+                  <span className="cmdItemHint">{IC.arrowRight}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!q.trim() && recentItems.length > 0 && (
+            <div className="cmdSection">
+              <div className="cmdSectionLabel">Recientes</div>
+              {recentItems.map((a, i) => (
+                <button key={i} className="cmdItem" type="button" onClick={() => handleAction(() => {
+                  if (a.type === "cabys") { setCabysQ(a.q); navigate("cabys"); setTimeout(() => consultarCabysRef.current?.({ reset:true, q:a.q }), 50) }
+                  else if (a.type === "contribuyente") { setAeId(a.q); navigate("contribuyente"); setTimeout(() => consultarAE(a.q), 50) }
+                  else if (a.type === "cedulas") { setCedQ(a.q); navigate("cedulas"); setTimeout(() => consultarCed(a.q), 50) }
+                  else navigate(a.type)
+                })}>
+                  <span className="cmdItemIcon">{ACT_ICONS[a.type] || IC.search}</span>
+                  <div className="cmdItemText">
+                    <span className="cmdItemLabel">{a.q}</span>
+                    <span className="cmdItemDesc">{ACT_LABELS[a.type]} · {relTime(a.ts)}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="cmdFooter">
+          <span><kbd>↵</kbd> ejecutar</span>
+          <span><kbd>Esc</kbd> cerrar</span>
+          <span><kbd>⌘K</kbd> abrir</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Ficha CRM de Contribuyente ─── */
+function FichaContribuyente({ data, aeJsonId, onBuscarCabys, fl, flash, aeResumen, aeActCsv, downloadActs }) {
+  const sit  = data?.situacion || {}
+  const initials = nameInitials(data.nombre)
+  const digits   = onlyDigits(String(aeJsonId || ""))
+  const personType = digits.length === 9 ? "Física" : digits.length === 10 ? "Jurídica" : digits.length === 11 ? "DIMEX/NITE" : "—"
+  const avatarColor = digits.length === 9 ? "avatarBlue" : digits.length === 10 ? "avatarGreen" : "avatarAmber"
+  const estadoOk = (sit.estado || "").toUpperCase() === "INSCRITO"
+  const moroso   = (sit.moroso || "NO").toUpperCase() !== "NO"
+  const omiso    = (sit.omiso  || "NO").toUpperCase() !== "NO"
+
+  return (
+    <div className="crmCard">
+      {/* Header perfil */}
+      <div className="crmHeader">
+        <div className={`crmAvatar ${avatarColor}`}>{initials}</div>
+        <div className="crmHeaderInfo">
+          <div className="crmName">{data.nombre}</div>
+          <div className="crmMeta">
+            <span className="crmMetaChip">{personType}</span>
+            <span className="mono" style={{ color: "var(--muted)", fontSize: 13 }}>{aeJsonId}</span>
+            {data.regimen?.descripcion && <span className="crmMetaChip crmMetaChipGray">{data.regimen.descripcion}</span>}
           </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+        <div className="crmHeaderActions">
+          <span className={`crmEstadoBadge ${estadoOk ? "crmEstadoOk" : "crmEstadoBad"}`}>
+            {sit.estado || "—"}
+          </span>
           <a href="https://ovitribucr.hacienda.go.cr/ConsultaPublica/" target="_blank" rel="noopener noreferrer"
-            className="btn btnGhost btnSm" style={{ fontSize: 12 }}>
-            {IC.external} Hacienda
-          </a>
+            className="btn btnGhost btnSm">{IC.external}</a>
         </div>
       </div>
 
-      <div className="fichaBody">
-        {/* Actividades económicas */}
-        {data.actividades?.length > 0 && (
-          <div className="fichaSection">
-            <div className="fichaSectionTitle">Actividades económicas</div>
-            {data.actividades.map(a => (
-              <div key={`${a.codigo}-${a.tipo}`} className="fichaActRow">
-                <span className="fichaActCode">{a.codigo}</span>
-                <span className="fichaActName">{a.descripcion}</span>
-                <div className="fichaActBadges">
-                  <span className={`estadoBadge${a.estado === "A" ? " activa" : " inactiva"}`}>{a.estado === "A" ? "Activa" : "Inactiva"}</span>
-                  <span className={`estadoBadge${a.tipo === "P" ? " activa" : " inactiva"}`}>{a.tipo === "P" ? "Principal" : "Secundaria"}</span>
-                  <button type="button" className="fichaActCabys" onClick={() => onBuscarCabys(a.descripcion)}>
-                    Buscar CABYS →
-                  </button>
+      {/* Situación tributaria */}
+      <div className="crmSection">
+        <div className="crmSectionTitle">Situación tributaria</div>
+        <div className="crmTaxGrid">
+          <div className="crmTaxItem">
+            <div className="crmTaxLabel">Moroso</div>
+            <div className={`crmTaxVal ${moroso ? "crmTaxBad" : "crmTaxOk"}`}>{sit.moroso || "No"}</div>
+          </div>
+          <div className="crmTaxItem">
+            <div className="crmTaxLabel">Omiso</div>
+            <div className={`crmTaxVal ${omiso ? "crmTaxBad" : "crmTaxOk"}`}>{sit.omiso || "No"}</div>
+          </div>
+          {sit.administracionTributaria && (
+            <div className="crmTaxItem">
+              <div className="crmTaxLabel">Administración Tributaria</div>
+              <div className="crmTaxVal">{sit.administracionTributaria}</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Actividades económicas */}
+      {data.actividades?.length > 0 && (
+        <div className="crmSection">
+          <div className="crmSectionTitle">Actividades económicas <span className="crmCount">{data.actividades.length}</span></div>
+          {data.actividades.map(a => (
+            <div key={`${a.codigo}-${a.tipo}`} className="crmActRow">
+              <div className="crmActLeft">
+                <span className="crmActCode">{a.codigo}</span>
+                <div>
+                  <div className="crmActName">{a.descripcion}</div>
+                  <div className="crmActBadges">
+                    <span className={`crmBadge ${a.tipo === "P" ? "crmBadgePrimary" : "crmBadgeSecondary"}`}>
+                      {a.tipo === "P" ? "Principal" : "Secundaria"}
+                    </span>
+                    <span className={`crmBadge ${a.estado === "A" ? "crmBadgeOk" : "crmBadgeOff"}`}>
+                      {a.estado === "A" ? "Activa" : "Inactiva"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <button type="button" className="crmCabysBtn" onClick={() => onBuscarCabys(a.descripcion)}>
+                Buscar CABYS {IC.arrowRight}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Actions */}
-      <div style={{ padding: "14px 24px", borderTop: "1px solid var(--border)", display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {/* Footer acciones */}
+      <div className="crmFooter">
         <CopyBtn id="ae-res" label="Copiar resumen" fl={fl} flash={flash} getText={aeResumen} disabled={false} />
         <CopyBtn id="ae-csv" label="Copiar CSV" fl={fl} flash={flash} getText={aeActCsv} disabled={!data?.actividades?.length} />
-        <button className="btn btnGhost" onClick={downloadActs} disabled={!data?.actividades?.length} type="button">
-          Descargar XLSX
-        </button>
+        <button className="btn btnGhost" onClick={downloadActs} disabled={!data?.actividades?.length} type="button">Descargar XLSX</button>
       </div>
     </div>
   )
@@ -314,12 +656,20 @@ function FichaContribuyente({ data, aeJsonId, onBuscarCabys, fl, flash, aeResume
    NAV CONFIG
 ───────────────────────────────────────────── */
 const NAV = [
-  { id: "home",          icon: IC.dashboard, label: "Inicio" },
-  { id: "cabys",         icon: IC.search,    label: "Asistente CABYS" },
-  { id: "contribuyente", icon: IC.user,      label: "Contribuyente" },
-  { id: "cedulas",       icon: IC.id,        label: "Cédulas TSE" },
-  { id: "tipocambio",    icon: IC.currency,  label: "Tipo de Cambio" },
-  { id: "factura",       icon: IC.receipt,   label: "Factura Electrónica" },
+  { id: "home",           icon: IC.dashboard, label: "Inicio" },
+  { id: "cabys",          icon: IC.search,    label: "Asistente CABYS" },
+  { id: "contribuyente",  icon: IC.user,      label: "Contribuyente" },
+  { id: "cedulas",        icon: IC.id,        label: "Cédulas TSE" },
+  { id: "tipocambio",     icon: IC.currency,  label: "Tipo de Cambio" },
+  { id: "factura",        icon: IC.receipt,   label: "Factura Electrónica" },
+  { id: "exoneraciones",  icon: IC.shield,    label: "Exoneraciones" },
+]
+const NAV_MAP = Object.fromEntries(NAV.map(n => [n.id, n]))
+const NAV_GROUPS = [
+  { items: ["home", "cabys"] },
+  { label: "Consultas",  items: ["contribuyente", "cedulas"] },
+  { label: "Finanzas",   items: ["tipocambio", "factura"] },
+  { label: "Tributario", items: ["exoneraciones"] },
 ]
 
 /* ═════════════════════════════════════════════
@@ -332,8 +682,30 @@ export default function App() {
   const [activities,    setActivities]    = useState(() => loadActs())
   const [searchQ,       setSearchQ]       = useState("")
   const [searchFocus,   setSearchFocus]   = useState(false)
+  const [cmdOpen,       setCmdOpen]       = useState(false)
+  const [cabysF_avs,    setCabysF_avs]    = useState(() => loadFavs())
+  const [cabysAeMatch,  setCabysAeMatch]  = useState(null)
 
-  const navigate = (id) => { setPage(id); setSideOpen(false); setSearchQ(""); setSearchFocus(false) }
+  const navigate = (id) => { setPage(id); setSideOpen(false); setSearchQ(""); setSearchFocus(false); setCmdOpen(false) }
+
+  /* ─── ⌘K / Ctrl+K ─── */
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setCmdOpen(o => !o) }
+      if (e.key === "Escape") setCmdOpen(false)
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [])
+
+  /* ─── Toggle favorito CABYS ─── */
+  const toggleFav = useCallback((item) => {
+    setCabysF_avs(prev => {
+      const exists = prev.some(f => f.codigo === item.codigo)
+      const next = exists ? prev.filter(f => f.codigo !== item.codigo) : [item, ...prev]
+      saveFavs(next); return next
+    })
+  }, [])
 
   const logActivity = useCallback((type, q) => {
     appendAct(type, q)
@@ -447,12 +819,17 @@ export default function App() {
   const [cabysHist,     setCabysHist]     = useState(() => loadH("ht_cabys"))
   const [cabysSort,     setCabysSort]     = useState({ col: null, dir: "asc" })
   const [cabysView,     setCabysView]     = useState("cards") // "cards" | "table"
+  const [cabysNorm,     setCabysNorm]     = useState("")      // query normalizada (con tildes)
+  const [cabysMode,     setCabysMode]     = useState("libre") // "libre" | "ae"
+  const [aeDesc,        setAeDesc]        = useState("")      // descripción actividad económica
 
   const cabysQ_  = useMemo(() => cabysQ.trim(), [cabysQ])
   const pageSize = useMemo(() => { const n = Number(cabysTop); return Number.isFinite(n) && n > 0 ? Math.min(50, Math.max(6, n)) : 12 }, [cabysTop])
 
   const consultarCabys = useCallback(async ({ reset = false, q: qOv } = {}) => {
-    const q = (qOv ?? cabysQ_).trim(); if (!q) return
+    const rawQ = (qOv ?? cabysQ_).trim(); if (!rawQ) return
+    const q = restoreAccents(rawQ)
+    setCabysNorm(q !== rawQ ? q : "")
     if (reset) setCabysPage(0)
     setCabysLoading(true); setCabysError(""); setCabysSearched(true)
     try {
@@ -461,10 +838,21 @@ export default function App() {
       const res = await fetch(`/hacienda/fe/cabys?q=${encodeURIComponent(q)}&top=${top}`, { cache: "no-store" })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json(); setCabysData(json.cabys || [])
-      if (reset) { saveH("ht_cabys", q); setCabysHist(loadH("ht_cabys")); setCabysPage(0); logActivity("cabys", q) }
+      if (reset) { saveH("ht_cabys", rawQ); setCabysHist(loadH("ht_cabys")); setCabysPage(0); logActivity("cabys", rawQ) }
     } catch (e) { setCabysData([]); setCabysError(e?.message || "Error") }
     finally { setCabysLoading(false) }
   }, [cabysQ_, cabysPage, pageSize, logActivity])
+
+  const consultarCabysAe = useCallback(() => {
+    const ae = matchAe(aeDesc)
+    const terms = ae ? ae.q : extractAeTerms(aeDesc)
+    if (!terms) return
+    const normalized = restoreAccents(terms)
+    setCabysAeMatch(ae || null)
+    setCabysQ(normalized)
+    setCabysMode("libre")
+    consultarCabysRef.current?.({ reset: true, q: normalized })
+  }, [aeDesc])
 
   useEffect(() => { consultarCabysRef.current = consultarCabys }, [consultarCabys])
 
@@ -608,12 +996,41 @@ export default function App() {
     ].filter(Boolean).join("\n")
   }
 
+  /* ─── EXONERACIONES ─── */
+  const [exoQ,       setExoQ]       = useState("")
+  const [exoTipo,    setExoTipo]    = useState("01") // 01=física, 02=jurídica, 03=DIMEX, 04=NITE
+  const [exoData,    setExoData]    = useState(null)
+  const [exoLoading, setExoLoading] = useState(false)
+  const [exoError,   setExoError]   = useState("")
+  const [exoSearched,setExoSearched]= useState(false)
+
+  const consultarExo = useCallback(async () => {
+    const num = onlyDigits(exoQ); if (!num) return
+    setExoLoading(true); setExoError(""); setExoSearched(true); setExoData(null)
+    try {
+      const res = await fetch(`/hacienda/fe/exoneraciones?tipoDocumento=${exoTipo}&numDocumento=${num}`, { cache: "no-store" })
+      if (res.status === 404) { setExoData([]); return }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json()
+      setExoData(Array.isArray(json) ? json : json.exoneraciones || json.data || [json])
+      logActivity("exoneraciones", num)
+    } catch (e) { setExoError(e?.message || "Error consultando exoneraciones") }
+    finally { setExoLoading(false) }
+  }, [exoQ, exoTipo, logActivity])
+
   /* ═══════════════════════════════════════════
      RENDER
   ═══════════════════════════════════════════ */
   return (
     <div className={`layout${sideCollapsed ? " sideCollapsed" : ""}`}>
       {sideOpen && <div className="sideOverlay" onClick={() => setSideOpen(false)} />}
+
+      {/* ── COMMAND PALETTE ── */}
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)}
+        activities={activities} navigate={navigate}
+        setCabysQ={setCabysQ} consultarCabysRef={consultarCabysRef}
+        setAeId={setAeId} consultarAE={consultarAE}
+        setCedQ={setCedQ} consultarCed={consultarCed} />
 
       {/* ── SIDEBAR ── */}
       <aside className={`sidebar${sideOpen ? " sideOpen" : ""}`}>
@@ -625,25 +1042,38 @@ export default function App() {
         </div>
 
         <nav className="sideNav">
-          <div className="navSection">Herramientas</div>
-          {NAV.map(n => (
-            <button key={n.id} type="button"
-              className={`navItem${page === n.id ? " navActive" : ""}`}
-              onClick={() => navigate(n.id)}>
-              <span className="navIcon">{n.icon}</span>
-              <span className="navLabel">{n.label}</span>
-            </button>
+          {NAV_GROUPS.map((g, gi) => (
+            <div key={gi} className="navGroup">
+              {g.label && <div className="navGroupLabel">{g.label}</div>}
+              {g.items.map(id => {
+                const n = NAV_MAP[id]; if (!n) return null
+                return (
+                  <button key={n.id} type="button"
+                    className={`navItem${page === n.id ? " navActive" : ""}`}
+                    title={n.label}
+                    onClick={() => navigate(n.id)}>
+                    <span className="navIcon">{n.icon}</span>
+                    <span className="navLabel">{n.label}</span>
+                  </button>
+                )
+              })}
+            </div>
           ))}
         </nav>
 
         <div className="sideBottom">
+          <button type="button" className="cmdTriggerBtn" onClick={() => setCmdOpen(true)}>
+            {IC.search}
+            <span className="cmdTriggerLabel">Búsqueda rápida</span>
+            <kbd className="cmdTriggerKbd">⌘K</kbd>
+          </button>
           <button type="button" className="sideCollapseBtn" onClick={() => setSideCollapsed(c => !c)}>
             {sideCollapsed ? IC.expandRight : IC.collapseLeft}
             <span className="collapseBtnLabel">Colapsar</span>
           </button>
           <div className={`apiPill${apiStatus == null ? "" : apiStatus.ok ? " apiPillOk" : " apiPillBad"}`}>
             <span className={`dot${apiStatus?.ok ? " ok" : apiStatus == null ? " loading" : " bad"}`} />
-            <span className="apiPillText">{apiStatus == null ? "Verificando…" : apiStatus.ok ? `Hacienda · ${apiStatus.ms}ms` : "Sin respuesta"}</span>
+            <span className="apiPillText">{apiStatus == null ? "…" : apiStatus.ok ? `Hacienda · ${apiStatus.ms}ms` : "Sin respuesta"}</span>
           </div>
         </div>
       </aside>
@@ -654,40 +1084,23 @@ export default function App() {
           <button className="menuBtn" type="button" onClick={() => setSideOpen(s => !s)}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M2 4.5h14M2 9h14M2 13.5h14"/></svg>
           </button>
+
           <div className="topbarBread">
             <span className="topbarApp">HaciendaKit</span>
             <span className="topbarSep">/</span>
-            <span className="topbarPage">{NAV.find(n => n.id === page)?.label}</span>
+            <span className="topbarPage">{NAV_MAP[page]?.label}</span>
           </div>
 
-          <div className="topbarSearchWrap">
-            <div className="topbarSearchInner">
-              <span className="topbarSearchIcon">{IC.search}</span>
-              <input className="topbarSearchInput" placeholder="Buscar herramienta…"
-                value={searchQ} onChange={e => setSearchQ(e.target.value)}
-                onFocus={() => setSearchFocus(true)}
-                onBlur={() => setTimeout(() => setSearchFocus(false), 150)} />
-              {searchFocus && (
-                <div className="topbarSearchResults">
-                  {searchResults.map(n => (
-                    <div key={n.id} className="searchResultItem" onMouseDown={() => navigate(n.id)}>
-                      <span className="srIcon">{n.icon}</span>
-                      <span className="srLabel">{n.label}</span>
-                      <span className="srMeta">↵</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Buscador tipo pill que abre Command Palette */}
+          <button type="button" className="topbarCmdBtn" onClick={() => setCmdOpen(true)}>
+            <span className="topbarCmdIcon">{IC.search}</span>
+            <span className="topbarCmdPlaceholder">Buscar…</span>
+            <kbd className="topbarCmdKbd">⌘K</kbd>
+          </button>
 
           <div className="topbarRight">
-            {apiStatus != null && (
-              <span className={`topbarBadge ${apiStatus.ok ? "topbarBadgeOk" : "topbarBadgeBad"}`}>
-                <span className={`dot${apiStatus.ok ? " ok" : " bad"}`} />
-                {apiStatus.ok ? "API OK" : "API Error"}
-              </span>
-            )}
+            <span className={`apiDot${apiStatus?.ok ? " apiDotOk" : apiStatus == null ? "" : " apiDotBad"}`}
+              title={apiStatus?.ok ? `Hacienda ${apiStatus.ms}ms` : "Sin respuesta"} />
             {fx && (
               <div className="topbarFx">
                 <span className="topbarFxLabel">USD</span>
@@ -699,59 +1112,65 @@ export default function App() {
 
         <main className="content">
 
-          {/* ══ INICIO — Hub ══ */}
+          {/* ══ INICIO — Spotlight ══ */}
           {page === "home" && (
-            <div className="hubWrap">
-              <div className="hubGreeting">
-                <div>
-                  <div className="hubTitle">{saludo()} 👋</div>
-                  <div className="hubSub">¿Con qué herramienta tributaria trabajás hoy?</div>
-                </div>
+            <div className="spotlightWrap">
+              <div className="spotlightHero">
+                <div className="spotlightGreeting">{saludo()}</div>
+                <h1 className="spotlightTitle">¿Qué deseas consultar?</h1>
+                <button type="button" className="spotlightSearchBox" onClick={() => setCmdOpen(true)}>
+                  <span className="spotlightSearchIcon">{IC.search}</span>
+                  <span className="spotlightSearchText">Buscá empresa, CABYS, factura electrónica…</span>
+                  <kbd className="spotlightKbd">⌘K</kbd>
+                </button>
                 {fx && (
-                  <div className="hubFxPill">
-                    <span className="hubFxLabel">USD</span>
-                    <span className="hubFxVal">Compra ₡{fx.compra.toLocaleString("es-CR")} · Venta ₡{fx.venta.toLocaleString("es-CR")}</span>
+                  <div className="spotlightFx">
+                    <span>USD · Compra <strong>₡{fx.compra.toLocaleString("es-CR")}</strong></span>
+                    <span className="spotlightFxSep">·</span>
+                    <span>Venta <strong>₡{fx.venta.toLocaleString("es-CR")}</strong></span>
                   </div>
                 )}
               </div>
 
-              <div className="hubGrid">
-                {HUB_CARDS.map(card => (
-                  <button key={card.id} type="button" className="hubCard" onClick={() => navigate(card.id)}>
-                    <div className={`hubCardIcon ${card.color}`}>{card.icon}</div>
-                    <div className="hubCardBody">
-                      <div className="hubCardTitle">{card.title}</div>
-                      <div className="hubCardDesc">{card.desc}</div>
+              <div className="spotlightQuickGrid">
+                {[
+                  { id:"cabys",        emoji:"⚡", label:"Asistente CABYS",    desc:"Encontrá el código correcto" },
+                  { id:"contribuyente",emoji:"🏢", label:"Verificar empresa",   desc:"Estado fiscal y actividades" },
+                  { id:"factura",      emoji:"📋", label:"Validar factura",     desc:"Comprobantes electrónicos" },
+                  { id:"tipocambio",   emoji:"💱", label:"Tipo de cambio",      desc:"USD/CRC del BCCR" },
+                ].map(q => (
+                  <button key={q.id} type="button" className="spotlightQuickBtn" onClick={() => navigate(q.id)}>
+                    <span className="spotlightQuickEmoji">{q.emoji}</span>
+                    <div>
+                      <div className="spotlightQuickLabel">{q.label}</div>
+                      <div className="spotlightQuickDesc">{q.desc}</div>
                     </div>
-                    <div className="hubCardArrow">{IC.chevronRight}</div>
+                    <span className="spotlightQuickArrow">{IC.arrowRight}</span>
                   </button>
                 ))}
               </div>
 
               {activities.length > 0 && (
-                <div className="hubRecentSection">
-                  <div className="hubRecentHeader">
-                    <div className="hubRecentTitle">Consultas recientes</div>
+                <div className="spotlightRecent">
+                  <div className="spotlightRecentHeader">
+                    <span className="spotlightRecentTitle">Recientes</span>
                     <button type="button" className="btn btnGhost btnSm"
-                      onClick={() => { localStorage.removeItem(ACT_KEY); setActivities([]) }}
-                      style={{ fontSize: 11 }}>Limpiar</button>
+                      onClick={() => { localStorage.removeItem(ACT_KEY); setActivities([]) }}>Limpiar</button>
                   </div>
-                  <div className="hubRecentList">
-                    {activities.slice(0, 6).map((a, i) => (
-                      <button key={i} type="button" className="hubRecentItem"
-                        onClick={() => {
-                          if (a.type === "cabys") { setCabysQ(a.q); navigate("cabys"); setTimeout(() => consultarCabys({ reset: true, q: a.q }), 50) }
-                          else if (a.type === "contribuyente") { setAeId(a.q); navigate("contribuyente"); setTimeout(() => consultarAE(a.q), 50) }
-                          else if (a.type === "cedulas") { setCedQ(a.q); navigate("cedulas"); setTimeout(() => consultarCed(a.q), 50) }
-                          else navigate(a.type)
-                        }}>
-                        <span className="hubRecentIcon">{ACT_ICONS[a.type] || IC.search}</span>
-                        <span className="hubRecentQuery">{a.q}</span>
-                        <span className="hubRecentTool">{ACT_LABELS[a.type] || a.type}</span>
-                        <span className="hubRecentTime">{relTime(a.ts)}</span>
-                      </button>
-                    ))}
-                  </div>
+                  {activities.slice(0, 5).map((a, i) => (
+                    <button key={i} type="button" className="spotlightRecentItem"
+                      onClick={() => {
+                        if (a.type === "cabys") { setCabysQ(a.q); navigate("cabys"); setTimeout(() => consultarCabys({ reset: true, q: a.q }), 50) }
+                        else if (a.type === "contribuyente") { setAeId(a.q); navigate("contribuyente"); setTimeout(() => consultarAE(a.q), 50) }
+                        else if (a.type === "cedulas") { setCedQ(a.q); navigate("cedulas"); setTimeout(() => consultarCed(a.q), 50) }
+                        else navigate(a.type)
+                      }}>
+                      <span className="spotlightRecentIcon">{ACT_ICONS[a.type] || IC.search}</span>
+                      <span className="spotlightRecentQ">{a.q}</span>
+                      <span className="spotlightRecentTool">{ACT_LABELS[a.type]}</span>
+                      <span className="spotlightRecentTime">{relTime(a.ts)}</span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -760,30 +1179,95 @@ export default function App() {
           {/* ══ ASISTENTE CABYS ══ */}
           {page === "cabys" && (
             <div className="pageWrap" style={{ maxWidth: 960 }}>
+              {/* Favoritos */}
+              {cabysF_avs.length > 0 && !cabysSearched && (
+                <div className="favSection">
+                  <div className="favSectionTitle">{IC.star} Favoritos guardados</div>
+                  <div className="cabysGrid">
+                    {cabysF_avs.map(item => (
+                      <CabysCard key={item.codigo} item={item} score={null}
+                        fl={fl} flash={flash} favs={cabysF_avs} onToggleFav={toggleFav} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="assistantHero">
                 <h1 className="assistantTitle">Asistente CABYS</h1>
                 <p className="assistantSub">Describí tu actividad, producto o giro de negocio</p>
-                <div className="assistantSearchWrap">
-                  <input className="assistantSearchInput" value={cabysQ}
-                    placeholder="Ej: vendo ropa en tienda, servicios contables, arroz blanco…"
-                    onChange={e => { setCabysQ(e.target.value); setCabysPage(0) }}
-                    onKeyDown={e => { if (e.key === "Enter") consultarCabys({ reset: true }) }} />
-                  <button className="assistantSearchBtn" onClick={() => consultarCabys({ reset: true })}
-                    disabled={!cabysQ_.length || cabysLoading} type="button">
-                    {cabysLoading ? "Buscando…" : "Buscar"}
+
+                {/* Modo selector */}
+                <div className="cabysModeRow">
+                  <button type="button"
+                    className={`cabysModeBtn${cabysMode === "libre" ? " active" : ""}`}
+                    onClick={() => setCabysMode("libre")}>
+                    🔍 Búsqueda libre
+                  </button>
+                  <button type="button"
+                    className={`cabysModeBtn${cabysMode === "ae" ? " active" : ""}`}
+                    onClick={() => setCabysMode("ae")}>
+                    🏢 Mi actividad económica
                   </button>
                 </div>
-                <div className="quickChipsRow">
-                  {CABYS_SUGERENCIAS.map(s => (
-                    <button key={s.q} type="button" className="quickChip"
-                      onClick={() => { setCabysQ(s.q); setCabysPage(0); consultarCabys({ reset: true, q: s.q }) }}>
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
+
+                {cabysMode === "libre" ? (
+                  <>
+                    <div className="assistantSearchWrap">
+                      <input className="assistantSearchInput" value={cabysQ}
+                        placeholder="Ej: vendo ropa en tienda, servicios contables, arroz blanco…"
+                        onChange={e => { setCabysQ(e.target.value); setCabysPage(0) }}
+                        onKeyDown={e => { if (e.key === "Enter") consultarCabys({ reset: true }) }} />
+                      <button className="assistantSearchBtn" onClick={() => consultarCabys({ reset: true })}
+                        disabled={!cabysQ_.length || cabysLoading} type="button">
+                        {cabysLoading ? "Buscando…" : "Buscar"}
+                      </button>
+                    </div>
+                    <div className="quickChipsRow">
+                      {CABYS_SUGERENCIAS.map(s => (
+                        <button key={s.q} type="button" className="quickChip"
+                          onClick={() => { setCabysQ(s.q); setCabysPage(0); consultarCabys({ reset: true, q: s.q }) }}>
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="aeSearchBlock">
+                    <p className="aeSearchHint">Escribí la descripción de tu actividad económica tal como aparece en Hacienda — el sistema extraerá los términos clave y buscará los códigos CABYS más relevantes.</p>
+                    <div className="assistantSearchWrap">
+                      <input className="assistantSearchInput" value={aeDesc}
+                        placeholder="Ej: Actividades de restaurantes y de servicio móvil de comidas"
+                        onChange={e => setAeDesc(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") consultarCabysAe() }} />
+                      <button className="assistantSearchBtn" onClick={consultarCabysAe}
+                        disabled={!aeDesc.trim() || cabysLoading} type="button">
+                        {cabysLoading ? "Buscando…" : "Sugerir CABYS"}
+                      </button>
+                    </div>
+                    {aeDesc.trim() && (
+                      <p className="aeTermsPreview">
+                        Términos clave: <strong>{extractAeTerms(aeDesc) || "—"}</strong>
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <HistoryRow items={cabysHist} onSelect={h => { setCabysQ(h); setCabysPage(0); consultarCabys({ reset: true, q: h }) }} />
+
+              {cabysNorm && (
+                <div className="cabysNormHint">
+                  {IC.search} Buscando con tildes: <strong>{cabysNorm}</strong>
+                </div>
+              )}
+
+              {cabysAeMatch && cabysSearched && (
+                <div className="aeMatchBanner">
+                  <span className="aeMatchLabel">AE relacionada:</span>
+                  <span className="aeMatchCiiu">{cabysAeMatch.ciiu}</span>
+                  <span className="aeMatchName">{cabysAeMatch.label}</span>
+                </div>
+              )}
 
               {cabysError && <div className="alertBox" style={{ marginTop: 16 }}>{IC.warning} {cabysError}</div>}
               {cabysSearched && !cabysLoading && !cabysError && !cabysTotal && (
@@ -794,7 +1278,7 @@ export default function App() {
                 <>
                   <div className="resultsHeader" style={{ marginTop: 20 }}>
                     <span className="resultsHeaderText">
-                      <strong>{cabysTotal}</strong> resultado{cabysTotal !== 1 ? "s" : ""} para "<strong>{cabysQ_}</strong>"
+                      <strong>{cabysTotal}</strong> resultado{cabysTotal !== 1 ? "s" : ""} para "<strong>{cabysNorm || cabysQ_}</strong>"
                     </span>
                     <div className="resultsHeaderActions">
                       <div className="viewModeToggle">
@@ -817,7 +1301,9 @@ export default function App() {
                   {cabysView === "cards" ? (
                     <div className="cabysGrid">
                       {cabysRows.map(c => (
-                        <CabysCard key={c.codigo} item={c} fl={fl} flash={flash} />
+                        <CabysCard key={c.codigo} item={c}
+                          score={cabysQ_ ? scoreMatch(cabysNorm || cabysQ_, c.descripcion) : null}
+                          fl={fl} flash={flash} favs={cabysF_avs} onToggleFav={toggleFav} />
                       ))}
                     </div>
                   ) : (
@@ -1118,6 +1604,72 @@ export default function App() {
                   <div className="infoTitle">¿Cómo encontrar la clave?</div>
                   <div className="infoText">La clave de 50 dígitos aparece en el PDF de tu factura bajo "Clave" o "Número de clave".</div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ══ EXONERACIONES ══ */}
+          {page === "exoneraciones" && (
+            <div className="pageWrap" style={{ maxWidth: 760 }}>
+              <PageHeader icon={IC.shield} title="Exoneraciones" subtitle="Verificá si una entidad tiene exoneración de impuestos registrada en Hacienda" />
+
+              <div className="toolCard">
+                <div className="toolRow">
+                  <div className="toolField" style={{ flex: "0 0 160px" }}>
+                    <label className="lbl">Tipo de documento</label>
+                    <select className="inp" value={exoTipo} onChange={e => setExoTipo(e.target.value)}>
+                      <option value="01">Cédula física (01)</option>
+                      <option value="02">Cédula jurídica (02)</option>
+                      <option value="03">DIMEX (03)</option>
+                      <option value="04">NITE (04)</option>
+                    </select>
+                  </div>
+                  <div className="toolField" style={{ flex: 1 }}>
+                    <label className="lbl">Número de documento</label>
+                    <input className="inp mono" value={exoQ} placeholder="Ej: 106780456"
+                      onChange={e => setExoQ(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") consultarExo() }} />
+                  </div>
+                </div>
+                <div className="toolActions">
+                  <button className="btn btnPrimary" onClick={consultarExo}
+                    disabled={!onlyDigits(exoQ).length || exoLoading} type="button">
+                    {exoLoading ? "Consultando…" : "Verificar exoneraciones"}
+                  </button>
+                </div>
+
+                {exoError && <div className="alertBox" style={{ marginTop: 16 }}>{IC.warning} {exoError}</div>}
+
+                {exoSearched && !exoLoading && !exoError && exoData !== null && exoData.length === 0 && (
+                  <div className="exoEmpty">
+                    <div className="exoEmptyIcon">{IC.shield}</div>
+                    <div className="exoEmptyTitle">Sin exoneraciones registradas</div>
+                    <div className="exoEmptyDesc">Este contribuyente no tiene exoneraciones activas en Hacienda.</div>
+                  </div>
+                )}
+
+                {exoData && exoData.length > 0 && (
+                  <div className="exoResults">
+                    <div className="exoResultsTitle">{exoData.length} exoneración{exoData.length !== 1 ? "es" : ""} encontrada{exoData.length !== 1 ? "s" : ""}</div>
+                    {exoData.map((ex, i) => (
+                      <div key={i} className="exoCard">
+                        {ex.nombreContribuyente && <div className="exoCardName">{ex.nombreContribuyente}</div>}
+                        <div className="exoCardGrid">
+                          {ex.tipoExoneracion  && <div className="exoField"><span className="lbl">Tipo</span><span>{ex.tipoExoneracion}</span></div>}
+                          {ex.porcentajeExoneracion != null && <div className="exoField"><span className="lbl">Porcentaje</span><span className="exoBadge">{ex.porcentajeExoneracion}%</span></div>}
+                          {ex.fechaInicio       && <div className="exoField"><span className="lbl">Inicio</span><span>{ex.fechaInicio}</span></div>}
+                          {ex.fechaFin          && <div className="exoField"><span className="lbl">Vencimiento</span><span>{ex.fechaFin}</span></div>}
+                          {ex.estado            && <div className="exoField"><span className="lbl">Estado</span><span className={`exoEstadoBadge ${(ex.estado||"").toUpperCase() === "ACTIVO" ? "exoActivo" : "exoInactivo"}`}>{ex.estado}</span></div>}
+                          {ex.numDocumento      && <div className="exoField"><span className="lbl">Documento</span><span className="mono">{ex.numDocumento}</span></div>}
+                        </div>
+                        {/* Mostrar campos adicionales no mapeados */}
+                        {Object.keys(ex).filter(k => !["nombreContribuyente","tipoExoneracion","porcentajeExoneracion","fechaInicio","fechaFin","estado","numDocumento"].includes(k)).map(k => (
+                          <div key={k} className="exoField"><span className="lbl">{k}</span><span>{String(ex[k])}</span></div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
