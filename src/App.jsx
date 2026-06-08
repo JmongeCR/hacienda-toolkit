@@ -775,26 +775,47 @@ export default function App() {
     return () => clearInterval(t)
   }, [fetchFx])
 
-  /* ─── CONVERSOR TRIPLE ─── */
-  const [convField, setConvField] = useState("usd")
-  const [convInput, setConvInput] = useState("")
-  const convCalc = useMemo(() => {
-    if (!fx) return {}
-    const raw = convInput === "" ? "" : parseFloat(convInput.replace(/,/g, ""))
-    if (convInput === "" || isNaN(raw) || raw < 0) return {}
-    const n = raw
+  /* ─── CONVERSOR WISE ─── */
+  const [convFrom,   setConvFrom]   = useState("usd")
+  const [convTo,     setConvTo]     = useState("crc")
+  const [convAmount, setConvAmount] = useState("")
+  const convResult = useMemo(() => {
+    const n = convAmount === "" ? NaN : parseFloat(convAmount)
+    if (!fx || isNaN(n) || n < 0) return null
     const eurRate = fxEur?.colones ?? null
-    if (convField === "usd") {
-      const crc = n * fx.venta
-      return { usd: n, crc, eur: eurRate ? crc / eurRate : null }
-    }
-    if (convField === "eur") {
-      const crc = eurRate ? n * eurRate : null
-      return { eur: n, crc, usd: crc != null ? crc / fx.venta : null }
-    }
-    // crc
-    return { crc: n, usd: n / fx.venta, eur: eurRate ? n / eurRate : null }
-  }, [fx, fxEur, convField, convInput])
+    const toCrc = (id, a) => id === "crc" ? a : id === "usd" ? a * fx.venta : eurRate ? a * eurRate : null
+    const fromCrc = (id, c) => id === "crc" ? c : id === "usd" ? c / fx.venta : eurRate ? c / eurRate : null
+    const crc = toCrc(convFrom, n)
+    if (crc == null) return null
+    const thirdId = ["crc","usd","eur"].find(c => c !== convFrom && c !== convTo)
+    return { to: fromCrc(convTo, crc), third: thirdId ? fromCrc(thirdId, crc) : null, thirdId }
+  }, [fx, fxEur, convFrom, convTo, convAmount])
+
+  /* ─── HISTORIAL BCCR ─── */
+  const [tcHistory,     setTcHistory]     = useState([])
+  const [tcHistLoading, setTcHistLoading] = useState(false)
+  const fetchTcHistory = useCallback(async () => {
+    setTcHistLoading(true)
+    try {
+      const fmtD = d => `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`
+      const end = new Date(); const start = new Date(); start.setDate(start.getDate() - 45)
+      const base = `/bccr/Indicadores/Suscripciones/WS/wsindicadoreseconomicos.asmx/ObtenerIndicadoresEconomicos`
+      const p = ind => `?Indicador=${ind}&FechaInicio=${fmtD(start)}&FechaFinal=${fmtD(end)}&Nombre=ht&SubNiveles=N&CorreoElectronico=no@no.com&Token=NONE`
+      const [rC, rV] = await Promise.all([fetch(base + p(317), { cache: "no-store" }), fetch(base + p(318), { cache: "no-store" })])
+      const [tC, tV] = await Promise.all([rC.text(), rV.text()])
+      const parseHist = xml => [...xml.matchAll(/<DES_FECHA>([\d/]+)<\/DES_FECHA>[\s\S]*?<NUM_VALOR>([\d.,]+)<\/NUM_VALOR>/g)]
+        .map(([, f, v]) => ({ fecha: f, val: parseFloat(v.replace(",", ".")) }))
+      const comp = parseHist(tC), vent = parseHist(tV)
+      const map = {}
+      comp.forEach(d => { map[d.fecha] = { fecha: d.fecha, compra: d.val } })
+      vent.forEach(d => { if (map[d.fecha]) map[d.fecha].venta = d.val })
+      const hist = Object.values(map).filter(d => d.compra && d.venta).slice(-30)
+      setTcHistory(hist)
+    } catch { /* silencioso */ }
+    finally { setTcHistLoading(false) }
+  }, [])
+
+  useEffect(() => { fetchTcHistory() }, [fetchTcHistory])
 
   /* ─── COPY FLASH ─── */
   const { fl, flash } = useCopyFlash()
@@ -1455,118 +1476,59 @@ export default function App() {
           )}
 
           {/* ══ TIPO DE CAMBIO ══ */}
-          {page === "tipocambio" && (
+          {page === "tipocambio" && (() => {
+            const prev = tcHistory.length >= 2 ? tcHistory[tcHistory.length - 2] : null
+            const usdChg  = (fx && prev) ? fx.venta - prev.venta : null
+            const usdChgP = (usdChg != null && prev?.venta) ? (usdChg / prev.venta) * 100 : null
+            return (
             <div className="pageWrap pageCentered">
-              <PageHeader icon={IC.currency} title="Tipo de Cambio"
-                description="Dólar y euro frente al colón · BCCR en tiempo real" />
 
-              {/* ─ Tarjetas hero ─ */}
-              <div className="tcHeroGrid">
-                {/* CRC */}
-                <div className="tcHeroCard tcHeroCardCrc">
-                  <div className="tcHeroTop">
-                    <span className="tcHeroFlag">🇨🇷</span>
+              {/* ── Chips compactos ── */}
+              <div className="tcChipRow">
+                <div className="tcChip">
+                  <div className="tcChipMain">
+                    <span className="tcChipFlag">🇺🇸</span>
                     <div>
-                      <div className="tcHeroName">Colón</div>
-                      <div className="tcHeroCode">CRC · Moneda base</div>
+                      <div className="tcChipRate">{fxLoading ? "…" : fx ? `₡${fx.venta.toLocaleString("es-CR")}` : "—"} <span className="tcChipCcy">USD</span></div>
+                      <div className="tcChipSub">Compra ₡{fx?.compra?.toLocaleString("es-CR") ?? "—"} · Venta ₡{fx?.venta?.toLocaleString("es-CR") ?? "—"}</div>
                     </div>
                   </div>
-                  <div className="tcHeroBase">Moneda local</div>
-                </div>
-                {/* USD */}
-                <div className="tcHeroCard tcHeroCardUsd">
-                  <div className="tcHeroTop">
-                    <span className="tcHeroFlag">🇺🇸</span>
-                    <div>
-                      <div className="tcHeroName">Dólar</div>
-                      <div className="tcHeroCode">USD</div>
-                    </div>
-                    <span className="tcHeroBadge">BCCR</span>
-                  </div>
-                  <div className="tcHeroRates">
-                    <div className="tcHeroRate">
-                      <span className="tcHeroRateLabel">Compra</span>
-                      <span className="tcHeroRateVal">{fxLoading ? "…" : fx ? `₡${fx.compra.toLocaleString("es-CR")}` : "—"}</span>
-                    </div>
-                    <div className="tcHeroRateDivider" />
-                    <div className="tcHeroRate">
-                      <span className="tcHeroRateLabel">Venta</span>
-                      <span className="tcHeroRateVal">{fxLoading ? "…" : fx ? `₡${fx.venta.toLocaleString("es-CR")}` : "—"}</span>
-                    </div>
-                  </div>
-                </div>
-                {/* EUR */}
-                <div className="tcHeroCard tcHeroCardEur">
-                  <div className="tcHeroTop">
-                    <span className="tcHeroFlag">🇪🇺</span>
-                    <div>
-                      <div className="tcHeroName">Euro</div>
-                      <div className="tcHeroCode">EUR</div>
-                    </div>
-                    <span className="tcHeroBadge tcHeroBadgeEur">Hacienda</span>
-                  </div>
-                  <div className="tcHeroRates">
-                    <div className="tcHeroRate" style={{ flex: 1 }}>
-                      <span className="tcHeroRateLabel">Referencia</span>
-                      <span className="tcHeroRateVal">{fxLoading ? "…" : fxEur ? `₡${fxEur.colones.toLocaleString("es-CR")}` : "—"}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="tcHeroMeta">
-                <span>{fx ? formatFechaCR(fx.fecha) : ""}</span>
-                <button className="tcRefreshBtn" onClick={fetchFx} type="button">{IC.refresh} Actualizar</button>
-              </div>
-
-              {/* ─ Conversor triple ─ */}
-              {fx && (
-                <div className="sectionBlock">
-                  <div className="sectionTitle">Conversor</div>
-                  <ConversorTriple fx={fx} fxEur={fxEur} convField={convField} setConvField={setConvField} convInput={convInput} setConvInput={setConvInput} convCalc={convCalc} />
-                </div>
-              )}
-
-              {/* ─ Histórico ─ */}
-              <div className="sectionBlock">
-                <div className="sectionTitle">Histórico por fecha · USD</div>
-                <div className="toolCard">
-                  <div className="toolSection">
-                    <div className="inputRow">
-                      <input className="inp" type="date" value={tcFecha} max={todayStr}
-                        onChange={e => setTcFecha(e.target.value)}
-                        onKeyDown={e => { if (e.key === "Enter") consultarTc() }} />
-                      <button className="btn btnPrimary" onClick={consultarTc} disabled={!tcFecha || tcLoading} type="button">
-                        {tcLoading ? "Consultando…" : "Consultar"}
-                      </button>
-                      {tcData && <CopyBtn id="tc-hist" label="Copiar" fl={fl} flash={flash} disabled={false}
-                        getText={() => { const [y, m, d] = tcData.fecha.split("-"); return `TC BCCR ${d}/${m}/${y}\nUSD Compra: ₡${tcData.compra.toLocaleString("es-CR", { minimumFractionDigits: 2 })}\nUSD Venta: ₡${tcData.venta.toLocaleString("es-CR", { minimumFractionDigits: 2 })}` }} />}
-                    </div>
-                  </div>
-                  {tcError && <div className="alertBox">{IC.warning} {tcError}</div>}
-                  {tcSearched && !tcLoading && !tcError && !tcData && <EmptyState msg="Sin datos para esa fecha — puede ser feriado o fin de semana" />}
-                  {tcData && (
-                    <div className="tcHistBox">
-                      <div className="tcHistHeader">
-                        <span className="tcHistFecha">🇺🇸 USD · {(() => { const [y, m, d] = tcData.fecha.split("-"); return `${d}/${m}/${y}` })()}</span>
-                        <span className="muted" style={{ fontSize: 11 }}>Banco Central de Costa Rica</span>
-                      </div>
-                      <div className="tcHistRow">
-                        <div className="tcHistCell">
-                          <div className="lbl">Compra</div>
-                          <div className="tcHistVal">₡{tcData.compra.toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div>
-                        </div>
-                        <div className="tcHistDivider" />
-                        <div className="tcHistCell">
-                          <div className="lbl">Venta</div>
-                          <div className="tcHistVal">₡{tcData.venta.toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div>
-                        </div>
-                      </div>
+                  {usdChg != null && (
+                    <div className={`tcChipVar ${usdChg >= 0 ? "tcChipUp" : "tcChipDown"}`}>
+                      <span className="tcChipVarPct">{usdChg >= 0 ? "▲" : "▼"} {Math.abs(usdChgP).toFixed(2)}%</span>
+                      <span className="tcChipVarAbs">{usdChg >= 0 ? "+" : ""}₡{usdChg.toFixed(2)} vs ayer</span>
                     </div>
                   )}
                 </div>
+                <div className="tcChip tcChipEur">
+                  <div className="tcChipMain">
+                    <span className="tcChipFlag">🇪🇺</span>
+                    <div>
+                      <div className="tcChipRate">{fxLoading ? "…" : fxEur ? `₡${fxEur.colones.toLocaleString("es-CR")}` : "—"} <span className="tcChipCcy">EUR</span></div>
+                      <div className="tcChipSub">Referencia Hacienda · {fxEur ? formatFechaCR(fxEur.fecha) : "—"}</div>
+                    </div>
+                  </div>
+                </div>
+                <button className="tcChipRefresh" onClick={() => { fetchFx(); fetchTcHistory() }} type="button" title="Actualizar">
+                  {IC.refresh}
+                </button>
               </div>
+
+              {/* ── Conversor Wise ── */}
+              <ConversorWise
+                fx={fx} fxEur={fxEur}
+                convFrom={convFrom} setConvFrom={setConvFrom}
+                convTo={convTo} setConvTo={setConvTo}
+                convAmount={convAmount} setConvAmount={setConvAmount}
+                convResult={convResult}
+              />
+
+              {/* ── Sparkline 30 días ── */}
+              <TcSparkline data={tcHistory} loading={tcHistLoading} />
+
             </div>
-          )}
+            )
+          })()}
 
           {/* ══ FACTURA ══ */}
           {page === "factura" && (
@@ -1727,47 +1689,204 @@ export default function App() {
   )
 }
 
-/* ─── Conversor triple CRC / USD / EUR ─── */
-function ConversorTriple({ fx, fxEur, convField, setConvField, convInput, setConvInput, convCalc }) {
-  const fmt = (n, dec = 2) => n == null ? "" : n.toLocaleString("es-CR", { minimumFractionDigits: dec, maximumFractionDigits: dec })
-  const currencies = [
-    { id: "crc", flag: "🇨🇷", label: "Colón",  code: "CRC", symbol: "₡",  color: "crc" },
-    { id: "usd", flag: "🇺🇸", label: "Dólar",  code: "USD", symbol: "$",  color: "usd" },
-    { id: "eur", flag: "🇪🇺", label: "Euro",   code: "EUR", symbol: "€",  color: "eur" },
-  ]
-  const displayVal = (id) => {
-    if (id === convField) return convInput
-    if (!convCalc[id] && convCalc[id] !== 0) return ""
-    return fmt(convCalc[id], id === "crc" ? 2 : 4)
-  }
+/* ─── CURRENCIES constant ─── */
+const CURRENCIES = [
+  { id: "crc", flag: "🇨🇷", code: "CRC", name: "Colón costarricense", symbol: "₡" },
+  { id: "usd", flag: "🇺🇸", code: "USD", name: "Dólar estadounidense", symbol: "$" },
+  { id: "eur", flag: "🇪🇺", code: "EUR", name: "Euro",                  symbol: "€" },
+]
+
+/* ─── Currency Selector ─── */
+function CurrencySelector({ value, onChange, exclude = [] }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const opts = CURRENCIES.filter(c => !exclude.includes(c.id))
+  const sel  = CURRENCIES.find(c => c.id === value)
+  useEffect(() => {
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener("mousedown", h)
+    return () => document.removeEventListener("mousedown", h)
+  }, [])
   return (
-    <div className="conv3Card">
-      {currencies.map(c => (
-        <div key={c.id} className={`conv3Row${convField === c.id ? " conv3RowActive" : ""}`}>
-          <div className="conv3Flag">
-            <span className="conv3FlagEmoji">{c.flag}</span>
-            <div>
-              <div className="conv3Label">{c.label}</div>
-              <div className="conv3Code">{c.code}</div>
-            </div>
-          </div>
-          <div className="conv3InputWrap" onClick={() => setConvField(c.id)}>
-            <span className="conv3Symbol">{c.symbol}</span>
-            <input
-              className="conv3Input"
-              type="number"
-              min="0"
-              placeholder="0.00"
-              value={displayVal(c.id)}
-              onChange={e => { setConvField(c.id); setConvInput(e.target.value) }}
-            />
+    <div className="currSel" ref={ref}>
+      <button type="button" className="currSelBtn" onClick={() => setOpen(o => !o)}>
+        <span className="currSelFlag">{sel.flag}</span>
+        <span className="currSelCode">{sel.code}</span>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className={`currSelArrow${open ? " open" : ""}`}>
+          <path d="M1.5 3.5l3.5 3 3.5-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && (
+        <div className="currSelDrop">
+          {opts.map(c => (
+            <button key={c.id} type="button"
+              className={`currSelOpt${c.id === value ? " currSelOptAct" : ""}`}
+              onClick={() => { onChange(c.id); setOpen(false) }}>
+              <span className="currSelOptFlag">{c.flag}</span>
+              <div>
+                <div className="currSelOptCode">{c.code}</div>
+                <div className="currSelOptName">{c.name}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ─── Conversor Wise ─── */
+function ConversorWise({ fx, fxEur, convFrom, setConvFrom, convTo, setConvTo, convAmount, setConvAmount, convResult }) {
+  const fmtOut = (n, id) => {
+    if (n == null || isNaN(n)) return ""
+    const dec = id === "crc" ? 2 : 4
+    return n.toLocaleString("es-CR", { minimumFractionDigits: dec, maximumFractionDigits: dec })
+  }
+  const thirdCurr = CURRENCIES.find(c => c.id !== convFrom && c.id !== convTo)
+  const handleSwap = () => {
+    const tmp = convFrom; setConvFrom(convTo); setConvTo(tmp); setConvAmount("")
+  }
+  const handleFromChange = (id) => {
+    if (id === convTo) setConvTo(convFrom)
+    setConvFrom(id); setConvAmount("")
+  }
+  const handleToChange = (id) => {
+    if (id === convFrom) setConvFrom(convTo)
+    setConvTo(id)
+  }
+  const fromCurr = CURRENCIES.find(c => c.id === convFrom)
+  const toCurr   = CURRENCIES.find(c => c.id === convTo)
+  return (
+    <div className="wiseCard">
+      {/* ─ Tengo ─ */}
+      <div className="wiseSection wiseSectionFrom">
+        <div className="wiseSectionLabel">Tengo</div>
+        <div className="wiseInputRow">
+          <CurrencySelector value={convFrom} onChange={handleFromChange} exclude={[convTo]} />
+          <input
+            className="wiseAmountInput"
+            type="number" min="0" placeholder="0"
+            value={convAmount}
+            onChange={e => setConvAmount(e.target.value)}
+            autoFocus
+          />
+        </div>
+        {convAmount && <div className="wiseAmountHint">{fromCurr.flag} {fromCurr.name}</div>}
+      </div>
+
+      {/* ─ Swap ─ */}
+      <div className="wiseSwapBar">
+        <div className="wiseSwapLine" />
+        <button type="button" className="wiseSwapBtn" onClick={handleSwap} title="Invertir">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M9 2v14M5 5.5L9 2l4 3.5M13 12.5L9 16l-4-3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <div className="wiseSwapLine" />
+      </div>
+
+      {/* ─ Recibo ─ */}
+      <div className="wiseSection wiseSectionTo">
+        <div className="wiseSectionLabel">Recibo</div>
+        <div className="wiseInputRow">
+          <CurrencySelector value={convTo} onChange={handleToChange} exclude={[convFrom]} />
+          <div className="wiseOutputVal">
+            {convResult?.to != null
+              ? <span className="wiseResultNum">{fmtOut(convResult.to, convTo)}</span>
+              : <span className="wiseResultEmpty">—</span>}
           </div>
         </div>
-      ))}
-      <div className="conv3Footer">
-        {fx && <span>USD: Compra ₡{fmt(fx.compra)} · Venta ₡{fmt(fx.venta)}</span>}
-        {fxEur && <span>EUR: Ref. ₡{fmt(fxEur.colones)}</span>}
-        <button className="conv3Clear" type="button" onClick={() => setConvInput("")}>Limpiar</button>
+        {convResult?.to != null && <div className="wiseAmountHint">{toCurr.flag} {toCurr.name}</div>}
+      </div>
+
+      {/* ─ También en ─ */}
+      {thirdCurr && convResult?.third != null && (
+        <div className="wiseThirdRow">
+          <span className="wiseThirdLabel">También en {thirdCurr.flag} {thirdCurr.code}:</span>
+          <span className="wiseThirdVal">{thirdCurr.symbol} {fmtOut(convResult.third, thirdCurr.id)}</span>
+        </div>
+      )}
+
+      {/* ─ Footer tasas ─ */}
+      <div className="wiseRateBar">
+        {fx && (
+          <span>
+            <strong>1 USD</strong> = ₡{fx.venta.toLocaleString("es-CR")} venta · ₡{fx.compra.toLocaleString("es-CR")} compra
+          </span>
+        )}
+        {fxEur && (
+          <span>
+            <strong>1 EUR</strong> = ₡{fxEur.colones.toLocaleString("es-CR")} referencia
+          </span>
+        )}
+        <button className="wiseClearBtn" type="button" onClick={() => setConvAmount("")}>Limpiar</button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Sparkline 30 días USD ─── */
+function TcSparkline({ data, loading }) {
+  if (loading) return (
+    <div className="sparkCard sparkLoading">
+      <div className="sparkLoadingDots"><span /><span /><span /></div>
+      <div className="sparkLoadingText">Cargando historial 30 días…</div>
+    </div>
+  )
+  if (!data || data.length < 5) return null
+  const vals = data.map(d => d.venta)
+  const min = Math.min(...vals), max = Math.max(...vals), avg = vals.reduce((a,b) => a+b,0)/vals.length
+  const first = vals[0], last = vals[vals.length-1]
+  const change = last - first, changePct = (change/first)*100, isUp = change >= 0
+  const W = 600, H = 90, padX = 2, padY = 6
+  const sx = i => padX + (i/(vals.length-1))*(W-padX*2)
+  const sy = v => padY + ((max-v)/((max-min)||1))*(H-padY*2)
+  const pathD  = vals.map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ")
+  const areaD  = `${pathD} L${sx(vals.length-1).toFixed(1)},${H} L${sx(0).toFixed(1)},${H} Z`
+  const color  = isUp ? "#2563eb" : "#dc2626"
+  const colorA = isUp ? "#dbeafe" : "#fee2e2"
+  const fmtV = v => `₡${v.toLocaleString("es-CR",{ minimumFractionDigits:2, maximumFractionDigits:2 })}`
+  return (
+    <div className="sparkCard">
+      <div className="sparkHeader">
+        <div>
+          <div className="sparkTitle">🇺🇸 Dólar — últimos 30 días</div>
+          <div className="sparkSub">Tipo de cambio venta · Banco Central de Costa Rica</div>
+        </div>
+        <div className={`sparkTrend ${isUp ? "sparkTrendUp" : "sparkTrendDown"}`}>
+          <span className="sparkTrendPct">{isUp ? "▲" : "▼"} {Math.abs(changePct).toFixed(2)}%</span>
+          <span className="sparkTrendAbs">{isUp?"+":""}₡{change.toFixed(2)} en 30 días</span>
+        </div>
+      </div>
+      <div className="sparkChartWrap">
+        <svg viewBox={`0 0 ${W} ${H}`} className="sparkSvg" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.18"/>
+              <stop offset="100%" stopColor={color} stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d={areaD} fill="url(#sg)"/>
+          <path d={pathD} stroke={color} strokeWidth="2" fill="none" strokeLinejoin="round"/>
+          <circle cx={sx(vals.length-1)} cy={sy(last)} r="4" fill={color} stroke="#fff" strokeWidth="2"/>
+        </svg>
+        <div className="sparkYaxis">
+          <span>{fmtV(max)}</span>
+          <span>{fmtV(min)}</span>
+        </div>
+      </div>
+      <div className="sparkStats">
+        {[
+          { label: "Mínimo",   val: fmtV(min) },
+          { label: "Promedio", val: fmtV(avg) },
+          { label: "Máximo",   val: fmtV(max) },
+          { label: "Actual",   val: fmtV(last), accent: true },
+        ].map(s => (
+          <div key={s.label} className={`sparkStat${s.accent ? " sparkStatAccent" : ""}`}>
+            <div className="sparkStatLabel">{s.label}</div>
+            <div className="sparkStatVal">{s.val}</div>
+          </div>
+        ))}
       </div>
     </div>
   )

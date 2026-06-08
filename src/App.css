@@ -835,90 +835,163 @@ tr:hover td { background: var(--slate-50) }
 .inactiva { background: var(--red-50);   color: var(--red-600);   border: 1px solid var(--red-100) }
 
 /* ═══════════════════════════════════════
-   TIPO DE CAMBIO
+   TIPO DE CAMBIO — REDISEÑO MODERN
 ═══════════════════════════════════════ */
 
-/* Hero cards grid: 3 columnas */
-.tcHeroGrid {
-  display: grid; grid-template-columns: 1fr 1.6fr 1.6fr; gap: 14px;
-  margin-bottom: 10px;
+/* ── Chips compactos ── */
+.tcChipRow {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 20px;
 }
-.tcHeroCard {
-  border-radius: var(--radius); padding: 20px 18px;
-  border: 1.5px solid var(--border); background: var(--surface);
-  box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 14px;
+.tcChip {
+  flex: 1; min-width: 200px; display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm);
 }
-.tcHeroCardCrc { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-color: #86efac }
-.tcHeroCardUsd { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #93c5fd }
-.tcHeroCardEur { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-color: #c4b5fd }
+.tcChipEur { border-color: #c4b5fd; background: linear-gradient(135deg,#faf5ff,#f5f3ff) }
+.tcChipMain { display: flex; align-items: center; gap: 12px }
+.tcChipFlag { font-size: 24px; line-height: 1 }
+.tcChipRate { font-size: var(--font-lg); font-weight: 800; color: var(--text) }
+.tcChipCcy  { font-size: var(--font-xs); font-weight: 600; color: var(--muted); margin-left: 4px }
+.tcChipSub  { font-size: 11px; color: var(--muted); margin-top: 2px }
+.tcChipVar  { text-align: right }
+.tcChipUp   .tcChipVarPct { color: #16a34a; font-size: var(--font-sm); font-weight: 700 }
+.tcChipDown .tcChipVarPct { color: #dc2626; font-size: var(--font-sm); font-weight: 700 }
+.tcChipVarAbs { font-size: 11px; color: var(--muted); display: block; margin-top: 2px }
+.tcChipRefresh {
+  width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center; color: var(--muted);
+  background: var(--surface); flex-shrink: 0; cursor: pointer; transition: all var(--t-fast);
+}
+.tcChipRefresh:hover { border-color: var(--accent); color: var(--accent) }
 
-.tcHeroTop  { display: flex; align-items: center; gap: 10px }
-.tcHeroFlag { font-size: 26px; line-height: 1; flex-shrink: 0 }
-.tcHeroName { font-size: var(--font-md); font-weight: 700; color: var(--text) }
-.tcHeroCode { font-size: var(--font-xs); font-weight: 500; color: var(--muted); margin-top: 1px }
-.tcHeroBadge     { margin-left: auto; font-size: 10px; font-weight: 700; background: #1d4ed8; color: #fff; border-radius: 4px; padding: 2px 6px; letter-spacing: .04em }
-.tcHeroBadgeEur  { background: #7c3aed }
-.tcHeroBase      { font-size: var(--font-sm); color: #16a34a; font-weight: 600 }
+/* ── Currency selector ── */
+.currSel     { position: relative }
+.currSelBtn  {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--slate-50); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 10px 12px; cursor: pointer;
+  font-weight: 700; transition: all var(--t-fast); min-width: 96px;
+}
+.currSelBtn:hover  { border-color: var(--accent); background: #eff6ff }
+.currSelFlag { font-size: 20px; line-height: 1 }
+.currSelCode { font-size: var(--font-md); font-weight: 800; color: var(--text) }
+.currSelArrow { color: var(--muted); transition: transform var(--t-fast); flex-shrink: 0 }
+.currSelArrow.open { transform: rotate(180deg) }
+.currSelDrop {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 100;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  min-width: 200px; overflow: hidden;
+}
+.currSelOpt {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 10px 14px; text-align: left; cursor: pointer;
+  transition: background var(--t-fast); border: none; background: none;
+}
+.currSelOpt:hover    { background: var(--slate-50) }
+.currSelOptAct       { background: #eff6ff }
+.currSelOptFlag      { font-size: 20px; line-height: 1 }
+.currSelOptCode      { font-size: var(--font-sm); font-weight: 700; color: var(--text) }
+.currSelOptName      { font-size: 11px; color: var(--muted); margin-top: 1px }
 
-.tcHeroRates { display: flex; align-items: center; gap: 0; background: rgba(255,255,255,.7); border-radius: var(--radius-sm); overflow: hidden }
-.tcHeroRate  { flex: 1; padding: 10px 14px; display: flex; flex-direction: column; gap: 3px }
-.tcHeroRateLabel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted) }
-.tcHeroRateVal   { font-size: var(--font-lg); font-weight: 800; color: var(--text) }
-.tcHeroRateDivider { width: 1px; background: var(--border); align-self: stretch }
+/* ── Conversor Wise ── */
+.wiseCard {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-md);
+  overflow: hidden; margin-bottom: 20px;
+}
+.wiseSection { padding: 22px 24px }
+.wiseSectionFrom { border-bottom: 1px solid var(--border); background: #fafafa }
+.wiseSectionTo   { background: #fff }
+.wiseSectionLabel {
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muted); margin-bottom: 12px;
+}
+.wiseInputRow { display: flex; align-items: center; gap: 12px }
+.wiseAmountInput {
+  flex: 1; border: none; background: transparent;
+  font-size: 2rem; font-weight: 800; color: var(--text);
+  outline: none; min-width: 0; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.wiseAmountInput::placeholder { color: #d1d5db; font-weight: 400 }
+.wiseOutputVal {
+  flex: 1; text-align: right; padding: 4px 0;
+}
+.wiseResultNum  { font-size: 2rem; font-weight: 800; color: #1d4ed8; font-variant-numeric: tabular-nums }
+.wiseResultEmpty{ font-size: 2rem; font-weight: 300; color: #d1d5db }
+.wiseAmountHint { font-size: 12px; color: var(--muted); margin-top: 6px; padding-left: 2px }
 
-.tcHeroMeta { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-bottom: 4px }
-.tcRefreshBtn { display: flex; align-items: center; gap: 5px; font-size: var(--font-xs); font-weight: 500; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; transition: all var(--t-fast) }
-.tcRefreshBtn:hover { color: var(--accent); border-color: var(--accent) }
+.wiseSwapBar  { display: flex; align-items: center; gap: 12px; padding: 0 24px }
+.wiseSwapLine { flex: 1; height: 1px; background: var(--border) }
+.wiseSwapBtn  {
+  width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); background: var(--surface); cursor: pointer;
+  transition: all var(--t-fast); flex-shrink: 0;
+}
+.wiseSwapBtn:hover { border-color: var(--accent); color: var(--accent); transform: rotate(180deg) }
 
-/* Conversor triple */
-.conv3Card {
-  background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius);
-  box-shadow: var(--shadow-sm); overflow: hidden;
+.wiseThirdRow {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px; background: #f8faff;
+  border-top: 1px solid var(--border);
 }
-.conv3Row {
-  display: flex; align-items: center; gap: 0;
-  border-bottom: 1px solid var(--border); transition: background var(--t-fast);
+.wiseThirdLabel { font-size: var(--font-sm); color: var(--muted) }
+.wiseThirdVal   { font-size: var(--font-lg); font-weight: 700; color: #6366f1 }
+
+.wiseRateBar {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 10px 24px; background: var(--slate-50);
+  border-top: 1px solid var(--border); font-size: 11px; color: var(--muted);
 }
-.conv3Row:last-of-type { border-bottom: none }
-.conv3RowActive { background: #f0f9ff }
-.conv3Flag {
-  display: flex; align-items: center; gap: 10px;
-  padding: 14px 16px; min-width: 140px; border-right: 1px solid var(--border);
-  background: var(--slate-50);
-}
-.conv3FlagEmoji { font-size: 22px; line-height: 1 }
-.conv3Label { font-size: var(--font-sm); font-weight: 600; color: var(--text) }
-.conv3Code  { font-size: var(--font-xs); color: var(--muted); margin-top: 1px }
-.conv3InputWrap {
-  flex: 1; display: flex; align-items: center; padding: 0 14px; cursor: text;
-}
-.conv3Symbol { font-size: var(--font-md); font-weight: 700; color: var(--muted); margin-right: 6px; min-width: 14px }
-.conv3Input {
-  flex: 1; border: none; background: transparent; font-size: var(--font-xl);
-  font-weight: 700; color: var(--text); padding: 14px 0; outline: none; min-width: 0;
-}
-.conv3Input::placeholder { color: var(--border); font-weight: 400; font-size: var(--font-lg) }
-.conv3RowActive .conv3Input { color: #1d4ed8 }
-.conv3Footer {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  padding: 10px 16px; background: var(--slate-50); border-top: 1px solid var(--border);
-  font-size: 11px; color: var(--muted);
-}
-.conv3Footer span { display: flex; align-items: center; gap: 4px }
-.conv3Clear {
+.wiseRateBar strong { color: var(--text2) }
+.wiseClearBtn {
   margin-left: auto; font-size: 11px; color: var(--muted); background: none;
-  border: 1px solid var(--border); border-radius: 5px; padding: 3px 10px; cursor: pointer; transition: all var(--t-fast);
+  border: 1px solid var(--border); border-radius: 5px; padding: 3px 10px;
+  cursor: pointer; transition: all var(--t-fast);
 }
-.conv3Clear:hover { color: var(--text); border-color: var(--text2) }
+.wiseClearBtn:hover { color: var(--text); border-color: var(--text2) }
 
-/* Histórico */
-.tcHistBox    { background: var(--slate-50); border-radius: var(--radius-sm); padding: 16px; margin-top: 12px; border: 1px solid var(--border) }
-.tcHistHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px }
-.tcHistFecha  { font-size: var(--font-sm); font-weight: 700; color: var(--text) }
-.tcHistRow    { display: flex; align-items: center; gap: 16px }
-.tcHistCell   { flex: 1 }
-.tcHistDivider{ width: 1px; height: 48px; background: var(--border) }
-.tcHistVal    { font-size: var(--font-xl); font-weight: 800; color: var(--text); margin-top: 4px }
+/* ── Sparkline ── */
+.sparkCard {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 20px 24px;
+}
+.sparkLoading { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px }
+.sparkLoadingDots { display: flex; gap: 6px }
+.sparkLoadingDots span {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+  animation: sparkDot 1.2s ease-in-out infinite;
+}
+.sparkLoadingDots span:nth-child(2) { animation-delay: .2s }
+.sparkLoadingDots span:nth-child(3) { animation-delay: .4s }
+@keyframes sparkDot { 0%,80%,100%{opacity:.2;transform:scale(.8)} 40%{opacity:1;transform:scale(1)} }
+.sparkLoadingText { font-size: var(--font-sm); color: var(--muted) }
+
+.sparkHeader { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px }
+.sparkTitle  { font-size: var(--font-base); font-weight: 700; color: var(--text) }
+.sparkSub    { font-size: 11px; color: var(--muted); margin-top: 2px }
+.sparkTrend  { text-align: right }
+.sparkTrendUp   .sparkTrendPct { color: #16a34a; font-size: var(--font-base); font-weight: 700 }
+.sparkTrendDown .sparkTrendPct { color: #dc2626; font-size: var(--font-base); font-weight: 700 }
+.sparkTrendAbs { font-size: 11px; color: var(--muted); display: block; margin-top: 2px }
+
+.sparkChartWrap { position: relative; display: flex; gap: 8px; align-items: stretch; margin-bottom: 16px }
+.sparkSvg  { flex: 1; height: 90px; display: block }
+.sparkYaxis {
+  display: flex; flex-direction: column; justify-content: space-between;
+  font-size: 10px; color: var(--muted); text-align: right; padding: 4px 0; min-width: 60px;
+}
+
+.sparkStats { display: grid; grid-template-columns: repeat(4,1fr); gap: 0; border-top: 1px solid var(--border) }
+.sparkStat  { padding: 12px 0; text-align: center; border-right: 1px solid var(--border) }
+.sparkStat:last-child { border-right: none }
+.sparkStatAccent { background: #f0f9ff }
+.sparkStatLabel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 4px }
+.sparkStatVal   { font-size: var(--font-sm); font-weight: 700; color: var(--text) }
+.sparkStatAccent .sparkStatVal { color: #1d4ed8 }
 
 /* ═══════════════════════════════════════
    FACTURA ELECTRÓNICA
@@ -997,15 +1070,20 @@ tr:hover td { background: var(--slate-50) }
 ═══════════════════════════════════════ */
 @media (max-width: 960px) {
   .cabysGrid { grid-template-columns: repeat(2, 1fr) }
-  .tcActualGrid { grid-template-columns: 1fr 1fr }
+  .sparkStats { grid-template-columns: repeat(2,1fr) }
+  .sparkStat:nth-child(2) { border-right: none }
+  .sparkStat:nth-child(3) { border-top: 1px solid var(--border) }
 }
 @media (max-width: 680px) {
   .content { padding: 16px }
   .spotlightQuickGrid { grid-template-columns: 1fr 1fr; gap: 8px }
   .spotlightTitle { font-size: var(--font-xl) }
   .cabysGrid { grid-template-columns: 1fr }
-  .tcHeroGrid { grid-template-columns: 1fr }
-  .conv3Flag { min-width: 110px }
+  .tcChipRow { flex-direction: column }
+  .tcChip { min-width: unset; width: 100% }
+  .wiseAmountInput, .wiseResultNum, .wiseResultEmpty { font-size: 1.5rem }
+  .wiseSection { padding: 16px }
+  .wiseRateBar { gap: 8px }
   .assistantSearchWrap { flex-direction: column }
   .crmTaxGrid { grid-template-columns: 1fr 1fr }
   .feDecodedGrid { grid-template-columns: 1fr 1fr }
