@@ -389,7 +389,7 @@ function parseXmlFe(xmlStr) {
       unidad:      g("UnidadMedida"),
       precio:      g("PrecioUnitario"),
       subtotal:    g("SubTotal"),
-      cabys:       g("CodigoComercial > Codigo") || g("Codigo"),
+      cabys:       g("CodigoCABYS") || g("CodigoComercial > Codigo") || g("Codigo"),
       ivaPct:      g("Impuesto > Tarifa") || g("Tarifa"),
       ivaMoneto:   g("Impuesto > Monto"),
       total:       g("MontoTotalLinea"),

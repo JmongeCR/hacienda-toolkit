@@ -1323,7 +1323,7 @@ tr:hover td { background: var(--slate-50) }
 .xmlUnt { font-size:10px; font-weight:600; color:var(--muted); text-transform:uppercase; }
 .xmlTdR { text-align:right; }
 .xmlTdBold { font-weight:700; }
-.xmlTdCabys { font-size:11px; max-width:180px; word-break:break-all; line-height:1.5; }
+.xmlTdCabys { font-size:11px; word-break:break-all; line-height:1.6; min-width:130px; }
 .xmlTdAct { width:36px; text-align:center; }
 .xmlMuted { color:var(--muted); }
 
