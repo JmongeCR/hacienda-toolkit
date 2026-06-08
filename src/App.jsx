@@ -462,6 +462,76 @@ export default function App() {
     )
   }
 
+  /* ================= TC HISTÓRICO (BCCR) ================= */
+  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), [])
+  const [tcFecha, setTcFecha] = useState(todayStr)
+  const [tcData, setTcData] = useState(null)
+  const [tcLoading, setTcLoading] = useState(false)
+  const [tcError, setTcError] = useState("")
+  const [tcSearched, setTcSearched] = useState(false)
+
+  async function consultarTcHistorico() {
+    if (!tcFecha) return
+    setTcLoading(true)
+    setTcError("")
+    setTcSearched(true)
+    try {
+      // Formato BCCR: dd/MM/yyyy
+      const [y, m, d] = tcFecha.split("-")
+      const fechaBCCR = `${d}/${m}/${y}`
+      // Indicador 317 = tipo de cambio compra USD, 318 = venta USD
+      const base = `/bccr/Indicadores/Suscripciones/WS/wsindicadoreseconomicos.asmx/ObtenerIndicadoresEconomicos`
+      const params = (ind) => `?Indicador=${ind}&FechaInicio=${fechaBCCR}&FechaFinal=${fechaBCCR}&Nombre=hacienda-toolkit&SubNiveles=N&CorreoElectronico=no@no.com&Token=NONE`
+      const [rCompra, rVenta] = await Promise.all([
+        fetch(base + params(317), { cache: "no-store" }),
+        fetch(base + params(318), { cache: "no-store" }),
+      ])
+      const [tCompra, tVenta] = await Promise.all([rCompra.text(), rVenta.text()])
+      const extractVal = (xml) => {
+        const m = xml.match(/<NUM_VALOR>([\d.,]+)<\/NUM_VALOR>/)
+        return m ? parseFloat(m[1].replace(",", ".")) : null
+      }
+      const compra = extractVal(tCompra)
+      const venta  = extractVal(tVenta)
+      if (!compra && !venta) throw new Error("Sin datos para esa fecha — puede ser feriado o fin de semana")
+      setTcData({ compra, venta, fecha: tcFecha })
+    } catch (e) {
+      setTcData(null)
+      setTcError(e?.message || "Error consultando tipo de cambio histórico")
+    } finally {
+      setTcLoading(false)
+    }
+  }
+
+  /* ================= FACTURA ELECTRÓNICA ================= */
+  const [feKey, setFeKey] = useState("")
+  const [feData, setFeData] = useState(null)
+  const [feLoading, setFeLoading] = useState(false)
+  const [feError, setFeError] = useState("")
+  const [feSearched, setFeSearched] = useState(false)
+
+  const feKeyClean  = useMemo(() => onlyDigits(feKey), [feKey])
+  const feKeyValid  = feKeyClean.length === 50
+
+  async function consultarFactura() {
+    if (!feKeyValid) return
+    setFeLoading(true)
+    setFeError("")
+    setFeSearched(true)
+    setFeData(null)
+    try {
+      const res = await fetch(`/hacienda/fe/documento?clave=${feKeyClean}`, { cache: "no-store" })
+      if (res.status === 404) throw new Error("Factura no encontrada — verificá la clave")
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json()
+      setFeData(json)
+    } catch (e) {
+      setFeError(e?.message || "Error consultando factura")
+    } finally {
+      setFeLoading(false)
+    }
+  }
+
   /* ================= RENDER ================= */
   return (
     <div className="page">
@@ -820,6 +890,158 @@ export default function App() {
               </table>
             )}
           </section>
+
+          {/* ===== TC HISTÓRICO ===== */}
+          <section className="card">
+            <h2>Tipo de cambio histórico</h2>
+            <p className="cardDesc muted">Consulta el tipo de cambio USD/CRC del BCCR para cualquier fecha.</p>
+
+            <label>Fecha</label>
+            <input
+              type="date"
+              value={tcFecha}
+              max={todayStr}
+              onChange={(e) => setTcFecha(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") consultarTcHistorico() }}
+            />
+
+            <div className="row">
+              <button className="btnPrimary" onClick={consultarTcHistorico} disabled={!tcFecha || tcLoading} type="button">
+                {tcLoading ? "Consultando…" : "Consultar"}
+              </button>
+              {tcData && (
+                <CopyBtn
+                  id="tc-hist-copy"
+                  label="Copiar"
+                  getText={() => {
+                    const [y, m, d] = tcData.fecha.split("-")
+                    return `Tipo de cambio BCCR ${d}/${m}/${y}\nCompra: ₡${tcData.compra.toLocaleString("es-CR")}\nVenta: ₡${tcData.venta.toLocaleString("es-CR")}`
+                  }}
+                  disabled={false}
+                />
+              )}
+            </div>
+
+            {tcError && <div className="alert">⚠️ {tcError}</div>}
+
+            {tcSearched && !tcLoading && !tcError && !tcData && (
+              <div className="emptyState">Sin datos para esa fecha</div>
+            )}
+
+            {tcData && (
+              <div className="tcHistBox">
+                <div className="tcHistDate muted">
+                  {(() => { const [y,m,d] = tcData.fecha.split("-"); return `${d}/${m}/${y}` })()}
+                </div>
+                <div className="tcHistRow">
+                  <div className="tcHistCell">
+                    <div className="label">Compra</div>
+                    <div className="tcHistVal">₡{tcData.compra.toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div>
+                  </div>
+                  <div className="tcHistDivider" />
+                  <div className="tcHistCell">
+                    <div className="label">Venta</div>
+                    <div className="tcHistVal">₡{tcData.venta.toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div>
+                  </div>
+                </div>
+                <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>Fuente: Banco Central de Costa Rica</div>
+              </div>
+            )}
+          </section>
+
+          {/* ===== FACTURA ELECTRÓNICA ===== */}
+          <section className="card">
+            <h2>Validación de Factura Electrónica</h2>
+            <p className="cardDesc muted">Verificá el estado de un comprobante electrónico por su clave numérica (50 dígitos).</p>
+
+            <label>Clave del comprobante</label>
+            <input
+              value={feKey}
+              onChange={(e) => setFeKey(onlyDigits(e.target.value))}
+              onKeyDown={(e) => { if (e.key === "Enter") consultarFactura() }}
+              placeholder="50 dígitos"
+              inputMode="numeric"
+              maxLength={50}
+            />
+            <div className="hint muted">{feKeyClean.length}/50 dígitos{feKeyClean.length > 0 && !feKeyValid ? " — debe ser exactamente 50" : ""}</div>
+
+            <div className="row">
+              <button className="btnPrimary" onClick={consultarFactura} disabled={!feKeyValid || feLoading} type="button">
+                {feLoading ? "Consultando…" : "Verificar"}
+              </button>
+              {feData && (
+                <CopyBtn
+                  id="fe-copy"
+                  label="Copiar resultado"
+                  getText={() => {
+                    const lines = [
+                      `Factura Electrónica`,
+                      `Clave: ${feKeyClean}`,
+                      `Estado: ${feData?.ind_estado || feData?.estado || feData?.estadoMensaje || "-"}`,
+                    ]
+                    if (feData?.emisor?.nombre)  lines.push(`Emisor: ${feData.emisor.nombre}`)
+                    if (feData?.receptor?.nombre) lines.push(`Receptor: ${feData.receptor.nombre}`)
+                    if (feData?.fecha) lines.push(`Fecha: ${feData.fecha}`)
+                    if (feData?.totalComprobante) lines.push(`Total: ${feData.totalComprobante}`)
+                    return lines.join("\n")
+                  }}
+                  disabled={false}
+                />
+              )}
+            </div>
+
+            {feError && <div className="alert">⚠️ {feError}</div>}
+
+            {feSearched && !feLoading && !feError && !feData && (
+              <div className="emptyState">No se encontró comprobante para esa clave</div>
+            )}
+
+            {feData && (
+              <div className="feBox">
+                {/* Estado principal */}
+                {(feData?.ind_estado || feData?.estado) && (
+                  <div className="feEstado">
+                    <span className={`feEstadoBadge ${(feData?.ind_estado || feData?.estado || "").toUpperCase().includes("ACEPT") ? "feAceptado" : "feRechazado"}`}>
+                      {feData?.ind_estado || feData?.estado}
+                    </span>
+                  </div>
+                )}
+
+                <div className="feGrid">
+                  {feData?.emisor?.nombre && (
+                    <div className="feField">
+                      <div className="label">Emisor</div>
+                      <div className="value">{feData.emisor.nombre}</div>
+                    </div>
+                  )}
+                  {feData?.receptor?.nombre && (
+                    <div className="feField">
+                      <div className="label">Receptor</div>
+                      <div className="value">{feData.receptor.nombre}</div>
+                    </div>
+                  )}
+                  {feData?.fecha && (
+                    <div className="feField">
+                      <div className="label">Fecha</div>
+                      <div className="value">{formatFechaCR(feData.fecha)}</div>
+                    </div>
+                  )}
+                  {feData?.totalComprobante && (
+                    <div className="feField">
+                      <div className="label">Total</div>
+                      <div className="value mono">₡{Number(feData.totalComprobante).toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Raw keys útiles si la respuesta tiene formato diferente */}
+                {!feData?.emisor && !feData?.estado && !feData?.ind_estado && (
+                  <pre className="feRaw">{JSON.stringify(feData, null, 2)}</pre>
+                )}
+              </div>
+            )}
+          </section>
+
         </main>
 
         <footer className="footer muted">
