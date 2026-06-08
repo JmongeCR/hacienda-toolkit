@@ -742,6 +742,7 @@ export default function App() {
   const [fx,        setFx]        = useState(null)
   const [fxLoading, setFxLoading] = useState(false)
   const [fxError,   setFxError]   = useState("")
+  const [fxEur,     setFxEur]     = useState(null)
 
   const fetchFx = useCallback(async () => {
     setFxLoading(true); setFxError("")
@@ -753,8 +754,17 @@ export default function App() {
       const vR = json?.venta  ?? json?.tipoCambioVenta  ?? json?.dolar?.venta  ?? json?.data?.tipoCambioVenta
       const compra = Number(pV(cR)), venta = Number(pV(vR))
       if (!compra && !venta) throw new Error("Sin datos")
-      setFx({ compra, venta, fecha: json?.fecha ?? json?.data?.fecha ?? pF(cR) ?? pF(vR) })
+      const fechaUsd = json?.fecha ?? json?.data?.fecha ?? pF(cR) ?? pF(vR)
+      setFx({ compra, venta, fecha: fechaUsd })
       setBccrOk(true)
+      // EUR desde el mismo endpoint de Hacienda
+      try {
+        const pV2 = x => x && typeof x === "object" ? x.valor ?? x : x
+        const eurColones = json?.euro?.colones
+        const eurFecha = json?.euro?.fecha ?? fechaUsd
+        const eurVal = eurColones ? Number(pV2(eurColones)) : null
+        if (eurVal) setFxEur({ colones: eurVal, fecha: eurFecha })
+      } catch { /* silencioso */ }
     } catch { setFx(null); setFxError("No disponible"); setBccrOk(false) }
     finally { setFxLoading(false) }
   }, [])
@@ -795,9 +805,11 @@ export default function App() {
       const [y, m, d] = tcFecha.split("-"); const f = `${d}/${m}/${y}`
       const base = `/bccr/Indicadores/Suscripciones/WS/wsindicadoreseconomicos.asmx/ObtenerIndicadoresEconomicos`
       const p = ind => `?Indicador=${ind}&FechaInicio=${f}&FechaFinal=${f}&Nombre=ht&SubNiveles=N&CorreoElectronico=no@no.com&Token=NONE`
-      const [rC, rV] = await Promise.all([fetch(base + p(317), { cache: "no-store" }), fetch(base + p(318), { cache: "no-store" })])
+      const [rC, rV] = await Promise.all([
+        fetch(base + p(317), { cache: "no-store" }), fetch(base + p(318), { cache: "no-store" }),
+      ])
       const [tC, tV] = await Promise.all([rC.text(), rV.text()])
-      const xv = xml => { const m = xml.match(/<NUM_VALOR>([\d.,]+)<\/NUM_VALOR>/); return m ? parseFloat(m[1].replace(",", ".")) : null }
+      const xv = xml => { const mm = xml.match(/<NUM_VALOR>([\d.,]+)<\/NUM_VALOR>/); return mm ? parseFloat(mm[1].replace(",", ".")) : null }
       const compra = xv(tC), venta = xv(tV)
       if (!compra && !venta) throw new Error("Sin datos para esa fecha — puede ser feriado o fin de semana")
       setTcData({ compra, venta, fecha: tcFecha })
@@ -1099,9 +1111,15 @@ export default function App() {
             <span className={`apiDot${apiStatus?.ok ? " apiDotOk" : apiStatus == null ? "" : " apiDotBad"}`}
               title={apiStatus?.ok ? `Hacienda ${apiStatus.ms}ms` : "Sin respuesta"} />
             {fx && (
-              <div className="topbarFx">
+              <div className="topbarFx" onClick={() => navigate("tipocambio")} style={{ cursor: "pointer" }}>
                 <span className="topbarFxLabel">USD</span>
                 <span className="topbarFxVal">₡{fx.venta.toLocaleString("es-CR")}</span>
+              </div>
+            )}
+            {fxEur && (
+              <div className="topbarFx topbarFxEur" onClick={() => navigate("tipocambio")} style={{ cursor: "pointer" }}>
+                <span className="topbarFxLabel">EUR</span>
+                <span className="topbarFxVal">₡{fxEur.colones.toLocaleString("es-CR")}</span>
               </div>
             )}
           </div>
@@ -1431,24 +1449,46 @@ export default function App() {
           {page === "tipocambio" && (
             <div className="pageWrap pageCentered">
               <PageHeader icon={IC.currency} title="Tipo de Cambio"
-                description="Tipo de cambio USD/CRC del Banco Central de Costa Rica — actual, histórico y conversor." />
+                description="Tipo de cambio del Banco Central de Costa Rica — dólar y euro, actual, histórico y conversor." />
 
               <div className="sectionBlock">
                 <div className="sectionTitle">Actual</div>
-                <div className="tcActualGrid">
-                  <div className="tcActualCard">
-                    <div className="lbl">Compra</div>
-                    <div className="tcActualVal">{fxLoading ? "…" : fx ? `₡${fx.compra.toLocaleString("es-CR")}` : "—"}</div>
+                <div className="tcCurrencyGrid">
+                  {/* USD */}
+                  <div className="tcCurrencyBlock">
+                    <div className="tcCurrencyLabel">
+                      <span className="tcCurrencyFlag">🇺🇸</span>
+                      <span className="tcCurrencyName">Dólar <span className="tcCurrencyCode">USD</span></span>
+                    </div>
+                    <div className="tcActualGrid">
+                      <div className="tcActualCard">
+                        <div className="lbl">Compra</div>
+                        <div className="tcActualVal">{fxLoading ? "…" : fx ? `₡${fx.compra.toLocaleString("es-CR")}` : "—"}</div>
+                      </div>
+                      <div className="tcActualCard">
+                        <div className="lbl">Venta</div>
+                        <div className="tcActualVal">{fxLoading ? "…" : fx ? `₡${fx.venta.toLocaleString("es-CR")}` : "—"}</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="tcActualCard">
-                    <div className="lbl">Venta</div>
-                    <div className="tcActualVal">{fxLoading ? "…" : fx ? `₡${fx.venta.toLocaleString("es-CR")}` : "—"}</div>
+                  {/* EUR */}
+                  <div className="tcCurrencyBlock tcCurrencyBlockEur">
+                    <div className="tcCurrencyLabel">
+                      <span className="tcCurrencyFlag">🇪🇺</span>
+                      <span className="tcCurrencyName">Euro <span className="tcCurrencyCode">EUR</span></span>
+                    </div>
+                    <div className="tcActualGrid" style={{ gridTemplateColumns: "1fr" }}>
+                      <div className="tcActualCard">
+                        <div className="lbl">Tipo de cambio referencia</div>
+                        <div className="tcActualVal">{fxLoading ? "…" : fxEur ? `₡${fxEur.colones.toLocaleString("es-CR")}` : "—"}</div>
+                        {fxEur && <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>Publicado {formatFechaCR(fxEur.fecha)}</div>}
+                      </div>
+                    </div>
                   </div>
-                  <div className="tcActualCard tcActualDate">
-                    <div className="lbl">Fecha</div>
-                    <div className="tcActualValSm">{fx ? formatFechaCR(fx.fecha) : "—"}</div>
-                    <button className="btn btnGhost btnSm" style={{ marginTop: 8 }} onClick={fetchFx} type="button">{IC.refresh} Actualizar</button>
-                  </div>
+                </div>
+                <div style={{ textAlign: "center", marginTop: 12 }}>
+                  <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>{fx ? formatFechaCR(fx.fecha) : ""}</div>
+                  <button className="btn btnGhost btnSm" onClick={fetchFx} type="button">{IC.refresh} Actualizar</button>
                 </div>
               </div>
 
@@ -1472,14 +1512,14 @@ export default function App() {
                         {tcLoading ? "Consultando…" : "Consultar"}
                       </button>
                       {tcData && <CopyBtn id="tc-hist" label="Copiar" fl={fl} flash={flash} disabled={false}
-                        getText={() => { const [y, m, d] = tcData.fecha.split("-"); return `TC BCCR ${d}/${m}/${y}\nCompra: ₡${tcData.compra.toLocaleString("es-CR")}\nVenta: ₡${tcData.venta.toLocaleString("es-CR")}` }} />}
+                        getText={() => { const [y, m, d] = tcData.fecha.split("-"); return `TC BCCR ${d}/${m}/${y}\nUSD Compra: ₡${tcData.compra.toLocaleString("es-CR")}\nUSD Venta: ₡${tcData.venta.toLocaleString("es-CR")}` }} />}
                     </div>
                   </div>
                   {tcError && <div className="alertBox">{IC.warning} {tcError}</div>}
                   {tcSearched && !tcLoading && !tcError && !tcData && <EmptyState msg="Sin datos para esa fecha" />}
                   {tcData && (
                     <div className="tcHistBox">
-                      <div className="muted" style={{ fontSize: 13, marginBottom: 10 }}>
+                      <div className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
                         {(() => { const [y, m, d] = tcData.fecha.split("-"); return `${d}/${m}/${y}` })()}
                       </div>
                       <div className="tcHistRow">

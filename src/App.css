@@ -261,7 +261,9 @@ a { text-decoration: none; color: inherit }
 .apiDotOk  { background: var(--green-600); box-shadow: 0 0 0 2px var(--green-100) }
 .apiDotBad { background: var(--red-600);   box-shadow: 0 0 0 2px var(--red-100) }
 
-.topbarFx { display: flex; align-items: baseline; gap: 4px }
+.topbarFx { display: flex; align-items: baseline; gap: 4px; padding: 4px 8px; border-radius: 6px; transition: background var(--t-fast) }
+.topbarFx:hover { background: var(--slate-50) }
+.topbarFxEur .topbarFxLabel { color: #6366f1 }
 .topbarFxLabel { font-size: var(--font-xs); font-weight: 700; color: var(--muted) }
 .topbarFxVal { font-size: var(--font-sm); font-weight: 600; color: var(--text) }
 
@@ -835,7 +837,17 @@ tr:hover td { background: var(--slate-50) }
 /* ═══════════════════════════════════════
    TIPO DE CAMBIO
 ═══════════════════════════════════════ */
-.tcActualGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px }
+/* Layout dos monedas */
+.tcCurrencyGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px }
+.tcCurrencyBlock { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm) }
+.tcCurrencyBlockEur { border-color: #c7d2fe }
+.tcCurrencyLabel { display: flex; align-items: center; gap: 8px; margin-bottom: 14px }
+.tcCurrencyFlag  { font-size: 22px; line-height: 1 }
+.tcCurrencyName  { font-size: var(--font-base); font-weight: 700; color: var(--text) }
+.tcCurrencyCode  { font-size: var(--font-xs); font-weight: 600; color: var(--muted); margin-left: 4px }
+
+/* Grid interno de compra/venta (2 cols ahora) */
+.tcActualGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
 .tcActualCard {
   background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius);
   padding: 16px; box-shadow: var(--shadow-sm);
@@ -856,10 +868,13 @@ tr:hover td { background: var(--slate-50) }
 .conversorValue  { margin-left: 4px }
 
 .tcHistBox    { background: var(--slate-50); border-radius: var(--radius-sm); padding: 14px; margin-top: 12px }
+.tcHistCurrencies { display: grid; grid-template-columns: 1fr 1fr; gap: 14px }
+.tcHistCurrencyBlock { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px }
+.tcHistCurrencyTitle { font-size: var(--font-sm); font-weight: 700; color: var(--text); margin-bottom: 10px }
 .tcHistRow    { display: flex; align-items: center; gap: 16px }
 .tcHistCell   { flex: 1 }
 .tcHistDivider{ width: 1px; height: 40px; background: var(--border) }
-.tcHistVal    { font-size: var(--font-xl); font-weight: 700; color: var(--text); margin-top: 4px }
+.tcHistVal    { font-size: var(--font-lg); font-weight: 700; color: var(--text); margin-top: 4px }
 
 /* ═══════════════════════════════════════
    FACTURA ELECTRÓNICA
@@ -945,6 +960,8 @@ tr:hover td { background: var(--slate-50) }
   .spotlightQuickGrid { grid-template-columns: 1fr 1fr; gap: 8px }
   .spotlightTitle { font-size: var(--font-xl) }
   .cabysGrid { grid-template-columns: 1fr }
+  .tcCurrencyGrid { grid-template-columns: 1fr }
+  .tcHistCurrencies { grid-template-columns: 1fr }
   .assistantSearchWrap { flex-direction: column }
   .crmTaxGrid { grid-template-columns: 1fr 1fr }
   .feDecodedGrid { grid-template-columns: 1fr 1fr }
