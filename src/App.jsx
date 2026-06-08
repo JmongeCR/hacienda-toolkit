@@ -724,7 +724,7 @@ export default function App() {
                     )}
                   </div>
                   <div className="ae-link">
-                    <a href="https://www.hacienda.go.cr/ATV/frmConsultaContribuyentes.aspx"
+                    <a href="https://ovitribucr.hacienda.go.cr/ConsultaPublica/"
                       target="_blank" rel="noopener noreferrer" className="linkExterno">
                       Ver en Hacienda ↗
                     </a>
