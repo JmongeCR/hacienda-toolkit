@@ -837,44 +837,88 @@ tr:hover td { background: var(--slate-50) }
 /* ═══════════════════════════════════════
    TIPO DE CAMBIO
 ═══════════════════════════════════════ */
-/* Layout dos monedas */
-.tcCurrencyGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px }
-.tcCurrencyBlock { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm) }
-.tcCurrencyBlockEur { border-color: #c7d2fe }
-.tcCurrencyLabel { display: flex; align-items: center; gap: 8px; margin-bottom: 14px }
-.tcCurrencyFlag  { font-size: 22px; line-height: 1 }
-.tcCurrencyName  { font-size: var(--font-base); font-weight: 700; color: var(--text) }
-.tcCurrencyCode  { font-size: var(--font-xs); font-weight: 600; color: var(--muted); margin-left: 4px }
 
-/* Grid interno de compra/venta (2 cols ahora) */
-.tcActualGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
-.tcActualCard {
+/* Hero cards grid: 3 columnas */
+.tcHeroGrid {
+  display: grid; grid-template-columns: 1fr 1.6fr 1.6fr; gap: 14px;
+  margin-bottom: 10px;
+}
+.tcHeroCard {
+  border-radius: var(--radius); padding: 20px 18px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 14px;
+}
+.tcHeroCardCrc { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-color: #86efac }
+.tcHeroCardUsd { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #93c5fd }
+.tcHeroCardEur { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-color: #c4b5fd }
+
+.tcHeroTop  { display: flex; align-items: center; gap: 10px }
+.tcHeroFlag { font-size: 26px; line-height: 1; flex-shrink: 0 }
+.tcHeroName { font-size: var(--font-md); font-weight: 700; color: var(--text) }
+.tcHeroCode { font-size: var(--font-xs); font-weight: 500; color: var(--muted); margin-top: 1px }
+.tcHeroBadge     { margin-left: auto; font-size: 10px; font-weight: 700; background: #1d4ed8; color: #fff; border-radius: 4px; padding: 2px 6px; letter-spacing: .04em }
+.tcHeroBadgeEur  { background: #7c3aed }
+.tcHeroBase      { font-size: var(--font-sm); color: #16a34a; font-weight: 600 }
+
+.tcHeroRates { display: flex; align-items: center; gap: 0; background: rgba(255,255,255,.7); border-radius: var(--radius-sm); overflow: hidden }
+.tcHeroRate  { flex: 1; padding: 10px 14px; display: flex; flex-direction: column; gap: 3px }
+.tcHeroRateLabel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted) }
+.tcHeroRateVal   { font-size: var(--font-lg); font-weight: 800; color: var(--text) }
+.tcHeroRateDivider { width: 1px; background: var(--border); align-self: stretch }
+
+.tcHeroMeta { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-bottom: 4px }
+.tcRefreshBtn { display: flex; align-items: center; gap: 5px; font-size: var(--font-xs); font-weight: 500; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; transition: all var(--t-fast) }
+.tcRefreshBtn:hover { color: var(--accent); border-color: var(--accent) }
+
+/* Conversor triple */
+.conv3Card {
   background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius);
-  padding: 16px; box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-sm); overflow: hidden;
 }
-.tcActualVal   { font-size: var(--font-xl); font-weight: 800; color: var(--text); margin-top: 4px }
-.tcActualValSm { font-size: var(--font-md); font-weight: 600; color: var(--text); margin-top: 4px }
-.tcActualDate  { display: flex; flex-direction: column }
-
-.conversorRow {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+.conv3Row {
+  display: flex; align-items: center; gap: 0;
+  border-bottom: 1px solid var(--border); transition: background var(--t-fast);
 }
-.conversorInputWrap { display: flex; align-items: center; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; flex: 1; min-width: 120px }
-.conversorPrefix { padding: 0 10px; font-weight: 700; color: var(--muted); background: var(--slate-50); border-right: 1px solid var(--border); height: 38px; display: flex; align-items: center }
-.conversorInput  { flex: 1; border: none; padding: 0 10px; height: 38px; min-width: 60px; font-size: var(--font-base); color: var(--text) }
-.conversorSwap   { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--muted); background: var(--surface); transition: all var(--t-fast) }
-.conversorSwap:hover { border-color: var(--accent); color: var(--accent) }
-.conversorResult { display: flex; align-items: center; flex: 1; min-width: 120px; font-size: var(--font-xl); font-weight: 700; color: var(--text) }
-.conversorValue  { margin-left: 4px }
+.conv3Row:last-of-type { border-bottom: none }
+.conv3RowActive { background: #f0f9ff }
+.conv3Flag {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; min-width: 140px; border-right: 1px solid var(--border);
+  background: var(--slate-50);
+}
+.conv3FlagEmoji { font-size: 22px; line-height: 1 }
+.conv3Label { font-size: var(--font-sm); font-weight: 600; color: var(--text) }
+.conv3Code  { font-size: var(--font-xs); color: var(--muted); margin-top: 1px }
+.conv3InputWrap {
+  flex: 1; display: flex; align-items: center; padding: 0 14px; cursor: text;
+}
+.conv3Symbol { font-size: var(--font-md); font-weight: 700; color: var(--muted); margin-right: 6px; min-width: 14px }
+.conv3Input {
+  flex: 1; border: none; background: transparent; font-size: var(--font-xl);
+  font-weight: 700; color: var(--text); padding: 14px 0; outline: none; min-width: 0;
+}
+.conv3Input::placeholder { color: var(--border); font-weight: 400; font-size: var(--font-lg) }
+.conv3RowActive .conv3Input { color: #1d4ed8 }
+.conv3Footer {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 10px 16px; background: var(--slate-50); border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--muted);
+}
+.conv3Footer span { display: flex; align-items: center; gap: 4px }
+.conv3Clear {
+  margin-left: auto; font-size: 11px; color: var(--muted); background: none;
+  border: 1px solid var(--border); border-radius: 5px; padding: 3px 10px; cursor: pointer; transition: all var(--t-fast);
+}
+.conv3Clear:hover { color: var(--text); border-color: var(--text2) }
 
-.tcHistBox    { background: var(--slate-50); border-radius: var(--radius-sm); padding: 14px; margin-top: 12px }
-.tcHistCurrencies { display: grid; grid-template-columns: 1fr 1fr; gap: 14px }
-.tcHistCurrencyBlock { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px }
-.tcHistCurrencyTitle { font-size: var(--font-sm); font-weight: 700; color: var(--text); margin-bottom: 10px }
+/* Histórico */
+.tcHistBox    { background: var(--slate-50); border-radius: var(--radius-sm); padding: 16px; margin-top: 12px; border: 1px solid var(--border) }
+.tcHistHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px }
+.tcHistFecha  { font-size: var(--font-sm); font-weight: 700; color: var(--text) }
 .tcHistRow    { display: flex; align-items: center; gap: 16px }
 .tcHistCell   { flex: 1 }
-.tcHistDivider{ width: 1px; height: 40px; background: var(--border) }
-.tcHistVal    { font-size: var(--font-lg); font-weight: 700; color: var(--text); margin-top: 4px }
+.tcHistDivider{ width: 1px; height: 48px; background: var(--border) }
+.tcHistVal    { font-size: var(--font-xl); font-weight: 800; color: var(--text); margin-top: 4px }
 
 /* ═══════════════════════════════════════
    FACTURA ELECTRÓNICA
@@ -960,8 +1004,8 @@ tr:hover td { background: var(--slate-50) }
   .spotlightQuickGrid { grid-template-columns: 1fr 1fr; gap: 8px }
   .spotlightTitle { font-size: var(--font-xl) }
   .cabysGrid { grid-template-columns: 1fr }
-  .tcCurrencyGrid { grid-template-columns: 1fr }
-  .tcHistCurrencies { grid-template-columns: 1fr }
+  .tcHeroGrid { grid-template-columns: 1fr }
+  .conv3Flag { min-width: 110px }
   .assistantSearchWrap { flex-direction: column }
   .crmTaxGrid { grid-template-columns: 1fr 1fr }
   .feDecodedGrid { grid-template-columns: 1fr 1fr }

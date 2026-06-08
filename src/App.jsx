@@ -775,17 +775,26 @@ export default function App() {
     return () => clearInterval(t)
   }, [fetchFx])
 
-  /* ─── CONVERSOR ─── */
-  const [fxInput, setFxInput] = useState("")
-  const [fxDir,   setFxDir]   = useState("usd2crc")
-  const fxResult = useMemo(() => {
-    if (!fx || fxInput === "") return null
-    const n = parseFloat(fxInput.replace(/,/g, ""))
-    if (isNaN(n) || n < 0) return null
-    return fxDir === "usd2crc"
-      ? (n * fx.venta).toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      : (n / fx.compra).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  }, [fx, fxInput, fxDir])
+  /* ─── CONVERSOR TRIPLE ─── */
+  const [convField, setConvField] = useState("usd")
+  const [convInput, setConvInput] = useState("")
+  const convCalc = useMemo(() => {
+    if (!fx) return {}
+    const raw = convInput === "" ? "" : parseFloat(convInput.replace(/,/g, ""))
+    if (convInput === "" || isNaN(raw) || raw < 0) return {}
+    const n = raw
+    const eurRate = fxEur?.colones ?? null
+    if (convField === "usd") {
+      const crc = n * fx.venta
+      return { usd: n, crc, eur: eurRate ? crc / eurRate : null }
+    }
+    if (convField === "eur") {
+      const crc = eurRate ? n * eurRate : null
+      return { eur: n, crc, usd: crc != null ? crc / fx.venta : null }
+    }
+    // crc
+    return { crc: n, usd: n / fx.venta, eur: eurRate ? n / eurRate : null }
+  }, [fx, fxEur, convField, convInput])
 
   /* ─── COPY FLASH ─── */
   const { fl, flash } = useCopyFlash()
@@ -1449,61 +1458,79 @@ export default function App() {
           {page === "tipocambio" && (
             <div className="pageWrap pageCentered">
               <PageHeader icon={IC.currency} title="Tipo de Cambio"
-                description="Tipo de cambio del Banco Central de Costa Rica — dólar y euro, actual, histórico y conversor." />
+                description="Dólar y euro frente al colón · BCCR en tiempo real" />
 
-              <div className="sectionBlock">
-                <div className="sectionTitle">Actual</div>
-                <div className="tcCurrencyGrid">
-                  {/* USD */}
-                  <div className="tcCurrencyBlock">
-                    <div className="tcCurrencyLabel">
-                      <span className="tcCurrencyFlag">🇺🇸</span>
-                      <span className="tcCurrencyName">Dólar <span className="tcCurrencyCode">USD</span></span>
-                    </div>
-                    <div className="tcActualGrid">
-                      <div className="tcActualCard">
-                        <div className="lbl">Compra</div>
-                        <div className="tcActualVal">{fxLoading ? "…" : fx ? `₡${fx.compra.toLocaleString("es-CR")}` : "—"}</div>
-                      </div>
-                      <div className="tcActualCard">
-                        <div className="lbl">Venta</div>
-                        <div className="tcActualVal">{fxLoading ? "…" : fx ? `₡${fx.venta.toLocaleString("es-CR")}` : "—"}</div>
-                      </div>
+              {/* ─ Tarjetas hero ─ */}
+              <div className="tcHeroGrid">
+                {/* CRC */}
+                <div className="tcHeroCard tcHeroCardCrc">
+                  <div className="tcHeroTop">
+                    <span className="tcHeroFlag">🇨🇷</span>
+                    <div>
+                      <div className="tcHeroName">Colón</div>
+                      <div className="tcHeroCode">CRC · Moneda base</div>
                     </div>
                   </div>
-                  {/* EUR */}
-                  <div className="tcCurrencyBlock tcCurrencyBlockEur">
-                    <div className="tcCurrencyLabel">
-                      <span className="tcCurrencyFlag">🇪🇺</span>
-                      <span className="tcCurrencyName">Euro <span className="tcCurrencyCode">EUR</span></span>
+                  <div className="tcHeroBase">Moneda local</div>
+                </div>
+                {/* USD */}
+                <div className="tcHeroCard tcHeroCardUsd">
+                  <div className="tcHeroTop">
+                    <span className="tcHeroFlag">🇺🇸</span>
+                    <div>
+                      <div className="tcHeroName">Dólar</div>
+                      <div className="tcHeroCode">USD</div>
                     </div>
-                    <div className="tcActualGrid" style={{ gridTemplateColumns: "1fr" }}>
-                      <div className="tcActualCard">
-                        <div className="lbl">Tipo de cambio referencia</div>
-                        <div className="tcActualVal">{fxLoading ? "…" : fxEur ? `₡${fxEur.colones.toLocaleString("es-CR")}` : "—"}</div>
-                        {fxEur && <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>Publicado {formatFechaCR(fxEur.fecha)}</div>}
-                      </div>
+                    <span className="tcHeroBadge">BCCR</span>
+                  </div>
+                  <div className="tcHeroRates">
+                    <div className="tcHeroRate">
+                      <span className="tcHeroRateLabel">Compra</span>
+                      <span className="tcHeroRateVal">{fxLoading ? "…" : fx ? `₡${fx.compra.toLocaleString("es-CR")}` : "—"}</span>
+                    </div>
+                    <div className="tcHeroRateDivider" />
+                    <div className="tcHeroRate">
+                      <span className="tcHeroRateLabel">Venta</span>
+                      <span className="tcHeroRateVal">{fxLoading ? "…" : fx ? `₡${fx.venta.toLocaleString("es-CR")}` : "—"}</span>
                     </div>
                   </div>
                 </div>
-                <div style={{ textAlign: "center", marginTop: 12 }}>
-                  <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>{fx ? formatFechaCR(fx.fecha) : ""}</div>
-                  <button className="btn btnGhost btnSm" onClick={fetchFx} type="button">{IC.refresh} Actualizar</button>
+                {/* EUR */}
+                <div className="tcHeroCard tcHeroCardEur">
+                  <div className="tcHeroTop">
+                    <span className="tcHeroFlag">🇪🇺</span>
+                    <div>
+                      <div className="tcHeroName">Euro</div>
+                      <div className="tcHeroCode">EUR</div>
+                    </div>
+                    <span className="tcHeroBadge tcHeroBadgeEur">Hacienda</span>
+                  </div>
+                  <div className="tcHeroRates">
+                    <div className="tcHeroRate" style={{ flex: 1 }}>
+                      <span className="tcHeroRateLabel">Referencia</span>
+                      <span className="tcHeroRateVal">{fxLoading ? "…" : fxEur ? `₡${fxEur.colones.toLocaleString("es-CR")}` : "—"}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+              <div className="tcHeroMeta">
+                <span>{fx ? formatFechaCR(fx.fecha) : ""}</span>
+                <button className="tcRefreshBtn" onClick={fetchFx} type="button">{IC.refresh} Actualizar</button>
+              </div>
 
+              {/* ─ Conversor triple ─ */}
               {fx && (
                 <div className="sectionBlock">
                   <div className="sectionTitle">Conversor</div>
-                  <ConversorUI fx={fx} fxInput={fxInput} setFxInput={setFxInput} fxDir={fxDir} setFxDir={setFxDir} fxResult={fxResult} />
+                  <ConversorTriple fx={fx} fxEur={fxEur} convField={convField} setConvField={setConvField} convInput={convInput} setConvInput={setConvInput} convCalc={convCalc} />
                 </div>
               )}
 
+              {/* ─ Histórico ─ */}
               <div className="sectionBlock">
-                <div className="sectionTitle">Histórico por fecha</div>
+                <div className="sectionTitle">Histórico por fecha · USD</div>
                 <div className="toolCard">
                   <div className="toolSection">
-                    <label className="lbl">Fecha</label>
                     <div className="inputRow">
                       <input className="inp" type="date" value={tcFecha} max={todayStr}
                         onChange={e => setTcFecha(e.target.value)}
@@ -1512,22 +1539,28 @@ export default function App() {
                         {tcLoading ? "Consultando…" : "Consultar"}
                       </button>
                       {tcData && <CopyBtn id="tc-hist" label="Copiar" fl={fl} flash={flash} disabled={false}
-                        getText={() => { const [y, m, d] = tcData.fecha.split("-"); return `TC BCCR ${d}/${m}/${y}\nUSD Compra: ₡${tcData.compra.toLocaleString("es-CR")}\nUSD Venta: ₡${tcData.venta.toLocaleString("es-CR")}` }} />}
+                        getText={() => { const [y, m, d] = tcData.fecha.split("-"); return `TC BCCR ${d}/${m}/${y}\nUSD Compra: ₡${tcData.compra.toLocaleString("es-CR", { minimumFractionDigits: 2 })}\nUSD Venta: ₡${tcData.venta.toLocaleString("es-CR", { minimumFractionDigits: 2 })}` }} />}
                     </div>
                   </div>
                   {tcError && <div className="alertBox">{IC.warning} {tcError}</div>}
-                  {tcSearched && !tcLoading && !tcError && !tcData && <EmptyState msg="Sin datos para esa fecha" />}
+                  {tcSearched && !tcLoading && !tcError && !tcData && <EmptyState msg="Sin datos para esa fecha — puede ser feriado o fin de semana" />}
                   {tcData && (
                     <div className="tcHistBox">
-                      <div className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
-                        {(() => { const [y, m, d] = tcData.fecha.split("-"); return `${d}/${m}/${y}` })()}
+                      <div className="tcHistHeader">
+                        <span className="tcHistFecha">🇺🇸 USD · {(() => { const [y, m, d] = tcData.fecha.split("-"); return `${d}/${m}/${y}` })()}</span>
+                        <span className="muted" style={{ fontSize: 11 }}>Banco Central de Costa Rica</span>
                       </div>
                       <div className="tcHistRow">
-                        <div className="tcHistCell"><div className="lbl">Compra</div><div className="tcHistVal">₡{tcData.compra.toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div></div>
+                        <div className="tcHistCell">
+                          <div className="lbl">Compra</div>
+                          <div className="tcHistVal">₡{tcData.compra.toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div>
+                        </div>
                         <div className="tcHistDivider" />
-                        <div className="tcHistCell"><div className="lbl">Venta</div><div className="tcHistVal">₡{tcData.venta.toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div></div>
+                        <div className="tcHistCell">
+                          <div className="lbl">Venta</div>
+                          <div className="tcHistVal">₡{tcData.venta.toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div>
+                        </div>
                       </div>
-                      <div className="muted" style={{ fontSize: 11, marginTop: 8 }}>Fuente: Banco Central de Costa Rica</div>
                     </div>
                   )}
                 </div>
@@ -1694,25 +1727,47 @@ export default function App() {
   )
 }
 
-/* ─── Conversor component ─── */
-function ConversorUI({ fx, fxInput, setFxInput, fxDir, setFxDir, fxResult }) {
+/* ─── Conversor triple CRC / USD / EUR ─── */
+function ConversorTriple({ fx, fxEur, convField, setConvField, convInput, setConvInput, convCalc }) {
+  const fmt = (n, dec = 2) => n == null ? "" : n.toLocaleString("es-CR", { minimumFractionDigits: dec, maximumFractionDigits: dec })
+  const currencies = [
+    { id: "crc", flag: "🇨🇷", label: "Colón",  code: "CRC", symbol: "₡",  color: "crc" },
+    { id: "usd", flag: "🇺🇸", label: "Dólar",  code: "USD", symbol: "$",  color: "usd" },
+    { id: "eur", flag: "🇪🇺", label: "Euro",   code: "EUR", symbol: "€",  color: "eur" },
+  ]
+  const displayVal = (id) => {
+    if (id === convField) return convInput
+    if (!convCalc[id] && convCalc[id] !== 0) return ""
+    return fmt(convCalc[id], id === "crc" ? 2 : 4)
+  }
   return (
-    <div className="toolCard">
-      <div className="conversorRow">
-        <div className="conversorInputWrap">
-          <span className="conversorPrefix">{fxDir === "usd2crc" ? "$" : "₡"}</span>
-          <input className="conversorInput" type="number" min="0" placeholder="0.00"
-            value={fxInput} onChange={e => setFxInput(e.target.value)} />
+    <div className="conv3Card">
+      {currencies.map(c => (
+        <div key={c.id} className={`conv3Row${convField === c.id ? " conv3RowActive" : ""}`}>
+          <div className="conv3Flag">
+            <span className="conv3FlagEmoji">{c.flag}</span>
+            <div>
+              <div className="conv3Label">{c.label}</div>
+              <div className="conv3Code">{c.code}</div>
+            </div>
+          </div>
+          <div className="conv3InputWrap" onClick={() => setConvField(c.id)}>
+            <span className="conv3Symbol">{c.symbol}</span>
+            <input
+              className="conv3Input"
+              type="number"
+              min="0"
+              placeholder="0.00"
+              value={displayVal(c.id)}
+              onChange={e => { setConvField(c.id); setConvInput(e.target.value) }}
+            />
+          </div>
         </div>
-        <button className="conversorSwap" type="button" onClick={() => { setFxDir(d => d === "usd2crc" ? "crc2usd" : "usd2crc"); setFxInput("") }}>⇄</button>
-        <div className="conversorResult">
-          {fxResult !== null
-            ? <><span className="conversorPrefix">{fxDir === "usd2crc" ? "₡" : "$"}</span><span className="conversorValue">{fxResult}</span></>
-            : <span className="muted">{fxDir === "usd2crc" ? "₡ —" : "$ —"}</span>}
-        </div>
-      </div>
-      <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>
-        {fxDir === "usd2crc" ? `Usando tipo de cambio venta ₡${fx.venta.toLocaleString("es-CR")}` : `Usando tipo de cambio compra ₡${fx.compra.toLocaleString("es-CR")}`}
+      ))}
+      <div className="conv3Footer">
+        {fx && <span>USD: Compra ₡{fmt(fx.compra)} · Venta ₡{fmt(fx.venta)}</span>}
+        {fxEur && <span>EUR: Ref. ₡{fmt(fxEur.colones)}</span>}
+        <button className="conv3Clear" type="button" onClick={() => setConvInput("")}>Limpiar</button>
       </div>
     </div>
   )
