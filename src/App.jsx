@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import * as XLSX from "xlsx"
 import "./App.css"
 
-/* ================= API CHECK ================= */
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
 async function checkApiStatus() {
   const start = performance.now()
   const res = await fetch("/hacienda/fe/ae?identificacion=110220294", { cache: "no-store" })
@@ -11,7 +13,6 @@ async function checkApiStatus() {
   return ms
 }
 
-/* ================= HELPERS ================= */
 function formatFechaCR(fecha) {
   if (!fecha) return ""
   const d = new Date(fecha)
@@ -19,1034 +20,857 @@ function formatFechaCR(fecha) {
   return d.toLocaleDateString("es-CR", { day: "numeric", month: "long", year: "numeric" })
 }
 
-function onlyDigits(s) {
-  return (s || "").replace(/\D+/g, "")
-}
-
-function isValidAeId(s) {
-  const v = onlyDigits(s)
-  return v.length === 9 || v.length === 10 || v.length === 11
-}
+function onlyDigits(s) { return (s || "").replace(/\D+/g, "") }
+function isValidAeId(s) { const v = onlyDigits(s); return v.length === 9 || v.length === 10 || v.length === 11 }
 
 async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true } catch {}
   try {
-    await navigator.clipboard.writeText(text)
-    return true
-  } catch {
-    try {
-      const ta = document.createElement("textarea")
-      ta.value = text
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand("copy")
-      document.body.removeChild(ta)
-      return true
-    } catch {
-      return false
-    }
-  }
+    const ta = document.createElement("textarea")
+    ta.value = text; document.body.appendChild(ta); ta.select()
+    document.execCommand("copy"); document.body.removeChild(ta); return true
+  } catch { return false }
 }
 
 function toCsv(rows, headers) {
-  const esc = (v) => {
-    const s = v === null || v === undefined ? "" : String(v)
-    const t = s.replace(/"/g, '""')
-    return /[",\n]/.test(t) ? `"${t}"` : t
-  }
-  const head = headers.map(esc).join(",")
-  const body = rows.map((r) => r.map(esc).join(",")).join("\n")
-  return `${head}\n${body}\n`
+  const esc = (v) => { const s = String(v ?? ""); const t = s.replace(/"/g,'""'); return /[",\n]/.test(t)?`"${t}"`:t }
+  return `${headers.map(esc).join(",")}\n${rows.map(r=>r.map(esc).join(",")).join("\n")}\n`
 }
 
 function downloadBlob(filename, blob) {
   const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
+  const a = document.createElement("a"); a.href=url; a.download=filename
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
 }
 
 function downloadXlsx(filename, sheetName, rows, headerOrder) {
-  const data = rows.map((r) => {
-    const obj = {}
-    headerOrder.forEach((h) => (obj[h] = r[h] ?? ""))
-    return obj
-  })
+  const data = rows.map(r => { const o={}; headerOrder.forEach(h=>(o[h]=r[h]??"")); return o })
   const ws = XLSX.utils.json_to_sheet(data, { header: headerOrder })
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, sheetName)
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, sheetName)
   const out = XLSX.write(wb, { bookType: "xlsx", type: "array" })
-  const blob = new Blob([out], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  })
-  downloadBlob(filename, blob)
+  downloadBlob(filename, new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }))
 }
 
-/* ================= SAFE JSON FETCH ================= */
 async function fetchJsonSafe(url) {
   const res = await fetch(url, { cache: "no-store" })
   const ct = (res.headers.get("content-type") || "").toLowerCase()
   const text = await res.text()
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  if (!ct.includes("application/json")) {
-    const preview = text.slice(0, 120).replace(/\s+/g, " ")
-    throw new Error(`Respuesta no es JSON (${ct || "sin content-type"}): ${preview}`)
-  }
-  try {
-    return JSON.parse(text)
-  } catch {
-    const preview = text.slice(0, 120).replace(/\s+/g, " ")
-    throw new Error(`JSON inválido: ${preview}`)
-  }
+  if (!ct.includes("application/json")) throw new Error(`Respuesta no es JSON: ${text.slice(0,100)}`)
+  try { return JSON.parse(text) } catch { throw new Error(`JSON inválido: ${text.slice(0,100)}`) }
 }
 
-/* ============ GOMETA NORMALIZER ============ */
-function normalizeGometaResponse(json) {
-  if (!json) return { items: [], raw: json }
-  if (Array.isArray(json?.results)) {
-    return {
-      items: json.results.map((x, i) => ({
-        id: x?.cedula || x?.rawcedula || x?.id || String(i),
-        cedula: x?.cedula || x?.rawcedula || "",
-        nombre: x?.fullname || x?.nombre || x?.name || "",
-        tipo: x?.guess_type || x?.tipo || x?.type || "",
-        extra: x,
-      })),
-      raw: json,
-    }
-  }
-  if (Array.isArray(json)) {
-    return {
-      items: json.map((x, i) => ({
-        id: x?.cedula || x?.id || String(i),
-        cedula: x?.cedula || "",
-        nombre: x?.fullname || x?.nombre || x?.name || "",
-        tipo: x?.guess_type || x?.tipo || x?.type || "",
-        extra: x,
-      })),
-      raw: json,
-    }
-  }
-  const one = {
-    id: json?.cedula || json?.rawcedula || json?.id || "1",
-    cedula: json?.cedula || json?.rawcedula || "",
-    nombre: json?.fullname || json?.nombre || json?.name || "",
-    tipo: json?.guess_type || json?.tipo || json?.type || "",
-    extra: json,
-  }
-  return { items: [one].filter((x) => x.cedula || x.nombre || x.tipo), raw: json }
+function normalizeGometa(json) {
+  if (!json) return []
+  const arr = Array.isArray(json?.results) ? json.results : Array.isArray(json) ? json : [json]
+  return arr.map((x,i) => ({
+    id: x?.cedula||x?.rawcedula||x?.id||String(i),
+    cedula: x?.cedula||x?.rawcedula||"",
+    nombre: x?.fullname||x?.nombre||x?.name||"",
+    tipo: x?.guess_type||x?.tipo||x?.type||"",
+  })).filter(x=>x.cedula||x.nombre)
 }
 
-/* ============ HISTORIAL (localStorage) ============ */
-const HISTORY_MAX = 5
+/* ─── Historial localStorage ─── */
+const H = 5
+const loadH = k => { try { return JSON.parse(localStorage.getItem(k)||"[]") } catch { return [] } }
+const saveH = (k,v) => { if(!v?.trim()) return; const p=loadH(k); localStorage.setItem(k,JSON.stringify([v,...p.filter(x=>x!==v)].slice(0,H))) }
 
-function loadHistory(key) {
-  try { return JSON.parse(localStorage.getItem(key) || "[]") } catch { return [] }
-}
-
-function saveHistory(key, value) {
-  if (!value.trim()) return
-  const prev = loadHistory(key)
-  const next = [value, ...prev.filter((x) => x !== value)].slice(0, HISTORY_MAX)
-  localStorage.setItem(key, JSON.stringify(next))
-}
-
-/* ============ COPY FLASH HOOK ============ */
+/* ─── Copy flash hook ─── */
 function useCopyFlash() {
-  const [flashing, setFlashing] = useState(null)
-  const timers = useRef({})
-
-  const flash = useCallback(async (id, textOrFn) => {
-    const text = typeof textOrFn === "function" ? await textOrFn() : textOrFn
-    const ok = await copyText(text)
-    if (!ok) return
-    clearTimeout(timers.current[id])
-    setFlashing(id)
-    timers.current[id] = setTimeout(() => setFlashing((f) => (f === id ? null : f)), 1500)
+  const [fl, setFl] = useState(null)
+  const t = useRef({})
+  const flash = useCallback(async (id, fn) => {
+    const text = typeof fn === "function" ? await fn() : fn
+    if (!await copyText(text)) return
+    clearTimeout(t.current[id]); setFl(id)
+    t.current[id] = setTimeout(() => setFl(f => f===id?null:f), 1500)
   }, [])
-
-  return { flashing, flash }
+  return { fl, flash }
 }
 
-/* ============ CHIP CON COLOR ============ */
+/* ─── Chip con color ─── */
 function ChipStatus({ label, value }) {
   if (!value) return null
-  const val = String(value).toUpperCase()
-  let mod = ""
-  if (val === "NO") mod = "chipGood"
-  else if (val === "SI" || val === "NO INSCRITO") mod = "chipBad"
-  else if (val === "INSCRITO") mod = "chipGood"
-  return <span className={`chip ${mod}`}>{label}: {value}</span>
+  const v = String(value).toUpperCase()
+  const cls = v==="NO" ? "chipGood" : (v==="SI"||v==="NO INSCRITO") ? "chipBad" : v==="INSCRITO" ? "chipGood" : ""
+  return <span className={`chip ${cls}`}>{label}: {value}</span>
 }
 
-export default function App() {
-  /* ================= API STATUS ================= */
-  const [apiStatus, setApiStatus] = useState(null)
+/* ─── CopyBtn ─── */
+function CopyBtn({ id, label, getText, disabled, fl, flash }) {
+  const active = fl === id
+  return (
+    <button className={`btn btnGhost${active?" btnFlashed":""}`} onClick={()=>flash(id,getText)}
+      disabled={disabled||active} type="button">
+      {active ? "✓ Copiado" : label}
+    </button>
+  )
+}
 
-  async function refreshApiStatus() {
-    try {
-      const ms = await checkApiStatus()
-      setApiStatus({ ok: true, ms, at: new Date() })
-    } catch {
-      setApiStatus({ ok: false, at: new Date() })
-    }
+/* ─── HistoryRow ─── */
+function HistoryRow({ items, onSelect }) {
+  if (!items.length) return null
+  return (
+    <div className="historyRow">
+      {items.map(h => (
+        <button key={h} type="button" className="historyChip" onClick={() => onSelect(h)}>{h}</button>
+      ))}
+    </div>
+  )
+}
+
+/* ─── EmptyState ─── */
+function EmptyState({ msg }) {
+  return <div className="emptyState"><span className="emptyIcon">○</span><span>{msg}</span></div>
+}
+
+/* ─── PageHeader ─── */
+function PageHeader({ icon, title, description }) {
+  return (
+    <div className="pageHeader">
+      <div className="pageHeaderIcon">{icon}</div>
+      <div>
+        <h1 className="pageTitle">{title}</h1>
+        <p className="pageDesc">{description}</p>
+      </div>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────
+   NAV CONFIG
+───────────────────────────────────────────── */
+const NAV = [
+  { id: "home",          icon: "⊞",  label: "Inicio" },
+  { id: "cabys",         icon: "🔍", label: "CABYS" },
+  { id: "contribuyente", icon: "👤", label: "Contribuyente" },
+  { id: "cedulas",       icon: "🪪",  label: "Cédulas TSE" },
+  { id: "tipocambio",    icon: "💱", label: "Tipo de Cambio" },
+  { id: "factura",       icon: "🧾", label: "Factura Electrónica" },
+]
+
+/* ═════════════════════════════════════════════
+   APP ROOT
+═════════════════════════════════════════════ */
+export default function App() {
+  const [page, setPage] = useState("home")
+  const [sideOpen, setSideOpen] = useState(false)
+
+  const navigate = (id) => { setPage(id); setSideOpen(false) }
+
+  /* ─── API STATUS ─── */
+  const [apiStatus, setApiStatus] = useState(null)
+  const refreshApi = async () => {
+    try { const ms = await checkApiStatus(); setApiStatus({ ok: true, ms, at: new Date() }) }
+    catch { setApiStatus({ ok: false, at: new Date() }) }
   }
 
-  /* ================= TIPO DE CAMBIO (BCCR) ================= */
+  /* ─── TIPO DE CAMBIO ─── */
   const [fx, setFx] = useState(null)
   const [fxLoading, setFxLoading] = useState(false)
   const [fxError, setFxError] = useState("")
 
-  const fetchTipoCambio = useCallback(async () => {
-    setFxLoading(true)
-    setFxError("")
+  const fetchFx = useCallback(async () => {
+    setFxLoading(true); setFxError("")
     try {
       const json = await fetchJsonSafe("/hacienda/indicadores/tc")
-      const pickValor = (x) => (x && typeof x === "object" ? x.valor ?? "" : x ?? "")
-      const pickFecha = (x) => (x && typeof x === "object" ? x.fecha ?? "" : x ?? "")
-      const compraRaw = json?.compra ?? json?.tipoCambioCompra ?? json?.dolar?.compra ?? json?.data?.tipoCambioCompra
-      const ventaRaw  = json?.venta  ?? json?.tipoCambioVenta  ?? json?.dolar?.venta  ?? json?.data?.tipoCambioVenta
-      const compra = pickValor(compraRaw)
-      const venta  = pickValor(ventaRaw)
-      const fecha  = json?.fecha ?? json?.data?.fecha ?? pickFecha(compraRaw) ?? pickFecha(ventaRaw)
-      if (!compra && !venta) throw new Error("Sin datos de tipo de cambio")
-      setFx({ compra: Number(compra), venta: Number(venta), fecha })
-    } catch {
-      setFx(null)
-      setFxError("Tipo de cambio no disponible")
-    } finally {
-      setFxLoading(false)
-    }
+      const pV = x => x && typeof x==="object" ? x.valor??""  : x??""
+      const pF = x => x && typeof x==="object" ? x.fecha??""  : x??""
+      const cR = json?.compra??json?.tipoCambioCompra??json?.dolar?.compra??json?.data?.tipoCambioCompra
+      const vR = json?.venta ??json?.tipoCambioVenta ??json?.dolar?.venta ??json?.data?.tipoCambioVenta
+      const compra = Number(pV(cR)), venta = Number(pV(vR))
+      if (!compra && !venta) throw new Error("Sin datos")
+      setFx({ compra, venta, fecha: json?.fecha??json?.data?.fecha??pF(cR)??pF(vR) })
+    } catch { setFx(null); setFxError("No disponible") }
+    finally { setFxLoading(false) }
   }, [])
 
   useEffect(() => {
-    refreshApiStatus()
-    fetchTipoCambio()
-    const interval = setInterval(() => refreshApiStatus(), 60_000)
-    return () => clearInterval(interval)
-  }, [fetchTipoCambio])
+    refreshApi(); fetchFx()
+    const t = setInterval(refreshApi, 60_000)
+    return () => clearInterval(t)
+  }, [fetchFx])
 
-  /* ================= CONVERSOR USD / CRC ================= */
+  /* ─── CONVERSOR ─── */
   const [fxInput, setFxInput] = useState("")
-  const [fxDir, setFxDir] = useState("usd2crc") // "usd2crc" | "crc2usd"
-
+  const [fxDir,   setFxDir]   = useState("usd2crc")
   const fxResult = useMemo(() => {
     if (!fx || fxInput === "") return null
-    const n = parseFloat(fxInput.replace(/,/g, ""))
+    const n = parseFloat(fxInput.replace(/,/g,""))
     if (isNaN(n) || n < 0) return null
-    if (fxDir === "usd2crc") return (n * fx.venta).toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    return (n / fx.compra).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    return fxDir === "usd2crc"
+      ? (n * fx.venta).toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : (n / fx.compra).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }, [fx, fxInput, fxDir])
 
-  /* ================= COPY FLASH ================= */
-  const { flashing, flash } = useCopyFlash()
+  /* ─── COPY FLASH ─── */
+  const { fl, flash } = useCopyFlash()
 
-  function CopyBtn({ id, label = "Copiar CSV", getText, disabled }) {
-    const active = flashing === id
-    return (
-      <button
-        className={`btnGhost${active ? " btnFlashed" : ""}`}
-        onClick={() => flash(id, getText)}
-        disabled={disabled || active}
-        type="button"
-      >
-        {active ? "✓ Copiado" : label}
-      </button>
-    )
-  }
+  /* ─── TC HISTÓRICO ─── */
+  const todayStr = useMemo(() => new Date().toISOString().slice(0,10), [])
+  const [tcFecha,   setTcFecha]   = useState(todayStr)
+  const [tcData,    setTcData]    = useState(null)
+  const [tcLoading, setTcLoading] = useState(false)
+  const [tcError,   setTcError]   = useState("")
+  const [tcSearched,setTcSearched]= useState(false)
 
-  /* ================= CABYS ================= */
-  const [cabysQ, setCabysQ] = useState("")
-  const [cabysTop, setCabysTop] = useState(10)
-  const [cabysData, setCabysData] = useState([])
-  const [cabysLoading, setCabysLoading] = useState(false)
-  const [cabysError, setCabysError] = useState("")
-  const [cabysPage, setCabysPage] = useState(0)
-  const [cabysLastTopRequested, setCabysLastTopRequested] = useState(0)
-  const [cabysSearched, setCabysSearched] = useState(false)
-  const [cabysHistory, setCabysHistory] = useState(() => loadHistory("ht_cabys"))
-  const suggestBoxRef = useRef(null)
-
-  const cabysQueryTrim = useMemo(() => cabysQ.trim(), [cabysQ])
-  const cabysCanSearch = cabysQueryTrim.length > 0
-
-  const pageSize = useMemo(() => {
-    const n = Number(cabysTop)
-    if (!Number.isFinite(n) || n <= 0) return 10
-    return Math.min(50, Math.max(5, n))
-  }, [cabysTop])
-
-  async function consultarCabys({ resetPage = false, queryOverride } = {}) {
-    const q = (queryOverride ?? cabysQueryTrim).trim()
-    if (!q) return
-    if (resetPage) setCabysPage(0)
-    setCabysLoading(true)
-    setCabysError("")
-    setCabysSearched(true)
+  const consultarTc = async () => {
+    if (!tcFecha) return
+    setTcLoading(true); setTcError(""); setTcSearched(true)
     try {
-      const page = resetPage ? 0 : cabysPage
-      const neededTop = Math.min(50, pageSize * (page + 1))
-      setCabysLastTopRequested(neededTop)
-      const res = await fetch(`/hacienda/fe/cabys?q=${encodeURIComponent(q)}&top=${neededTop}`, { cache: "no-store" })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = await res.json()
-      setCabysData(json.cabys || [])
-      if (resetPage) {
-        saveHistory("ht_cabys", q)
-        setCabysHistory(loadHistory("ht_cabys"))
-        setCabysPage(0)
-      }
-    } catch (e) {
-      setCabysData([])
-      setCabysError(e?.message || "Error consultando CABYS")
-    } finally {
-      setCabysLoading(false)
-    }
+      const [y,m,d] = tcFecha.split("-"); const f = `${d}/${m}/${y}`
+      const base = `/bccr/Indicadores/Suscripciones/WS/wsindicadoreseconomicos.asmx/ObtenerIndicadoresEconomicos`
+      const p = ind => `?Indicador=${ind}&FechaInicio=${f}&FechaFinal=${f}&Nombre=ht&SubNiveles=N&CorreoElectronico=no@no.com&Token=NONE`
+      const [rC, rV] = await Promise.all([fetch(base+p(317),{cache:"no-store"}), fetch(base+p(318),{cache:"no-store"})])
+      const [tC, tV] = await Promise.all([rC.text(), rV.text()])
+      const xv = xml => { const m = xml.match(/<NUM_VALOR>([\d.,]+)<\/NUM_VALOR>/); return m ? parseFloat(m[1].replace(",",".")) : null }
+      const compra = xv(tC), venta = xv(tV)
+      if (!compra && !venta) throw new Error("Sin datos para esa fecha — puede ser feriado o fin de semana")
+      setTcData({ compra, venta, fecha: tcFecha })
+    } catch(e) { setTcData(null); setTcError(e?.message||"Error") }
+    finally { setTcLoading(false) }
   }
 
-  async function cabysNextPage() {
-    const nextPage = cabysPage + 1
-    const needTop = Math.min(50, pageSize * (nextPage + 1))
-    if (cabysData.length < needTop) {
-      setCabysLoading(true)
-      setCabysError("")
+  /* ─── CABYS ─── */
+  const [cabysQ,        setCabysQ]       = useState("")
+  const [cabysTop,      setCabysTop]     = useState(10)
+  const [cabysData,     setCabysData]    = useState([])
+  const [cabysLoading,  setCabysLoading] = useState(false)
+  const [cabysError,    setCabysError]   = useState("")
+  const [cabysPage,     setCabysPage]    = useState(0)
+  const [cabysLastTop,  setCabysLastTop] = useState(0)
+  const [cabysSearched, setCabysSearched]= useState(false)
+  const [cabysHist,     setCabysHist]    = useState(() => loadH("ht_cabys"))
+
+  const cabysQ_   = useMemo(() => cabysQ.trim(), [cabysQ])
+  const pageSize  = useMemo(() => { const n=Number(cabysTop); return Number.isFinite(n)&&n>0 ? Math.min(50,Math.max(5,n)) : 10 }, [cabysTop])
+
+  const consultarCabys = async ({ reset=false, q: qOv }={}) => {
+    const q = (qOv??cabysQ_).trim(); if(!q) return
+    if(reset) setCabysPage(0)
+    setCabysLoading(true); setCabysError(""); setCabysSearched(true)
+    try {
+      const pg = reset ? 0 : cabysPage
+      const top = Math.min(50, pageSize*(pg+1)); setCabysLastTop(top)
+      const res = await fetch(`/hacienda/fe/cabys?q=${encodeURIComponent(q)}&top=${top}`,{cache:"no-store"})
+      if(!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json(); setCabysData(json.cabys||[])
+      if(reset) { saveH("ht_cabys",q); setCabysHist(loadH("ht_cabys")); setCabysPage(0) }
+    } catch(e) { setCabysData([]); setCabysError(e?.message||"Error") }
+    finally { setCabysLoading(false) }
+  }
+
+  const cabysNext = async () => {
+    const np = cabysPage+1, need = Math.min(50, pageSize*(np+1))
+    if(cabysData.length < need) {
+      setCabysLoading(true); setCabysError("")
       try {
-        const res = await fetch(`/hacienda/fe/cabys?q=${encodeURIComponent(cabysQueryTrim)}&top=${needTop}`, { cache: "no-store" })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const json = await res.json()
-        setCabysData(json.cabys || [])
-        setCabysLastTopRequested(needTop)
-      } catch (e) {
-        setCabysError(e?.message || "Error consultando CABYS")
-        setCabysLoading(false)
-        return
-      } finally {
-        setCabysLoading(false)
-      }
-    } else {
-      setCabysLastTopRequested(needTop)
-    }
-    setCabysPage(nextPage)
+        const res = await fetch(`/hacienda/fe/cabys?q=${encodeURIComponent(cabysQ_)}&top=${need}`,{cache:"no-store"})
+        if(!res.ok) throw new Error(`HTTP ${res.status}`)
+        const json = await res.json(); setCabysData(json.cabys||[]); setCabysLastTop(need)
+      } catch(e) { setCabysError(e?.message||"Error"); setCabysLoading(false); return }
+      finally { setCabysLoading(false) }
+    } else { setCabysLastTop(need) }
+    setCabysPage(np)
   }
 
-  const cabysTotal    = cabysData.length
-  const cabysStart    = cabysPage * pageSize
-  const cabysEnd      = cabysStart + pageSize
-  const cabysPageRows = cabysData.slice(cabysStart, cabysEnd)
-  const cabysHasPrev  = cabysPage > 0
-  const cabysHasNext  = cabysEnd < cabysTotal || (cabysTotal === cabysLastTopRequested && cabysLastTopRequested < 50)
+  const cabysTotal = cabysData.length
+  const cabysStart = cabysPage*pageSize, cabysEnd = cabysStart+pageSize
+  const cabysRows  = cabysData.slice(cabysStart, cabysEnd)
+  const cabysHasNext = cabysEnd<cabysTotal||(cabysTotal===cabysLastTop&&cabysLastTop<50)
 
-  function downloadCabysXlsx() {
-    if (!cabysPageRows.length) return
-    downloadXlsx("cabys.xlsx", "CABYS",
-      cabysPageRows.map((c) => ({ codigo: c.codigo, descripcion: c.descripcion, impuesto: `${c.impuesto}%` })),
-      ["codigo", "descripcion", "impuesto"]
-    )
-  }
+  /* ─── AE ─── */
+  const [aeId,       setAeId]      = useState("")
+  const [aeData,     setAeData]    = useState(null)
+  const [aeLoading,  setAeLoading] = useState(false)
+  const [aeError,    setAeError]   = useState("")
+  const [aeSearched, setAeSearched]= useState(false)
+  const [aeHist,     setAeHist]    = useState(() => loadH("ht_ae"))
+  const aeLastQ = useRef("")
 
-  /* ================= AE ================= */
-  const [aeId, setAeId] = useState("")
-  const [aeData, setAeData] = useState(null)
-  const [aeLoading, setAeLoading] = useState(false)
-  const [aeError, setAeError] = useState("")
-  const [aeSearched, setAeSearched] = useState(false)
-  const [aeHistory, setAeHistory] = useState(() => loadHistory("ht_ae"))
-  const aeLastQueried = useRef("")  // ID de la última consulta exitosa, no cambia al borrar el input
+  const aeDigits = useMemo(() => onlyDigits(aeId), [aeId])
+  const aeValid  = useMemo(() => isValidAeId(aeId), [aeId])
 
-  const aeIdDigits = useMemo(() => onlyDigits(aeId), [aeId])
-  const aeValid    = useMemo(() => isValidAeId(aeId), [aeId])
-
-  /* idOverride permite llamar desde el chip de historial sin esperar actualización de estado */
-  async function consultarAE(idOverride) {
-    const digits = idOverride ? onlyDigits(idOverride) : aeIdDigits
-    if (!isValidAeId(digits)) return
-    setAeLoading(true)
-    setAeError("")
-    setAeSearched(true)
+  const consultarAE = async (idOv) => {
+    const digits = idOv ? onlyDigits(idOv) : aeDigits
+    if(!isValidAeId(digits)) return
+    setAeLoading(true); setAeError(""); setAeSearched(true)
     try {
-      const res = await fetch(`/hacienda/fe/ae?identificacion=${digits}`, { cache: "no-store" })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = await res.json()
-      setAeData(json)
-      aeLastQueried.current = digits
-      saveHistory("ht_ae", digits)
-      setAeHistory(loadHistory("ht_ae"))
-    } catch (e) {
-      setAeData(null)
-      setAeError(e?.message || "Error consultando AE")
-    } finally {
-      setAeLoading(false)
-    }
+      const res = await fetch(`/hacienda/fe/ae?identificacion=${digits}`,{cache:"no-store"})
+      if(!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json(); setAeData(json)
+      aeLastQ.current = digits; saveH("ht_ae",digits); setAeHist(loadH("ht_ae"))
+    } catch(e) { setAeData(null); setAeError(e?.message||"Error") }
+    finally { setAeLoading(false) }
   }
 
   const aeJsonId = useMemo(() => {
-    const raw = aeData?.identificacion ?? aeData?.identificacionTributaria ?? aeData?.cedula ?? aeData?.id ?? ""
-    return onlyDigits(String(raw)) || aeLastQueried.current
+    const raw = aeData?.identificacion??aeData?.identificacionTributaria??aeData?.cedula??aeData?.id??""
+    return onlyDigits(String(raw)) || aeLastQ.current
   }, [aeData])
 
-  function getAeSummaryText() {
-    if (!aeData) return ""
-    const s = aeData?.situacion || {}
-    return [
-      `Contribuyente (AE)`,
-      `Nombre: ${aeData.nombre || "-"}`,
-      `Identificación: ${aeJsonId || "-"}`,
-      `Régimen: ${aeData.regimen?.descripcion || "-"}`,
-      `Estado: ${s.estado || "-"}`,
-      `Moroso: ${s.moroso || "-"}`,
-      `Omiso: ${s.omiso || "-"}`,
-      `Administración Tributaria: ${s.administracionTributaria || "-"}`,
-    ].join("\n")
+  const aeResumen = () => {
+    if(!aeData) return ""; const s=aeData?.situacion||{}
+    return [`Contribuyente (AE)`,`Nombre: ${aeData.nombre||"-"}`,`Identificación: ${aeJsonId||"-"}`,
+      `Régimen: ${aeData.regimen?.descripcion||"-"}`,`Estado: ${s.estado||"-"}`,
+      `Moroso: ${s.moroso||"-"}`,`Omiso: ${s.omiso||"-"}`,
+      `AT: ${s.administracionTributaria||"-"}`].join("\n")
   }
 
-  function getAeActividadesCsvText() {
-    if (!aeData?.actividades?.length) return ""
-    return toCsv(
-      aeData.actividades.map((a) => [a.codigo, a.descripcion, a.tipo === "P" ? "Principal" : "Secundaria", a.estado === "A" ? "Activa" : "Inactiva"]),
-      ["codigo", "descripcion", "tipo", "estado"]
-    )
+  const aeActCsv = () => {
+    if(!aeData?.actividades?.length) return ""
+    return toCsv(aeData.actividades.map(a=>[a.codigo,a.descripcion,a.tipo==="P"?"Principal":"Secundaria",a.estado==="A"?"Activa":"Inactiva"]),["codigo","descripcion","tipo","estado"])
   }
 
-  function downloadAeActividadesXlsx() {
-    if (!aeData?.actividades?.length) return
-    downloadXlsx("actividades_ae.xlsx", "Actividades",
-      aeData.actividades.map((a) => ({
-        codigo: a.codigo,
-        descripcion: a.descripcion,
-        tipo: a.tipo === "P" ? "Principal" : "Secundaria",
-        estado: a.estado === "A" ? "Activa" : "Inactiva",
-      })),
-      ["codigo", "descripcion", "tipo", "estado"]
-    )
-  }
+  /* ─── CÉDULAS ─── */
+  const [cedQ,       setCedQ]      = useState("")
+  const [cedItems,   setCedItems]  = useState([])
+  const [cedLoading, setCedLoading]= useState(false)
+  const [cedError,   setCedError]  = useState("")
+  const [cedSearched,setCedSearched]=useState(false)
+  const [cedHist,    setCedHist]   = useState(() => loadH("ht_ced"))
 
-  /* ================= GOMETA CEDULAS ================= */
-  const [cedQuery, setCedQuery] = useState("")
-  const [cedLoading, setCedLoading] = useState(false)
-  const [cedError, setCedError] = useState("")
-  const [cedItems, setCedItems] = useState([])
-  const [cedSearched, setCedSearched] = useState(false)
-  const [cedHistory, setCedHistory] = useState(() => loadHistory("ht_ced"))
+  const cedQ_ = useMemo(() => cedQ.trim(), [cedQ])
 
-  const cedQueryTrim = useMemo(() => cedQuery.trim(), [cedQuery])
-  const cedCanSearch = cedQueryTrim.length > 0
-
-  async function consultarCedulas(queryOverride) {
-    const q = (queryOverride ?? cedQueryTrim).trim()
-    if (!q) return
-    setCedLoading(true)
-    setCedError("")
-    setCedItems([])
-    setCedSearched(true)
+  const consultarCed = async (qOv) => {
+    const q = (qOv??cedQ_).trim(); if(!q) return
+    setCedLoading(true); setCedError(""); setCedItems([]); setCedSearched(true)
     try {
       const json = await fetchJsonSafe(`/gometa/cedulas/${encodeURIComponent(q)}`)
-      const norm = normalizeGometaResponse(json)
-      setCedItems(norm.items)
-      saveHistory("ht_ced", q)
-      setCedHistory(loadHistory("ht_ced"))
-    } catch (e) {
-      setCedError(e?.message || "Error consultando Cédulas (gometa)")
-    } finally {
-      setCedLoading(false)
-    }
+      setCedItems(normalizeGometa(json))
+      saveH("ht_ced",q); setCedHist(loadH("ht_ced"))
+    } catch(e) { setCedError(e?.message||"Error") }
+    finally { setCedLoading(false) }
   }
 
-  function downloadCedulasXlsx() {
-    if (!cedItems.length) return
-    downloadXlsx("cedulas_gometa.xlsx", "Cedulas",
-      cedItems.map((x) => ({ cedula: x.cedula, nombre: x.nombre, tipo: x.tipo })),
-      ["cedula", "nombre", "tipo"]
-    )
-  }
+  /* ─── FACTURA ─── */
+  const [feKey,      setFeKey]     = useState("")
+  const [feData,     setFeData]    = useState(null)
+  const [feLoading,  setFeLoading] = useState(false)
+  const [feError,    setFeError]   = useState("")
+  const [feSearched, setFeSearched]= useState(false)
 
-  /* ================= TC HISTÓRICO (BCCR) ================= */
-  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), [])
-  const [tcFecha, setTcFecha] = useState(todayStr)
-  const [tcData, setTcData] = useState(null)
-  const [tcLoading, setTcLoading] = useState(false)
-  const [tcError, setTcError] = useState("")
-  const [tcSearched, setTcSearched] = useState(false)
+  const feClean = useMemo(() => onlyDigits(feKey), [feKey])
+  const feValid = feClean.length === 50
 
-  async function consultarTcHistorico() {
-    if (!tcFecha) return
-    setTcLoading(true)
-    setTcError("")
-    setTcSearched(true)
+  const consultarFe = async () => {
+    if(!feValid) return
+    setFeLoading(true); setFeError(""); setFeSearched(true); setFeData(null)
     try {
-      // Formato BCCR: dd/MM/yyyy
-      const [y, m, d] = tcFecha.split("-")
-      const fechaBCCR = `${d}/${m}/${y}`
-      // Indicador 317 = tipo de cambio compra USD, 318 = venta USD
-      const base = `/bccr/Indicadores/Suscripciones/WS/wsindicadoreseconomicos.asmx/ObtenerIndicadoresEconomicos`
-      const params = (ind) => `?Indicador=${ind}&FechaInicio=${fechaBCCR}&FechaFinal=${fechaBCCR}&Nombre=hacienda-toolkit&SubNiveles=N&CorreoElectronico=no@no.com&Token=NONE`
-      const [rCompra, rVenta] = await Promise.all([
-        fetch(base + params(317), { cache: "no-store" }),
-        fetch(base + params(318), { cache: "no-store" }),
-      ])
-      const [tCompra, tVenta] = await Promise.all([rCompra.text(), rVenta.text()])
-      const extractVal = (xml) => {
-        const m = xml.match(/<NUM_VALOR>([\d.,]+)<\/NUM_VALOR>/)
-        return m ? parseFloat(m[1].replace(",", ".")) : null
-      }
-      const compra = extractVal(tCompra)
-      const venta  = extractVal(tVenta)
-      if (!compra && !venta) throw new Error("Sin datos para esa fecha — puede ser feriado o fin de semana")
-      setTcData({ compra, venta, fecha: tcFecha })
-    } catch (e) {
-      setTcData(null)
-      setTcError(e?.message || "Error consultando tipo de cambio histórico")
-    } finally {
-      setTcLoading(false)
-    }
+      const res = await fetch(`/hacienda/fe/documento?clave=${feClean}`,{cache:"no-store"})
+      if(res.status===404) throw new Error("Factura no encontrada — verificá la clave")
+      if(!res.ok) throw new Error(`HTTP ${res.status}`)
+      setFeData(await res.json())
+    } catch(e) { setFeError(e?.message||"Error") }
+    finally { setFeLoading(false) }
   }
 
-  /* ================= FACTURA ELECTRÓNICA ================= */
-  const [feKey, setFeKey] = useState("")
-  const [feData, setFeData] = useState(null)
-  const [feLoading, setFeLoading] = useState(false)
-  const [feError, setFeError] = useState("")
-  const [feSearched, setFeSearched] = useState(false)
-
-  const feKeyClean  = useMemo(() => onlyDigits(feKey), [feKey])
-  const feKeyValid  = feKeyClean.length === 50
-
-  async function consultarFactura() {
-    if (!feKeyValid) return
-    setFeLoading(true)
-    setFeError("")
-    setFeSearched(true)
-    setFeData(null)
-    try {
-      const res = await fetch(`/hacienda/fe/documento?clave=${feKeyClean}`, { cache: "no-store" })
-      if (res.status === 404) throw new Error("Factura no encontrada — verificá la clave")
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = await res.json()
-      setFeData(json)
-    } catch (e) {
-      setFeError(e?.message || "Error consultando factura")
-    } finally {
-      setFeLoading(false)
-    }
+  const feResumen = () => {
+    if(!feData) return ""
+    return [`Factura Electrónica`,`Clave: ${feClean}`,
+      `Estado: ${feData?.ind_estado||feData?.estado||"-"}`,
+      feData?.emisor?.nombre  ? `Emisor: ${feData.emisor.nombre}`   : "",
+      feData?.receptor?.nombre? `Receptor: ${feData.receptor.nombre}`: "",
+      feData?.fecha           ? `Fecha: ${feData.fecha}`             : "",
+      feData?.totalComprobante? `Total: ₡${Number(feData.totalComprobante).toLocaleString("es-CR",{minimumFractionDigits:2})}` : "",
+    ].filter(Boolean).join("\n")
   }
 
-  /* ================= RENDER ================= */
+  /* ═══════════════════════════════════════════
+     RENDER
+  ═══════════════════════════════════════════ */
   return (
-    <div className="page">
-      <div className="container">
-        <header className="top">
-          <div className="topLeft">
-            <h1>Herramienta de consulta</h1>
-            <p>CABYS · Contribuyentes · Cédulas TSE · Tipo de cambio</p>
-          </div>
+    <div className="layout">
+      {/* ── Overlay mobile ── */}
+      {sideOpen && <div className="sideOverlay" onClick={()=>setSideOpen(false)} />}
 
-          {/* TIPO DE CAMBIO */}
-          <div className="fxCard" title="Tipo de cambio BCCR">
-            <div className="fxTitle">
-              Tipo de cambio
-              <button className="fxRefresh" onClick={fetchTipoCambio} type="button" title="Actualizar">↻</button>
-            </div>
-            {fxLoading ? (
-              <div className="fxRow muted">Cargando…</div>
-            ) : fx ? (
-              <>
-                <div className="fxRow">
-                  <span className="fxLabel">Compra</span>
-                  <span className="fxValue">₡{fx.compra.toLocaleString("es-CR")}</span>
-                </div>
-                <div className="fxRow">
-                  <span className="fxLabel">Venta</span>
-                  <span className="fxValue">₡{fx.venta.toLocaleString("es-CR")}</span>
-                </div>
-                <div className="fxDate muted">Al {formatFechaCR(fx.fecha)}</div>
-              </>
-            ) : (
-              <div className="fxRow bad">{fxError || "No disponible"}</div>
-            )}
+      {/* ── SIDEBAR ── */}
+      <aside className={`sidebar${sideOpen?" sideOpen":""}`}>
+        <div className="sideTop">
+          <div className="sideBrand">
+            <span className="sideLogo">⚡</span>
+            <span className="sideName">HaciendaKit</span>
           </div>
+        </div>
+
+        <nav className="sideNav">
+          {NAV.map(n => (
+            <button key={n.id} type="button"
+              className={`navItem${page===n.id?" navActive":""}`}
+              onClick={() => navigate(n.id)}>
+              <span className="navIcon">{n.icon}</span>
+              <span className="navLabel">{n.label}</span>
+              {page===n.id && <span className="navDot"/>}
+            </button>
+          ))}
+        </nav>
+
+        <div className="sideBottom">
+          <div className={`apiPill${apiStatus?.ok?" apiPillOk":" apiPillBad"}`}>
+            <span className={`dot${apiStatus?.ok?" ok":" bad"}`}/>
+            <span>{apiStatus?.ok ? `API OK · ${apiStatus.ms}ms` : "API sin respuesta"}</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── MAIN ── */}
+      <div className="mainArea">
+        {/* Topbar */}
+        <header className="topbar">
+          <button className="menuBtn" type="button" onClick={()=>setSideOpen(s=>!s)}>☰</button>
+          <div className="topbarBread">
+            <span className="topbarApp">HaciendaKit</span>
+            <span className="topbarSep">›</span>
+            <span className="topbarPage">{NAV.find(n=>n.id===page)?.label}</span>
+          </div>
+          {fx && (
+            <div className="topbarFx">
+              <span className="topbarFxLabel">USD/CRC</span>
+              <span className="topbarFxVal">₡{fx.venta.toLocaleString("es-CR")}</span>
+            </div>
+          )}
         </header>
 
-        {/* API STATUS */}
-        <section className="card apiStatusCard">
-          <div className="apiHead">
-            <div>
-              <div className="apiTitle">Estado de los APIs</div>
-              <div className="apiSub">Hacienda · Gometa — Auto cada 1 minuto</div>
-            </div>
-            <button className="btnGhost" onClick={refreshApiStatus} type="button">
-              ↻ Revisar ahora
-            </button>
-          </div>
-          <div className="apiBody">
-            {apiStatus?.ok ? (
-              <div className="apiOk">
-                <span className="dot ok" />
-                <span className="apiLine">Operacional — respuesta en <b>{apiStatus.ms} ms</b></span>
-              </div>
-            ) : (
-              <div className="apiBad">
-                <span className="dot bad" />
-                <span className="apiLine">Sin respuesta</span>
-              </div>
-            )}
-            {apiStatus?.at && <div className="muted">Última revisión: {apiStatus.at.toLocaleString()}</div>}
-          </div>
-        </section>
+        {/* Page content */}
+        <main className="content">
 
-        {/* CONVERSOR USD / CRC */}
-        {fx && (
-          <section className="card conversorCard">
-            <h2 className="conversorTitle">Conversor USD ↔ CRC</h2>
-            <div className="conversorRow">
-              <div className="conversorInputWrap">
-                <span className="conversorPrefix">{fxDir === "usd2crc" ? "$" : "₡"}</span>
-                <input
-                  className="conversorInput"
-                  type="number"
-                  min="0"
-                  placeholder="0.00"
-                  value={fxInput}
-                  onChange={(e) => setFxInput(e.target.value)}
-                />
+          {/* ══ INICIO ══ */}
+          {page === "home" && (
+            <div className="pageWrap">
+              <PageHeader icon="⊞" title="Inicio" description="Panel general — estado del sistema y tipo de cambio en tiempo real." />
+
+              <div className="homeGrid">
+                {/* API status */}
+                <div className="statCard">
+                  <div className="statLabel">Estado API Hacienda</div>
+                  <div className={`statVal${apiStatus?.ok?" statGood":" statBad"}`}>
+                    {apiStatus == null ? "Verificando…" : apiStatus.ok ? "Operacional" : "Sin respuesta"}
+                  </div>
+                  {apiStatus?.ok && <div className="statSub">{apiStatus.ms} ms · última revisión {apiStatus.at.toLocaleTimeString()}</div>}
+                  <button className="btn btnGhost" style={{marginTop:12}} onClick={refreshApi} type="button">↻ Revisar ahora</button>
+                </div>
+
+                {/* TC compra */}
+                <div className="statCard">
+                  <div className="statLabel">Tipo de cambio — Compra</div>
+                  <div className="statVal statPurple">
+                    {fxLoading ? "…" : fx ? `₡${fx.compra.toLocaleString("es-CR")}` : "—"}
+                  </div>
+                  {fx && <div className="statSub">Al {formatFechaCR(fx.fecha)}</div>}
+                </div>
+
+                {/* TC venta */}
+                <div className="statCard">
+                  <div className="statLabel">Tipo de cambio — Venta</div>
+                  <div className="statVal statPurple">
+                    {fxLoading ? "…" : fx ? `₡${fx.venta.toLocaleString("es-CR")}` : "—"}
+                  </div>
+                  {fx && <div className="statSub">Fuente: BCCR</div>}
+                </div>
+
+                {/* Accesos rápidos */}
+                <div className="quickCard">
+                  <div className="statLabel" style={{marginBottom:12}}>Acceso rápido</div>
+                  <div className="quickGrid">
+                    {NAV.filter(n=>n.id!=="home").map(n=>(
+                      <button key={n.id} type="button" className="quickBtn" onClick={()=>navigate(n.id)}>
+                        <span className="quickIcon">{n.icon}</span>
+                        <span>{n.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <button
-                className="conversorSwap"
-                type="button"
-                title="Cambiar dirección"
-                onClick={() => { setFxDir((d) => d === "usd2crc" ? "crc2usd" : "usd2crc"); setFxInput("") }}
-              >
-                ⇄
-              </button>
-              <div className="conversorResult">
-                {fxResult !== null ? (
-                  <>
-                    <span className="conversorPrefix">{fxDir === "usd2crc" ? "₡" : "$"}</span>
-                    <span className="conversorValue">{fxResult}</span>
-                  </>
-                ) : (
-                  <span className="muted">{fxDir === "usd2crc" ? "₡ —" : "$ —"}</span>
+
+              {/* Conversor en Inicio */}
+              {fx && (
+                <div className="sectionBlock">
+                  <h2 className="sectionTitle">Conversor USD ↔ CRC</h2>
+                  <ConversorUI fx={fx} fxInput={fxInput} setFxInput={setFxInput}
+                    fxDir={fxDir} setFxDir={setFxDir} fxResult={fxResult} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ══ CABYS ══ */}
+          {page === "cabys" && (
+            <div className="pageWrap">
+              <PageHeader icon="🔍" title="Consulta CABYS"
+                description="Buscá productos y servicios del Catálogo de Bienes y Servicios para facturación electrónica." />
+              <div className="toolCard">
+                <div className="toolSection">
+                  <label className="lbl">Búsqueda por nombre o código</label>
+                  <div className="inputRow">
+                    <input className="inp" value={cabysQ} placeholder="Ej: arroz · servicios contables · 1010101…"
+                      onChange={e=>{setCabysQ(e.target.value);setCabysPage(0)}}
+                      onKeyDown={e=>{if(e.key==="Enter")consultarCabys({reset:true})}} />
+                    <button className="btn btnPrimary" onClick={()=>consultarCabys({reset:true})}
+                      disabled={!cabysQ_.length||cabysLoading} type="button">
+                      {cabysLoading?"Buscando…":"Buscar"}
+                    </button>
+                  </div>
+                  <HistoryRow items={cabysHist} onSelect={h=>{setCabysQ(h);setCabysPage(0);consultarCabys({reset:true,q:h})}} />
+                </div>
+
+                <div className="toolSection toolRow">
+                  <div>
+                    <label className="lbl">Resultados por página</label>
+                    <input className="inp inpSmall" type="number" min="5" max="50" value={cabysTop}
+                      onChange={e=>{setCabysTop(e.target.value);setCabysPage(0)}} />
+                  </div>
+                  <div className="toolActions">
+                    <CopyBtn id="cabys-csv" label="Copiar CSV" fl={fl} flash={flash}
+                      getText={()=>toCsv(cabysRows.map(c=>[c.codigo,c.descripcion,`${c.impuesto}%`]),["codigo","descripcion","impuesto"])}
+                      disabled={!cabysRows.length} />
+                    <button className="btn btnGhost" onClick={()=>{
+                      if(!cabysRows.length) return
+                      downloadXlsx("cabys.xlsx","CABYS",cabysRows.map(c=>({codigo:c.codigo,descripcion:c.descripcion,impuesto:`${c.impuesto}%`})),["codigo","descripcion","impuesto"])
+                    }} type="button">Descargar XLSX</button>
+                  </div>
+                </div>
+
+                {cabysError && <div className="alertBox">⚠️ {cabysError}</div>}
+                {cabysSearched && !cabysLoading && !cabysError && !cabysTotal && <EmptyState msg={`Sin resultados para "${cabysQ_}"`} />}
+
+                {cabysTotal > 0 && (
+                  <div className="pager">
+                    <button className="btn btnGhost" disabled={cabysPage===0} onClick={()=>setCabysPage(p=>Math.max(0,p-1))} type="button">◀</button>
+                    <span className="muted">Pág. {cabysPage+1} · {Math.min(cabysEnd,cabysTotal)} de {cabysTotal}</span>
+                    <button className="btn btnGhost" disabled={!cabysHasNext} onClick={cabysNext} type="button">▶</button>
+                  </div>
+                )}
+
+                {cabysRows.length > 0 && (
+                  <div className="tableWrap">
+                    <table>
+                      <thead><tr><th>Código</th><th>Descripción</th><th>Impuesto</th><th className="thR">Copiar</th></tr></thead>
+                      <tbody>
+                        {cabysRows.map(c=>(
+                          <tr key={c.codigo}>
+                            <td className="mono">{c.codigo}</td>
+                            <td>{c.descripcion}</td>
+                            <td><span className="taxBadge">{c.impuesto}%</span></td>
+                            <td className="thR">
+                              <button className={`iconBtn${fl===`cc-${c.codigo}`?" flashed":""}`} type="button"
+                                onClick={()=>flash(`cc-${c.codigo}`,String(c.codigo||""))}>
+                                {fl===`cc-${c.codigo}`?"✓":"📋"}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
             </div>
-            <div className="conversorHint muted">
-              {fxDir === "usd2crc"
-                ? `Usando tipo de cambio venta ₡${fx.venta.toLocaleString("es-CR")}`
-                : `Usando tipo de cambio compra ₡${fx.compra.toLocaleString("es-CR")}`}
-            </div>
-          </section>
-        )}
+          )}
 
-        {/* MAIN GRID */}
-        <main className="grid2">
-          {/* ===== CABYS ===== */}
-          <section className="card">
-            <h2>Consulta de CABYS</h2>
+          {/* ══ CONTRIBUYENTE ══ */}
+          {page === "contribuyente" && (
+            <div className="pageWrap">
+              <PageHeader icon="👤" title="Consulta de Contribuyente"
+                description="Verificá el estado tributario, régimen, actividades económicas y situación fiscal de un contribuyente." />
+              <div className="toolCard">
+                <div className="toolSection">
+                  <label className="lbl">Número de identificación</label>
+                  <div className="inputRow">
+                    <input className="inp" value={aeId} inputMode="numeric" placeholder="Solo números — 9, 10 u 11 dígitos"
+                      onChange={e=>setAeId(onlyDigits(e.target.value))}
+                      onKeyDown={e=>{if(e.key==="Enter")consultarAE()}} />
+                    <button className="btn btnPrimary" onClick={()=>consultarAE()} disabled={!aeValid||aeLoading} type="button">
+                      {aeLoading?"Consultando…":"Consultar"}
+                    </button>
+                  </div>
+                  {!aeValid && aeId.length>0 && <div className="hintBad">Debe tener 9, 10 u 11 dígitos.</div>}
+                  <HistoryRow items={aeHist} onSelect={h=>{setAeId(h);consultarAE(h)}} />
+                </div>
 
-            <label>Búsqueda por nombre o código</label>
-            <div className="suggestWrap" ref={suggestBoxRef}>
-              <input
-                value={cabysQ}
-                onChange={(e) => { setCabysQ(e.target.value); setCabysPage(0) }}
-                onKeyDown={(e) => { if (e.key === "Enter") consultarCabys({ resetPage: true }) }}
-                placeholder="Ej: arroz o 1010101010000"
-              />
-            </div>
+                {aeData && (
+                  <div className="toolSection toolActions">
+                    <CopyBtn id="ae-res" label="Copiar resumen" fl={fl} flash={flash} getText={aeResumen} disabled={!aeData} />
+                    <CopyBtn id="ae-csv" label="Copiar CSV actividades" fl={fl} flash={flash} getText={aeActCsv} disabled={!aeData?.actividades?.length} />
+                    <button className="btn btnGhost" onClick={()=>{
+                      if(!aeData?.actividades?.length) return
+                      downloadXlsx("actividades_ae.xlsx","Actividades",
+                        aeData.actividades.map(a=>({codigo:a.codigo,descripcion:a.descripcion,tipo:a.tipo==="P"?"Principal":"Secundaria",estado:a.estado==="A"?"Activa":"Inactiva"})),
+                        ["codigo","descripcion","tipo","estado"])
+                    }} type="button">Descargar XLSX</button>
+                  </div>
+                )}
 
-            {cabysHistory.length > 0 && (
-              <div className="historyRow">
-                {cabysHistory.map((h) => (
-                  <button key={h} type="button" className="historyChip"
-                    onClick={() => { setCabysQ(h); setCabysPage(0); consultarCabys({ resetPage: true, queryOverride: h }) }}
-                  >{h}</button>
-                ))}
-              </div>
-            )}
+                {aeError && <div className="alertBox">⚠️ {aeError}</div>}
+                {aeSearched && !aeLoading && !aeError && !aeData && <EmptyState msg={`No se encontró contribuyente para "${aeDigits}"`} />}
 
-            <label>Resultados por página</label>
-            <input
-              type="number" min="5" max="50" value={cabysTop}
-              onChange={(e) => { setCabysTop(e.target.value); setCabysPage(0) }}
-            />
-
-            <div className="row">
-              <button className="btnPrimary" onClick={() => consultarCabys({ resetPage: true })}
-                disabled={!cabysCanSearch || cabysLoading} type="button">
-                {cabysLoading ? "Consultando…" : "Consultar"}
-              </button>
-              <CopyBtn id="cabys-csv" label="Copiar CSV"
-                getText={() => toCsv(cabysPageRows.map((c) => [c.codigo, c.descripcion, `${c.impuesto}%`]), ["codigo", "descripcion", "impuesto"])}
-                disabled={!cabysPageRows.length}
-              />
-              <button className="btnGhost" onClick={downloadCabysXlsx} disabled={!cabysPageRows.length} type="button">
-                Descargar XLSX
-              </button>
-            </div>
-
-            {cabysError && <div className="alert">⚠️ {cabysError}</div>}
-            {cabysSearched && !cabysLoading && !cabysError && cabysTotal === 0 && (
-              <div className="emptyState">Sin resultados para "{cabysQueryTrim}"</div>
-            )}
-
-            {cabysTotal > 0 && (
-              <div className="pager">
-                <button className="btnGhost" disabled={!cabysHasPrev}
-                  onClick={() => setCabysPage((p) => Math.max(0, p - 1))} type="button">◀ Anterior</button>
-                <div className="muted">Pág. {cabysPage + 1} · {Math.min(cabysEnd, cabysTotal)} de {cabysTotal}</div>
-                <button className="btnGhost" disabled={!cabysHasNext} onClick={cabysNextPage} type="button">
-                  Siguiente ▶
-                </button>
-              </div>
-            )}
-
-            {cabysPageRows.length > 0 && (
-              <table>
-                <thead>
-                  <tr><th>Código</th><th>Descripción</th><th>Impuesto</th><th className="thRight">Copiar</th></tr>
-                </thead>
-                <tbody>
-                  {cabysPageRows.map((c) => (
-                    <tr key={c.codigo}>
-                      <td className="mono">{c.codigo}</td>
-                      <td>{c.descripcion}</td>
-                      <td><span className="taxBadge">{c.impuesto}%</span></td>
-                      <td className="tdRight">
-                        <button
-                          className={`iconBtn${flashing === `cabys-code-${c.codigo}` ? " flashed" : ""}`}
-                          type="button" title="Copiar código"
-                          onClick={() => flash(`cabys-code-${c.codigo}`, String(c.codigo || ""))}
-                        >
-                          {flashing === `cabys-code-${c.codigo}` ? "✓" : "📋"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </section>
-
-          {/* ===== AE ===== */}
-          <section className="card">
-            <h2>Consulta de Contribuyente</h2>
-
-            <label>Identificación</label>
-            <input
-              value={aeId}
-              onChange={(e) => setAeId(onlyDigits(e.target.value))}
-              onKeyDown={(e) => { if (e.key === "Enter") consultarAE() }}
-              placeholder="Solo números (111111111)"
-              inputMode="numeric"
-            />
-
-            {!aeValid && aeId.length > 0 && (
-              <div className="hint bad">La identificación debe tener 9, 10 u 11 dígitos.</div>
-            )}
-
-            {aeHistory.length > 0 && (
-              <div className="historyRow">
-                {aeHistory.map((h) => (
-                  <button key={h} type="button" className="historyChip"
-                    onClick={() => { setAeId(h); consultarAE(h) }}
-                  >{h}</button>
-                ))}
-              </div>
-            )}
-
-            <div className="row">
-              <button className="btnPrimary" onClick={() => consultarAE()} disabled={!aeValid || aeLoading} type="button">
-                {aeLoading ? "Consultando…" : "Consultar"}
-              </button>
-              <CopyBtn id="ae-summary" label="Copiar resumen" getText={getAeSummaryText} disabled={!aeData} />
-              <CopyBtn id="ae-csv" label="Copiar CSV" getText={getAeActividadesCsvText} disabled={!aeData?.actividades?.length} />
-              <button className="btnGhost" onClick={downloadAeActividadesXlsx} disabled={!aeData?.actividades?.length} type="button">
-                Descargar XLSX
-              </button>
-            </div>
-
-            {aeError && <div className="alert">⚠️ {aeError}</div>}
-            {aeSearched && !aeLoading && !aeError && !aeData && (
-              <div className="emptyState">No se encontró contribuyente para "{aeIdDigits}"</div>
-            )}
-
-            {aeData && (
-              <>
-                <div className="ae-box">
-                  <div className="ae-header">
-                    <div className="ae-col">
-                      <div className="label">Nombre</div>
-                      <div className="value">{aeData.nombre}</div>
+                {aeData && (
+                  <>
+                    <div className="aeBox">
+                      <div className="aeHeader">
+                        <div className="aeField"><div className="lbl">Nombre</div><div className="aeVal">{aeData.nombre}</div></div>
+                        <div className="aeField"><div className="lbl">Identificación</div><div className="aeVal mono">{aeJsonId}</div></div>
+                        <div className="aeField"><div className="lbl">Régimen</div><div className="aeVal">{aeData.regimen?.descripcion||"—"}</div></div>
+                      </div>
+                      <div className="aeChips">
+                        <ChipStatus label="Estado" value={aeData.situacion?.estado} />
+                        <ChipStatus label="Moroso" value={aeData.situacion?.moroso} />
+                        <ChipStatus label="Omiso"  value={aeData.situacion?.omiso} />
+                        {aeData.situacion?.administracionTributaria && (
+                          <span className="chip">AT: {aeData.situacion.administracionTributaria}</span>
+                        )}
+                      </div>
+                      <a href="https://ovitribucr.hacienda.go.cr/ConsultaPublica/" target="_blank" rel="noopener noreferrer" className="linkExterno">
+                        Ver en Hacienda ↗
+                      </a>
                     </div>
-                    <div className="ae-col">
-                      <div className="label">Identificación</div>
-                      <div className="value mono">{aeJsonId}</div>
-                    </div>
-                    <div className="ae-col">
-                      <div className="label">Régimen</div>
-                      <div className="value">{aeData.regimen?.descripcion || "—"}</div>
+
+                    {aeData.actividades?.length > 0 && (
+                      <div className="tableWrap">
+                        <table>
+                          <thead><tr><th>Código</th><th>Descripción</th><th>Tipo</th><th>Estado</th></tr></thead>
+                          <tbody>
+                            {aeData.actividades.map(a=>(
+                              <tr key={`${a.codigo}-${a.tipo}`}>
+                                <td className="mono">{a.codigo}</td>
+                                <td>{a.descripcion}</td>
+                                <td>{a.tipo==="P"?"Principal":"Secundaria"}</td>
+                                <td><span className={`estadoBadge${a.estado==="A"?" activa":" inactiva"}`}>{a.estado==="A"?"Activa":"Inactiva"}</span></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ══ CÉDULAS TSE ══ */}
+          {page === "cedulas" && (
+            <div className="pageWrap">
+              <PageHeader icon="🪪" title="Consulta de Cédulas TSE"
+                description="Buscá personas físicas y jurídicas registradas en el Tribunal Supremo de Elecciones." />
+              <div className="toolCard">
+                <div className="toolSection">
+                  <label className="lbl">Búsqueda por cédula o nombre</label>
+                  <div className="inputRow">
+                    <input className="inp" value={cedQ} placeholder="Ej: 116740278 o Juan Pérez García"
+                      onChange={e=>setCedQ(e.target.value)}
+                      onKeyDown={e=>{if(e.key==="Enter")consultarCed()}} />
+                    <button className="btn btnPrimary" onClick={()=>consultarCed()} disabled={!cedQ_.length||cedLoading} type="button">
+                      {cedLoading?"Buscando…":"Buscar"}
+                    </button>
+                  </div>
+                  <HistoryRow items={cedHist} onSelect={h=>{setCedQ(h);consultarCed(h)}} />
+                </div>
+
+                {cedItems.length > 0 && (
+                  <div className="toolSection toolActions">
+                    <button className="btn btnGhost" onClick={()=>downloadXlsx("cedulas_tse.xlsx","Cedulas",cedItems.map(x=>({cedula:x.cedula,nombre:x.nombre,tipo:x.tipo})),["cedula","nombre","tipo"])} type="button">
+                      Descargar XLSX
+                    </button>
+                  </div>
+                )}
+
+                {cedError && <div className="alertBox">⚠️ {cedError}</div>}
+                {cedSearched && !cedLoading && !cedError && !cedItems.length && <EmptyState msg={`Sin resultados para "${cedQ_}"`} />}
+
+                {cedItems.length > 0 && (
+                  <div className="tableWrap">
+                    <table>
+                      <thead><tr><th>Cédula</th><th>Nombre</th><th>Tipo</th><th className="thR">Copiar</th></tr></thead>
+                      <tbody>
+                        {cedItems.map(x=>(
+                          <tr key={x.id}>
+                            <td className="mono">{x.cedula}</td>
+                            <td>{x.nombre}</td>
+                            <td className="mono">{x.tipo}</td>
+                            <td className="thR">
+                              <button className={`iconBtn${fl===`ced-${x.id}`?" flashed":""}`} type="button"
+                                onClick={()=>flash(`ced-${x.id}`,String(x.cedula||""))}>
+                                {fl===`ced-${x.id}`?"✓":"📋"}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ══ TIPO DE CAMBIO ══ */}
+          {page === "tipocambio" && (
+            <div className="pageWrap">
+              <PageHeader icon="💱" title="Tipo de Cambio"
+                description="Tipo de cambio USD/CRC del Banco Central de Costa Rica — actual, histórico y conversor." />
+
+              {/* Actual */}
+              <div className="sectionBlock">
+                <h2 className="sectionTitle">Tipo de cambio actual</h2>
+                <div className="tcActualGrid">
+                  <div className="tcActualCard">
+                    <div className="lbl">Compra</div>
+                    <div className="tcActualVal">{fxLoading?"…":fx?`₡${fx.compra.toLocaleString("es-CR")}`:"—"}</div>
+                  </div>
+                  <div className="tcActualCard">
+                    <div className="lbl">Venta</div>
+                    <div className="tcActualVal">{fxLoading?"…":fx?`₡${fx.venta.toLocaleString("es-CR")}`:"—"}</div>
+                  </div>
+                  <div className="tcActualCard tcActualDate">
+                    <div className="lbl">Actualizado al</div>
+                    <div className="tcActualValSm">{fx?formatFechaCR(fx.fecha):"—"}</div>
+                    <button className="btn btnGhost" style={{marginTop:8}} onClick={fetchFx} type="button">↻ Actualizar</button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Conversor */}
+              {fx && (
+                <div className="sectionBlock">
+                  <h2 className="sectionTitle">Conversor USD ↔ CRC</h2>
+                  <ConversorUI fx={fx} fxInput={fxInput} setFxInput={setFxInput}
+                    fxDir={fxDir} setFxDir={setFxDir} fxResult={fxResult} />
+                </div>
+              )}
+
+              {/* Histórico */}
+              <div className="sectionBlock">
+                <h2 className="sectionTitle">Consulta histórica por fecha</h2>
+                <div className="toolCard">
+                  <div className="toolSection">
+                    <label className="lbl">Fecha</label>
+                    <div className="inputRow">
+                      <input className="inp" type="date" value={tcFecha} max={todayStr}
+                        onChange={e=>setTcFecha(e.target.value)}
+                        onKeyDown={e=>{if(e.key==="Enter")consultarTc()}} />
+                      <button className="btn btnPrimary" onClick={consultarTc} disabled={!tcFecha||tcLoading} type="button">
+                        {tcLoading?"Consultando…":"Consultar"}
+                      </button>
+                      {tcData && (
+                        <CopyBtn id="tc-hist" label="Copiar" fl={fl} flash={flash} disabled={false}
+                          getText={()=>{const[y,m,d]=tcData.fecha.split("-");return`TC BCCR ${d}/${m}/${y}\nCompra: ₡${tcData.compra.toLocaleString("es-CR")}\nVenta: ₡${tcData.venta.toLocaleString("es-CR")}`}} />
+                      )}
                     </div>
                   </div>
-                  <div className="ae-chips">
-                    <ChipStatus label="Estado"  value={aeData.situacion?.estado} />
-                    <ChipStatus label="Moroso"  value={aeData.situacion?.moroso} />
-                    <ChipStatus label="Omiso"   value={aeData.situacion?.omiso} />
-                    {aeData.situacion?.administracionTributaria && (
-                      <span className="chip">AT: {aeData.situacion.administracionTributaria}</span>
+
+                  {tcError && <div className="alertBox">⚠️ {tcError}</div>}
+                  {tcSearched && !tcLoading && !tcError && !tcData && <EmptyState msg="Sin datos para esa fecha" />}
+
+                  {tcData && (
+                    <div className="tcHistBox">
+                      <div className="muted" style={{fontSize:13,marginBottom:10}}>
+                        {(()=>{const[y,m,d]=tcData.fecha.split("-");return`${d}/${m}/${y}`})()}
+                      </div>
+                      <div className="tcHistRow">
+                        <div className="tcHistCell"><div className="lbl">Compra</div><div className="tcHistVal">₡{tcData.compra.toLocaleString("es-CR",{minimumFractionDigits:2})}</div></div>
+                        <div className="tcHistDivider"/>
+                        <div className="tcHistCell"><div className="lbl">Venta</div><div className="tcHistVal">₡{tcData.venta.toLocaleString("es-CR",{minimumFractionDigits:2})}</div></div>
+                      </div>
+                      <div className="muted" style={{fontSize:11,marginTop:8}}>Fuente: Banco Central de Costa Rica</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ══ FACTURA ══ */}
+          {page === "factura" && (
+            <div className="pageWrap">
+              <PageHeader icon="🧾" title="Validación de Factura Electrónica"
+                description="Verificá si un comprobante electrónico fue aceptado o rechazado por el Ministerio de Hacienda de Costa Rica." />
+              <div className="toolCard">
+                <div className="toolSection">
+                  <label className="lbl">Clave numérica del comprobante</label>
+                  <div className="inputRow">
+                    <input className="inp" value={feKey} inputMode="numeric" maxLength={50}
+                      placeholder="50 dígitos — ej: 50623011800310…"
+                      onChange={e=>setFeKey(onlyDigits(e.target.value))}
+                      onKeyDown={e=>{if(e.key==="Enter")consultarFe()}} />
+                    <button className="btn btnPrimary" onClick={consultarFe} disabled={!feValid||feLoading} type="button">
+                      {feLoading?"Verificando…":"Verificar"}
+                    </button>
+                  </div>
+                  <div className={`keyCounter${feValid?" keyOk":""}`}>{feClean.length}/50 dígitos{feClean.length>0&&!feValid?" — debe ser exactamente 50":""}</div>
+                </div>
+
+                {feData && (
+                  <div className="toolSection toolActions">
+                    <CopyBtn id="fe-res" label="Copiar resultado" fl={fl} flash={flash} getText={feResumen} disabled={!feData} />
+                  </div>
+                )}
+
+                {feError && <div className="alertBox">⚠️ {feError}</div>}
+                {feSearched && !feLoading && !feError && !feData && <EmptyState msg="No se encontró comprobante para esa clave" />}
+
+                {feData && (
+                  <div className="feBox">
+                    {(feData?.ind_estado||feData?.estado) && (
+                      <div className="feEstado">
+                        <span className={`feEstadoBadge ${(feData?.ind_estado||feData?.estado||"").toUpperCase().includes("ACEPT")?"feAceptado":"feRechazado"}`}>
+                          {feData?.ind_estado||feData?.estado}
+                        </span>
+                      </div>
+                    )}
+                    <div className="feGrid">
+                      {feData?.emisor?.nombre   && <div className="feField"><div className="lbl">Emisor</div><div className="feVal">{feData.emisor.nombre}</div></div>}
+                      {feData?.receptor?.nombre && <div className="feField"><div className="lbl">Receptor</div><div className="feVal">{feData.receptor.nombre}</div></div>}
+                      {feData?.fecha            && <div className="feField"><div className="lbl">Fecha</div><div className="feVal">{formatFechaCR(feData.fecha)}</div></div>}
+                      {feData?.totalComprobante && <div className="feField"><div className="lbl">Total</div><div className="feVal mono">₡{Number(feData.totalComprobante).toLocaleString("es-CR",{minimumFractionDigits:2})}</div></div>}
+                    </div>
+                    {!feData?.emisor && !feData?.estado && !feData?.ind_estado && (
+                      <pre className="feRaw">{JSON.stringify(feData,null,2)}</pre>
                     )}
                   </div>
-                  <div className="ae-link">
-                    <a href="https://ovitribucr.hacienda.go.cr/ConsultaPublica/"
-                      target="_blank" rel="noopener noreferrer" className="linkExterno">
-                      Ver en Hacienda ↗
-                    </a>
-                  </div>
-                </div>
-
-                {aeData.actividades?.length > 0 && (
-                  <table>
-                    <thead>
-                      <tr><th>Código</th><th>Descripción</th><th>Tipo</th><th>Estado</th></tr>
-                    </thead>
-                    <tbody>
-                      {aeData.actividades.map((a) => (
-                        <tr key={`${a.codigo}-${a.tipo}-${a.estado}`}>
-                          <td className="mono">{a.codigo}</td>
-                          <td>{a.descripcion}</td>
-                          <td>{a.tipo === "P" ? "Principal" : "Secundaria"}</td>
-                          <td>
-                            <span className={a.estado === "A" ? "estadoBadge activa" : "estadoBadge inactiva"}>
-                              {a.estado === "A" ? "Activa" : "Inactiva"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </>
-            )}
-          </section>
-
-          {/* ===== GOMETA ===== */}
-          <section className="card">
-            <h2>Consulta de cédula TSE</h2>
-
-            <label>Búsqueda por cédula o nombre</label>
-            <input
-              value={cedQuery}
-              onChange={(e) => setCedQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") consultarCedulas() }}
-              placeholder="Ej: 116740278 o Juan Pérez"
-            />
-
-            {cedHistory.length > 0 && (
-              <div className="historyRow">
-                {cedHistory.map((h) => (
-                  <button key={h} type="button" className="historyChip"
-                    onClick={() => { setCedQuery(h); consultarCedulas(h) }}
-                  >{h}</button>
-                ))}
-              </div>
-            )}
-
-            <div className="row">
-              <button className="btnPrimary" onClick={() => consultarCedulas()} disabled={!cedCanSearch || cedLoading} type="button">
-                {cedLoading ? "Consultando…" : "Consultar"}
-              </button>
-              <button className="btnGhost" onClick={downloadCedulasXlsx} disabled={!cedItems.length} type="button">
-                Descargar XLSX
-              </button>
-            </div>
-
-            {cedError && <div className="alert">⚠️ {cedError}</div>}
-            {cedSearched && !cedLoading && !cedError && cedItems.length === 0 && (
-              <div className="emptyState">Sin resultados para "{cedQueryTrim}"</div>
-            )}
-
-            {cedItems.length > 0 && (
-              <table>
-                <thead>
-                  <tr><th>Cédula</th><th>Nombre</th><th>Tipo</th><th className="thRight">Copiar</th></tr>
-                </thead>
-                <tbody>
-                  {cedItems.map((x) => (
-                    <tr key={x.id}>
-                      <td className="mono">{x.cedula}</td>
-                      <td>{x.nombre}</td>
-                      <td className="mono">{x.tipo}</td>
-                      <td className="tdRight">
-                        <button
-                          className={`iconBtn${flashing === `ced-${x.id}` ? " flashed" : ""}`}
-                          type="button" title="Copiar cédula"
-                          onClick={() => flash(`ced-${x.id}`, String(x.cedula || ""))}
-                        >
-                          {flashing === `ced-${x.id}` ? "✓" : "📋"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </section>
-
-          {/* ===== TC HISTÓRICO ===== */}
-          <section className="card">
-            <h2>Tipo de cambio histórico</h2>
-            <p className="cardDesc muted">Consulta el tipo de cambio USD/CRC del BCCR para cualquier fecha.</p>
-
-            <label>Fecha</label>
-            <input
-              type="date"
-              value={tcFecha}
-              max={todayStr}
-              onChange={(e) => setTcFecha(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") consultarTcHistorico() }}
-            />
-
-            <div className="row">
-              <button className="btnPrimary" onClick={consultarTcHistorico} disabled={!tcFecha || tcLoading} type="button">
-                {tcLoading ? "Consultando…" : "Consultar"}
-              </button>
-              {tcData && (
-                <CopyBtn
-                  id="tc-hist-copy"
-                  label="Copiar"
-                  getText={() => {
-                    const [y, m, d] = tcData.fecha.split("-")
-                    return `Tipo de cambio BCCR ${d}/${m}/${y}\nCompra: ₡${tcData.compra.toLocaleString("es-CR")}\nVenta: ₡${tcData.venta.toLocaleString("es-CR")}`
-                  }}
-                  disabled={false}
-                />
-              )}
-            </div>
-
-            {tcError && <div className="alert">⚠️ {tcError}</div>}
-
-            {tcSearched && !tcLoading && !tcError && !tcData && (
-              <div className="emptyState">Sin datos para esa fecha</div>
-            )}
-
-            {tcData && (
-              <div className="tcHistBox">
-                <div className="tcHistDate muted">
-                  {(() => { const [y,m,d] = tcData.fecha.split("-"); return `${d}/${m}/${y}` })()}
-                </div>
-                <div className="tcHistRow">
-                  <div className="tcHistCell">
-                    <div className="label">Compra</div>
-                    <div className="tcHistVal">₡{tcData.compra.toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div>
-                  </div>
-                  <div className="tcHistDivider" />
-                  <div className="tcHistCell">
-                    <div className="label">Venta</div>
-                    <div className="tcHistVal">₡{tcData.venta.toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div>
-                  </div>
-                </div>
-                <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>Fuente: Banco Central de Costa Rica</div>
-              </div>
-            )}
-          </section>
-
-          {/* ===== FACTURA ELECTRÓNICA ===== */}
-          <section className="card">
-            <h2>Validación de Factura Electrónica</h2>
-            <p className="cardDesc muted">Verificá el estado de un comprobante electrónico por su clave numérica (50 dígitos).</p>
-
-            <label>Clave del comprobante</label>
-            <input
-              value={feKey}
-              onChange={(e) => setFeKey(onlyDigits(e.target.value))}
-              onKeyDown={(e) => { if (e.key === "Enter") consultarFactura() }}
-              placeholder="50 dígitos"
-              inputMode="numeric"
-              maxLength={50}
-            />
-            <div className="hint muted">{feKeyClean.length}/50 dígitos{feKeyClean.length > 0 && !feKeyValid ? " — debe ser exactamente 50" : ""}</div>
-
-            <div className="row">
-              <button className="btnPrimary" onClick={consultarFactura} disabled={!feKeyValid || feLoading} type="button">
-                {feLoading ? "Consultando…" : "Verificar"}
-              </button>
-              {feData && (
-                <CopyBtn
-                  id="fe-copy"
-                  label="Copiar resultado"
-                  getText={() => {
-                    const lines = [
-                      `Factura Electrónica`,
-                      `Clave: ${feKeyClean}`,
-                      `Estado: ${feData?.ind_estado || feData?.estado || feData?.estadoMensaje || "-"}`,
-                    ]
-                    if (feData?.emisor?.nombre)  lines.push(`Emisor: ${feData.emisor.nombre}`)
-                    if (feData?.receptor?.nombre) lines.push(`Receptor: ${feData.receptor.nombre}`)
-                    if (feData?.fecha) lines.push(`Fecha: ${feData.fecha}`)
-                    if (feData?.totalComprobante) lines.push(`Total: ${feData.totalComprobante}`)
-                    return lines.join("\n")
-                  }}
-                  disabled={false}
-                />
-              )}
-            </div>
-
-            {feError && <div className="alert">⚠️ {feError}</div>}
-
-            {feSearched && !feLoading && !feError && !feData && (
-              <div className="emptyState">No se encontró comprobante para esa clave</div>
-            )}
-
-            {feData && (
-              <div className="feBox">
-                {/* Estado principal */}
-                {(feData?.ind_estado || feData?.estado) && (
-                  <div className="feEstado">
-                    <span className={`feEstadoBadge ${(feData?.ind_estado || feData?.estado || "").toUpperCase().includes("ACEPT") ? "feAceptado" : "feRechazado"}`}>
-                      {feData?.ind_estado || feData?.estado}
-                    </span>
-                  </div>
                 )}
 
-                <div className="feGrid">
-                  {feData?.emisor?.nombre && (
-                    <div className="feField">
-                      <div className="label">Emisor</div>
-                      <div className="value">{feData.emisor.nombre}</div>
-                    </div>
-                  )}
-                  {feData?.receptor?.nombre && (
-                    <div className="feField">
-                      <div className="label">Receptor</div>
-                      <div className="value">{feData.receptor.nombre}</div>
-                    </div>
-                  )}
-                  {feData?.fecha && (
-                    <div className="feField">
-                      <div className="label">Fecha</div>
-                      <div className="value">{formatFechaCR(feData.fecha)}</div>
-                    </div>
-                  )}
-                  {feData?.totalComprobante && (
-                    <div className="feField">
-                      <div className="label">Total</div>
-                      <div className="value mono">₡{Number(feData.totalComprobante).toLocaleString("es-CR", { minimumFractionDigits: 2 })}</div>
-                    </div>
-                  )}
+                {/* Info educativa */}
+                <div className="infoBox">
+                  <div className="infoTitle">¿Cómo encontrar la clave?</div>
+                  <div className="infoText">La clave numérica de 50 dígitos aparece impresa en el PDF de tu factura electrónica, generalmente bajo el título "Clave" o "Número de clave".</div>
                 </div>
-
-                {/* Raw keys útiles si la respuesta tiene formato diferente */}
-                {!feData?.emisor && !feData?.estado && !feData?.ind_estado && (
-                  <pre className="feRaw">{JSON.stringify(feData, null, 2)}</pre>
-                )}
               </div>
-            )}
-          </section>
+            </div>
+          )}
 
         </main>
 
-        <footer className="footer muted">
-          Datos: Ministerio de Hacienda · BCCR · TSE
+        <footer className="footerBar">
+          Datos: Ministerio de Hacienda · BCCR · TSE · Gometa
         </footer>
+      </div>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────
+   CONVERSOR COMPONENT (reutilizado en 2 páginas)
+───────────────────────────────────────────── */
+function ConversorUI({ fx, fxInput, setFxInput, fxDir, setFxDir, fxResult }) {
+  return (
+    <div className="toolCard">
+      <div className="conversorRow">
+        <div className="conversorInputWrap">
+          <span className="conversorPrefix">{fxDir==="usd2crc"?"$":"₡"}</span>
+          <input className="conversorInput" type="number" min="0" placeholder="0.00"
+            value={fxInput} onChange={e=>setFxInput(e.target.value)} />
+        </div>
+        <button className="conversorSwap" type="button" title="Cambiar dirección"
+          onClick={()=>{setFxDir(d=>d==="usd2crc"?"crc2usd":"usd2crc");setFxInput("")}}>⇄</button>
+        <div className="conversorResult">
+          {fxResult !== null
+            ? <><span className="conversorPrefix">{fxDir==="usd2crc"?"₡":"$"}</span><span className="conversorValue">{fxResult}</span></>
+            : <span className="muted">{fxDir==="usd2crc"?"₡ —":"$ —"}</span>}
+        </div>
+      </div>
+      <div className="muted" style={{marginTop:8,fontSize:12}}>
+        {fxDir==="usd2crc"?`Usando tipo de cambio venta ₡${fx.venta.toLocaleString("es-CR")}`:`Usando tipo de cambio compra ₡${fx.compra.toLocaleString("es-CR")}`}
       </div>
     </div>
   )
