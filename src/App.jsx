@@ -358,20 +358,29 @@ export default function App() {
   /* Decodifica los campos de la clave numérica de 50 dígitos */
   const feDecoded = useMemo(() => {
     if (feClean.length !== 50) return null
-    const tipos = { "01":"Factura Electrónica","02":"Nota de Débito","03":"Nota de Crédito","04":"Tiquete Electrónico","08":"FE de Compra","09":"FE de Exportación" }
-    const tipo    = feClean.slice(0, 2)
-    const dia     = feClean.slice(2, 4)
-    const mes     = feClean.slice(4, 6)
-    const anio    = feClean.slice(6, 8)
-    const cedula  = feClean.slice(8, 21).replace(/^0+/, "")
-    const consec  = feClean.slice(21, 41)
+    // Formato oficial Hacienda CR (50 dígitos):
+    // 1-3: país (506), 4-5: día, 6-7: mes, 8-9: año,
+    // 10-21: cédula emisor (12d), 22-24: terminal (3d),
+    // 25-41: consecutivo (17d), 42: situación, 43-50: seguridad
+    const pais      = feClean.slice(0, 3)             // 506
+    const dia       = feClean.slice(3, 5)
+    const mes       = feClean.slice(5, 7)
+    const anio      = feClean.slice(7, 9)
+    const cedula    = feClean.slice(9, 21).replace(/^0+/, "")
+    const terminal  = feClean.slice(21, 24)
+    const consec    = feClean.slice(24, 41)
     const situacion = feClean.slice(41, 42)
     const seguridad = feClean.slice(42, 50)
-    const sits = { "1":"Normal","2":"Contingencia","3":"Sin internet" }
+    // Los primeros 3 dígitos del consecutivo = tipo de comprobante
+    const tipoConsec = consec.slice(0, 3)
+    const tipos = { "001":"Factura Electrónica","002":"Nota de Débito","003":"Nota de Crédito","004":"Tiquete Electrónico","008":"FE de Compra","009":"FE de Exportación" }
+    const sits  = { "1":"Normal","2":"Contingencia","3":"Sin internet" }
     return {
-      tipo: tipos[tipo] || `Tipo ${tipo}`,
+      pais,
+      tipo: tipos[tipoConsec] || `Comprobante ${tipoConsec}`,
       fecha: `${dia}/${mes}/20${anio}`,
       cedula,
+      terminal,
       consecutivo: consec.replace(/^0+/, ""),
       situacion: sits[situacion] || situacion,
       seguridad,
@@ -839,27 +848,33 @@ export default function App() {
                   <div className="feDecodedBox">
                     <div className="feDecodedTitle">Información de la clave</div>
                     <div className="feDecodedGrid">
-                      <div className="feField"><div className="lbl">Tipo</div><div className="feVal">{feDecoded.tipo}</div></div>
+                      <div className="feField"><div className="lbl">Tipo comprobante</div><div className="feVal">{feDecoded.tipo}</div></div>
                       <div className="feField"><div className="lbl">Fecha emisión</div><div className="feVal">{feDecoded.fecha}</div></div>
                       <div className="feField"><div className="lbl">Cédula emisor</div><div className="feVal mono">{feDecoded.cedula}</div></div>
-                      <div className="feField"><div className="lbl">Consecutivo</div><div className="feVal mono">{feDecoded.consecutivo}</div></div>
+                      <div className="feField"><div className="lbl">Terminal</div><div className="feVal mono">{feDecoded.terminal}</div></div>
                       <div className="feField"><div className="lbl">Situación</div><div className="feVal">{feDecoded.situacion}</div></div>
                       <div className="feField"><div className="lbl">Código seguridad</div><div className="feVal mono">{feDecoded.seguridad}</div></div>
                     </div>
                   </div>
                 )}
 
-                {/* No encontrado en Hacienda */}
+                {/* No encontrado */}
                 {feNotFound && (
                   <div className="feNotFound">
                     <div className="feNotFoundIcon">○</div>
                     <div>
-                      <div className="feNotFoundTitle">No encontrado en el sistema de Hacienda</div>
+                      <div className="feNotFoundTitle">No disponible en la API pública de Hacienda</div>
                       <div className="feNotFoundDesc">
-                        Este comprobante no aparece en la API de Hacienda. Puede deberse a que aún está en proceso, fue emitido en contingencia, o la clave no corresponde a un comprobante registrado.
+                        La API pública de Hacienda no indexa todos los comprobantes — especialmente facturas recientes o emitidas a través de proveedores como ICE, Claro, etc. La información decodificada de arriba sí pertenece a esta clave.
                         <br/><br/>
-                        <a href="https://ovitribucr.hacienda.go.cr/ConsultaPublica/" target="_blank" rel="noopener noreferrer" className="linkExterno">
-                          Verificar directamente en OVI Hacienda ↗
+                        Para verificar el estado oficial, usá uno de estos servicios:
+                      </div>
+                      <div className="feNotFoundLinks">
+                        <a href={`https://verificatufactura.com/verificacion-simple`} target="_blank" rel="noopener noreferrer" className="feExternalBtn">
+                          VerificaTuFactura.com ↗
+                        </a>
+                        <a href="https://ovitribucr.hacienda.go.cr/ConsultaPublica/" target="_blank" rel="noopener noreferrer" className="feExternalBtn">
+                          OVI Hacienda ↗
                         </a>
                       </div>
                     </div>
