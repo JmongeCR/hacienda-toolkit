@@ -2253,6 +2253,13 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
     return isNaN(n) ? null : `${parseFloat(n.toFixed(4))}%`
   }
 
+  // 1.00000 → "1"  |  2.50000 → "2.5"
+  const fmtQty = (v) => {
+    if (!v) return v
+    const n = parseFloat(v)
+    return isNaN(n) ? v : String(parseFloat(n.toFixed(6)))
+  }
+
   const fmtTc = tc && tc > 0
     ? new Intl.NumberFormat("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}).format(tc)
     : null
@@ -2363,7 +2370,7 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
                       <tr key={i}>
                         <td className="xmlTdNum">{i + 1}</td>
                         <td className="xmlTdDesc">{l.descripcion}</td>
-                        <td className="mono xmlTdQty">{l.cantidad} <span className="xmlUnt">{l.unidad}</span></td>
+                        <td className="mono xmlTdQty">{fmtQty(l.cantidad)} <span className="xmlUnt">{l.unidad}</span></td>
                         <td className="mono xmlTdR">{l.precio ? fmtM(l.precio) : "—"}</td>
                         <td>{pct ? <span className={`taxBadgeV2 ${taxClass(parseFloat(l.ivaPct))}`}>{pct}</span> : <span className="xmlMuted">—</span>}</td>
                         <td className="mono xmlTdR xmlTdBold">{l.total ? fmtM(l.total) : "—"}</td>
