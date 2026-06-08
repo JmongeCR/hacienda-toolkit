@@ -1258,10 +1258,8 @@ tr:hover td { background: var(--slate-50) }
 .feTabBtn:hover:not(.active) { border-color:var(--accent); color:var(--accent); background:var(--bg-alt); }
 
 /* ══════════════════════════════════════════════
-   FXV — Factura XML Viewer  (diseño SaaS moderno)
+   XML Factura Viewer — Drop Zone
    ══════════════════════════════════════════════ */
-
-/* ── Drop zone ── */
 .fxvDrop { border:2px dashed var(--border); border-radius:20px; padding:64px 32px; text-align:center; cursor:pointer; transition:border-color var(--t-fast),background var(--t-fast); user-select:none; }
 .fxvDrop:hover,.fxvDropOver { border-color:var(--accent); background:rgba(37,99,235,.035); }
 .fxvDropIco { display:flex; justify-content:center; margin-bottom:18px; }
@@ -1270,95 +1268,78 @@ tr:hover td { background: var(--slate-50) }
 .fxvDropFormats { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
 .fxvDropFormats span { font-size:11px; font-weight:600; padding:3px 11px; border-radius:99px; background:var(--bg-alt); border:1px solid var(--border); color:var(--muted); }
 
-/* ── Viewer root ── */
-.fxv { display:flex; flex-direction:column; gap:16px; }
+/* ══════════════════════════════════════════════
+   XML Factura Viewer — Resultado
+   ══════════════════════════════════════════════ */
 
-/* ── Barra de acciones ── */
-.fxvBar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
-.fxvBarLeft { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.fxvBarRight { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.fxvDocTypePill { font-size:12px; font-weight:700; color:var(--text); }
-.fxvStateBadge { font-size:11px; font-weight:700; padding:3px 11px; border-radius:99px; }
-.fxvStateOk { background:#dcfce7; color:#15803d; }
-.fxvStatePend { background:#fef9c3; color:#b45309; }
-.fxvStateBad { background:#fee2e2; color:#dc2626; }
-.fxvCondBadge { font-size:11px; font-weight:600; padding:3px 11px; border-radius:99px; background:var(--bg-alt); border:1px solid var(--border); color:var(--muted); }
-.fxvBarBtn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:9px; background:var(--surface); border:1px solid var(--border); color:var(--text); font-size:12px; font-weight:600; cursor:pointer; transition:all var(--t-fast); white-space:nowrap; }
-.fxvBarBtn:hover { background:var(--bg-alt); border-color:var(--accent); color:var(--accent); }
-.fxvBarBtnGhost { color:var(--muted); }
+/* Tarjeta contenedora */
+.xmlResult { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px; margin-bottom:16px; }
 
-/* ── Grid superior ── */
-.fxvTopGrid { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:14px; }
-.fxvTopGrid2 { grid-template-columns:1.2fr 1fr; }
+/* ── Encabezado ── */
+.xmlResultHead { margin-bottom:20px; padding-bottom:18px; border-bottom:1.5px solid var(--border); }
+.xmlDocType { font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); margin-bottom:12px; }
+.xmlHeadField { margin-bottom:10px; }
+.xmlHeadField:last-child { margin-bottom:0; }
+.xmlHeadLbl { display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:4px; }
+.xmlHeadRow { display:flex; align-items:flex-start; gap:10px; }
+.xmlConsec { font-size:14px; font-weight:600; color:var(--text); }
+.xmlClave { font-size:11px; color:var(--text); word-break:break-all; line-height:1.5; }
 
-/* ── Card base ── */
-.fxvCard { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; }
-.fxvCardNoP { padding:0; overflow:hidden; }
-.fxvCardLbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); margin-bottom:14px; }
+/* Botón copiar (encabezado + CABYS) */
+.xmlCopyBtn { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; min-width:26px; border-radius:7px; background:var(--bg-alt); border:1px solid var(--border); color:var(--muted); cursor:pointer; font-size:12px; font-weight:700; flex-shrink:0; margin-top:1px; transition:all var(--t-fast); }
+.xmlCopyBtn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.xmlCopyBtnOk { background:var(--accent) !important; color:#fff !important; border-color:var(--accent) !important; }
 
-/* ── Campos comprobante ── */
-.fxvFieldList { display:flex; flex-direction:column; gap:12px; }
-.fxvFld { display:flex; flex-direction:column; gap:3px; }
-.fxvFldKey { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
-.fxvFldVal { font-size:var(--font-sm); color:var(--text); font-weight:500; }
-.fxvFldRow { display:flex; align-items:flex-start; gap:8px; }
-.fxvFldInlineRow { display:flex; gap:24px; flex-wrap:wrap; }
-.fxvMonPill { display:inline-flex; align-items:center; background:var(--accent); color:#fff; font-size:11px; font-weight:800; padding:2px 10px; border-radius:6px; letter-spacing:.05em; }
-.fxvMono { font-family:var(--font-mono,monospace) !important; }
-.fxvBreak { word-break:break-all; line-height:1.45; }
-.fxvClaveSmall { font-size:10px; }
-.fxvMuted { color:var(--muted); }
+/* ── Emisor / Receptor ── */
+.xmlParties { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px; }
+.xmlParty { background:var(--bg-alt); border-radius:12px; padding:14px 16px; }
+.xmlPartyLabel { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:6px; }
+.xmlPartyName { font-size:15px; font-weight:700; color:var(--text); margin-bottom:4px; line-height:1.3; }
+.xmlPartyComm { font-size:12px; color:var(--muted); margin-bottom:4px; }
+.xmlPartyCed { font-size:12px; font-weight:600; color:var(--text); letter-spacing:.03em; margin-top:4px; }
+.xmlPartySub { font-size:11px; color:var(--muted); margin-top:3px; }
 
-/* Mini botón copiar */
-.fxvCopyMini { width:24px; height:24px; min-width:24px; border-radius:6px; background:transparent; border:1px solid var(--border); color:var(--muted); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; font-size:12px; font-weight:700; transition:all var(--t-fast); }
-.fxvCopyMini:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
-.fxvCopied { background:var(--accent) !important; color:#fff !important; border-color:var(--accent) !important; }
-
-/* ── Cards empresa ── */
-.fxvCompany { display:flex; align-items:flex-start; gap:13px; }
-.fxvAvatar { width:42px; height:42px; min-width:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; letter-spacing:-.5px; }
-.fxvCompanyInfo { flex:1; min-width:0; }
-.fxvCompanyName { font-size:var(--font-sm); font-weight:700; color:var(--text); line-height:1.35; margin-bottom:2px; word-break:break-word; }
-.fxvCompanyComm { font-size:11px; color:var(--muted); margin-bottom:4px; }
-.fxvCompanyMeta { font-size:11px; color:var(--muted); margin-top:3px; }
-
-/* ── KPIs financieros ── */
-.fxvKpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; }
-.fxvKpi { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; }
-.fxvKpiTotal { background:var(--accent); border:none; border-radius:14px; padding:16px 18px; }
-.fxvKpiLbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:7px; }
-.fxvKpiTotal .fxvKpiLbl { color:rgba(255,255,255,.75); }
-.fxvKpiNum { font-size:1.05rem; font-weight:700; color:var(--text); }
-.fxvKpiTotal .fxvKpiNum { font-size:1.3rem; color:#fff; font-weight:800; }
-.fxvKpiRed { color:#dc2626; }
+/* ── Meta (fecha · moneda · TC) ── */
+.xmlMeta { display:flex; flex-wrap:wrap; gap:24px; margin-bottom:18px; padding:14px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+.xmlMetaItem { display:flex; flex-direction:column; gap:3px; }
+.xmlMetaItem > span:first-child { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:700; }
+.xmlMetaItem > span:last-child { font-size:var(--font-sm); font-weight:600; color:var(--text); }
+.xmlMonTag { display:inline-flex; align-items:center; background:var(--accent); color:#fff; font-size:11px; font-weight:800; padding:2px 9px; border-radius:6px; letter-spacing:.05em; }
 
 /* ── Tabla de líneas ── */
-.fxvLinesHead { display:flex; justify-content:space-between; align-items:center; padding:16px 20px 12px; border-bottom:1px solid var(--border); }
-.fxvLinesBadge { font-size:11px; font-weight:600; padding:2px 10px; border-radius:99px; background:var(--bg-alt); border:1px solid var(--border); color:var(--muted); }
-.fxvTableScroll { overflow-x:auto; }
-.fxvTbl { width:100%; border-collapse:collapse; font-size:13px; min-width:580px; }
-.fxvTbl thead th { text-align:left; padding:10px 12px; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:700; border-bottom:1px solid var(--border); white-space:nowrap; background:var(--surface); }
-.fxvTbl tbody tr { border-bottom:1px solid var(--bg-alt); transition:background var(--t-fast); }
-.fxvTbl tbody tr:last-child { border-bottom:none; }
-.fxvTbl tbody tr:hover { background:var(--bg-alt); }
-.fxvTbl td { padding:12px 12px; vertical-align:middle; color:var(--text); }
-.fxvTdMain { max-width:260px; line-height:1.4; font-weight:500; }
-.fxvTdR { text-align:right; }
-.fxvTdBold { font-weight:600; }
-.fxvUnt { font-size:10px; color:var(--muted); text-transform:uppercase; }
-.fxvCabys { font-size:10px; font-family:var(--font-mono,monospace); background:var(--bg-alt); border:1px solid var(--border); padding:2px 7px; border-radius:5px; color:var(--muted); white-space:nowrap; }
+.xmlLines { margin-bottom:18px; }
+.xmlLinesTitle { font-size:13px; font-weight:700; color:var(--text); margin-bottom:10px; }
+.xmlTableWrap { overflow-x:auto; border:1px solid var(--border); border-radius:12px; }
+.xmlLinesTable { width:100%; border-collapse:collapse; font-size:13px; min-width:600px; }
+.xmlLinesTable thead th { text-align:left; padding:10px 12px; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); border-bottom:1px solid var(--border); font-weight:700; white-space:nowrap; background:var(--bg-alt); }
+.xmlThNum,.xmlTdNum { width:36px; text-align:center; color:var(--muted); font-size:11px; }
+.xmlThR { text-align:right !important; }
+.xmlLinesTable tbody tr { border-bottom:1px solid var(--border); transition:background var(--t-fast); }
+.xmlLinesTable tbody tr:last-child { border-bottom:none; }
+.xmlLinesTable tbody tr:hover { background:var(--bg-alt); }
+.xmlLinesTable td { padding:12px 12px; vertical-align:middle; color:var(--text); }
+.xmlTdDesc { font-size:14px; font-weight:600; color:var(--text); max-width:280px; line-height:1.4; }
+.xmlTdQty { color:var(--text); }
+.xmlUnt { font-size:10px; font-weight:600; color:var(--muted); text-transform:uppercase; }
+.xmlTdR { text-align:right; }
+.xmlTdBold { font-weight:700; }
+.xmlTdCabys { font-size:11px; max-width:180px; word-break:break-all; line-height:1.5; }
+.xmlTdAct { width:36px; text-align:center; }
+.xmlMuted { color:var(--muted); }
 
-/* ── Panel de totales ── */
-.fxvSummary { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px 22px; display:flex; flex-direction:column; gap:9px; max-width:360px; margin-left:auto; }
-.fxvSumRow { display:flex; justify-content:space-between; align-items:center; font-size:var(--font-sm); color:var(--text); }
-.fxvSumTotal { font-size:1.1rem; font-weight:800; padding-top:11px; border-top:1.5px solid var(--border); margin-top:3px; }
+/* ── Totales ── */
+.xmlTotals { background:var(--bg-alt); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:8px; }
+.xmlTotalRow { display:flex; justify-content:space-between; align-items:center; font-size:var(--font-sm); color:var(--text); }
+.xmlTotalDisc { color:#dc2626; }
+.xmlTotalFinal { font-size:1.15rem; font-weight:800; color:var(--accent); padding-top:12px; border-top:2px solid var(--border); margin-top:4px; }
+
+/* ── Acciones ── */
+.xmlActions { display:flex; gap:8px; flex-wrap:wrap; }
 
 /* ── Responsive ── */
-@media(max-width:700px) {
-  .fxvTopGrid,.fxvTopGrid2 { grid-template-columns:1fr; }
-  .fxvKpis { grid-template-columns:1fr 1fr; }
-  .fxvSummary { max-width:100%; }
-  .fxvBar { flex-direction:column; align-items:flex-start; }
+@media(max-width:560px) {
+  .xmlParties { grid-template-columns:1fr; }
+  .xmlResult { padding:18px; }
 }
 
 /* ══════════════════════════════════════════════

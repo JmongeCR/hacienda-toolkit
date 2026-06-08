@@ -2236,6 +2236,7 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
   const tc  = data.resumen.tipoCambio ? parseFloat(data.resumen.tipoCambio) : null
   const isUsd = mon === "USD", isEur = mon === "EUR"
 
+  // Montos en moneda ORIGINAL — sin convertir
   const fmtM = (v) => {
     const n = parseFloat(v || 0)
     if (isNaN(n)) return "—"
@@ -2245,6 +2246,7 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
     return `₡${f.format(n)}`
   }
 
+  // 13.00000 → "13%"  |  2.50000 → "2.5%"
   const fmtPct = (v) => {
     if (!v) return null
     const n = parseFloat(v)
@@ -2255,26 +2257,7 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
     ? new Intl.NumberFormat("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}).format(tc)
     : null
 
-  const PALETTE = [
-    {bg:"#dbeafe",fg:"#1e40af"},{bg:"#dcfce7",fg:"#15803d"},{bg:"#fce7f3",fg:"#9d174d"},
-    {bg:"#fef3c7",fg:"#92400e"},{bg:"#ede9fe",fg:"#5b21b6"},{bg:"#e0f2fe",fg:"#0369a1"},
-    {bg:"#fef9c3",fg:"#854d0e"},{bg:"#ecfccb",fg:"#365314"},
-  ]
-  const avatarFor = (name) => PALETTE[(name||"X").charCodeAt(0) % PALETTE.length]
-
-  /* badge de situación — posición 41 de la clave (1-indexed) */
-  const sitDigit = data.clave?.length === 50 ? data.clave[41] : "1"
-  const SIT = {"1":{label:"Normal",cls:"fxvStateOk"},"2":{label:"Contingencia",cls:"fxvStatePend"},"3":{label:"Sin internet",cls:"fxvStatePend"}}
-  const sit = SIT[sitDigit] || {label:"Válida",cls:"fxvStateOk"}
-
-  const COND = {"01":"Contado","02":"Crédito","03":"Consignación","04":"Apartado","99":"Otros"}
-  const condLabel = data.condicionVenta ? (COND[data.condicionVenta] || data.condicionVenta) : null
-
-  const hasReceptor = !!(data.receptor.nombre || data.receptor.cedula)
-  const ec = avatarFor(data.emisor.nombre)
-  const rc = avatarFor(data.receptor.nombre || "R")
-
-  /* icono copiar inline */
+  // Ícono copiar reutilizable
   const CopyIco = () => (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
       <rect x="4" y="4" width="7" height="7" rx="1.5"/>
@@ -2283,217 +2266,159 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
   )
 
   return (
-    <div className="fxv" id="xmlPrintArea">
+    <div>
+      <div className="xmlResult" id="xmlPrintArea">
 
-      {/* ── Barra superior ── */}
-      <div className="fxvBar">
-        <div className="fxvBarLeft">
-          <span className="fxvDocTypePill">{data.tipoDoc}</span>
-          <span className={`fxvStateBadge ${sit.cls}`}>● {sit.label}</span>
-          {condLabel && <span className="fxvCondBadge">{condLabel}</span>}
-        </div>
-        <div className="fxvBarRight">
-          <button type="button" className="fxvBarBtn" onClick={onPrint}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="5" width="10" height="7" rx="1"/><path d="M5 5V3h4v2M5 12v-2h4v2"/>
-            </svg>
-            Imprimir
-          </button>
-          <CopyBtn id="xml-copy-main" label="Copiar" fl={fl} flash={flash} disabled={false}
-            getText={() => [data.tipoDoc,
-              `Emisor: ${data.emisor.nombre}`,
-              hasReceptor ? `Receptor: ${data.receptor.nombre}` : "",
-              data.fecha ? `Fecha: ${formatFechaCR(data.fecha)}` : "",
-              data.resumen.total ? `Total: ${fmtM(data.resumen.total)}` : "",
-              data.clave ? `Clave: ${data.clave}` : "",
-            ].filter(Boolean).join("\n")} />
-          {data.lines.length > 0 && (
-            <button type="button" className="fxvBarBtn" onClick={onExcelDownload}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 2H4a1 1 0 00-1 1v8a1 1 0 001 1h6a1 1 0 001-1V5L8 2z"/><path d="M8 2v3h3M5 7h4M5 9.5h4"/>
-              </svg>
-              Excel
-            </button>
+        {/* ── Encabezado ── */}
+        <div className="xmlResultHead">
+          <div className="xmlDocType">{data.tipoDoc}</div>
+          {data.numConsecutivo && (
+            <div className="xmlHeadField">
+              <span className="xmlHeadLbl">Consecutivo</span>
+              <div className="xmlHeadRow">
+                <span className="xmlConsec mono">{data.numConsecutivo}</span>
+                <button className={`xmlCopyBtn${fl==="xml-consec"?" xmlCopyBtnOk":""}`} type="button"
+                  onClick={() => flash("xml-consec", data.numConsecutivo)} title="Copiar consecutivo">
+                  {fl==="xml-consec" ? "✓" : <CopyIco/>}
+                </button>
+              </div>
+            </div>
           )}
-          <button type="button" className="fxvBarBtn fxvBarBtnGhost" onClick={onReset}>← Otro XML</button>
-        </div>
-      </div>
-
-      {/* ── Grid superior: Comprobante · Emisor · Receptor ── */}
-      <div className={`fxvTopGrid${hasReceptor ? "" : " fxvTopGrid2"}`}>
-
-        {/* — Comprobante — */}
-        <div className="fxvCard">
-          <div className="fxvCardLbl">Comprobante</div>
-          <div className="fxvFieldList">
-            {data.numConsecutivo && (
-              <div className="fxvFld">
-                <span className="fxvFldKey">Consecutivo</span>
-                <div className="fxvFldRow">
-                  <span className="fxvFldVal fxvMono fxvBreak">{data.numConsecutivo}</span>
-                  <button className={`fxvCopyMini${fl==="fxv-consec"?" fxvCopied":""}`} type="button"
-                    onClick={() => flash("fxv-consec", data.numConsecutivo)} title="Copiar consecutivo">
-                    {fl==="fxv-consec" ? "✓" : <CopyIco/>}
-                  </button>
-                </div>
-              </div>
-            )}
-            {data.clave && (
-              <div className="fxvFld">
-                <span className="fxvFldKey">Clave</span>
-                <div className="fxvFldRow">
-                  <span className="fxvFldVal fxvMono fxvBreak fxvClaveSmall">{data.clave}</span>
-                  <button className={`fxvCopyMini${fl==="fxv-clave"?" fxvCopied":""}`} type="button"
-                    onClick={() => flash("fxv-clave", data.clave)} title="Copiar clave">
-                    {fl==="fxv-clave" ? "✓" : <CopyIco/>}
-                  </button>
-                </div>
-              </div>
-            )}
-            {data.fecha && (
-              <div className="fxvFld">
-                <span className="fxvFldKey">Fecha de emisión</span>
-                <span className="fxvFldVal">{formatFechaCR(data.fecha)}</span>
-              </div>
-            )}
-            <div className="fxvFldInlineRow">
-              <div className="fxvFld">
-                <span className="fxvFldKey">Moneda</span>
-                <span className="fxvMonPill">{mon}</span>
-              </div>
-              {fmtTc && (
-                <div className="fxvFld">
-                  <span className="fxvFldKey">Tipo de cambio</span>
-                  <span className="fxvFldVal fxvMono">₡{fmtTc}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* — Emisor — */}
-        <div className="fxvCard">
-          <div className="fxvCardLbl">Emisor</div>
-          <div className="fxvCompany">
-            <div className="fxvAvatar" style={{background:ec.bg,color:ec.fg}}>{nameInitials(data.emisor.nombre)}</div>
-            <div className="fxvCompanyInfo">
-              <div className="fxvCompanyName">{data.emisor.nombre || "—"}</div>
-              {data.emisor.comercial && <div className="fxvCompanyComm">{data.emisor.comercial}</div>}
-              {data.emisor.cedula && <div className="fxvCompanyMeta fxvMono">{data.emisor.cedula}</div>}
-              {data.emisor.correo && <div className="fxvCompanyMeta fxvMuted">{data.emisor.correo}</div>}
-            </div>
-          </div>
-        </div>
-
-        {/* — Receptor — */}
-        {hasReceptor && (
-          <div className="fxvCard">
-            <div className="fxvCardLbl">Receptor</div>
-            <div className="fxvCompany">
-              <div className="fxvAvatar" style={{background:rc.bg,color:rc.fg}}>{nameInitials(data.receptor.nombre || "?")}</div>
-              <div className="fxvCompanyInfo">
-                <div className="fxvCompanyName">{data.receptor.nombre || "—"}</div>
-                {data.receptor.cedula && <div className="fxvCompanyMeta fxvMono">{data.receptor.cedula}</div>}
-                {data.receptor.correo && <div className="fxvCompanyMeta fxvMuted">{data.receptor.correo}</div>}
+          {data.clave && (
+            <div className="xmlHeadField">
+              <span className="xmlHeadLbl">Clave</span>
+              <div className="xmlHeadRow">
+                <span className="xmlClave mono">{data.clave}</span>
+                <button className={`xmlCopyBtn${fl==="xml-clave"?" xmlCopyBtnOk":""}`} type="button"
+                  onClick={() => flash("xml-clave", data.clave)} title="Copiar clave">
+                  {fl==="xml-clave" ? "✓" : <CopyIco/>}
+                </button>
               </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── KPIs financieros ── */}
-      <div className="fxvKpis">
-        {data.resumen.totalVenta && parseFloat(data.resumen.totalVenta) > 0 && (
-          <div className="fxvKpi">
-            <div className="fxvKpiLbl">Subtotal</div>
-            <div className="fxvKpiNum">{fmtM(data.resumen.totalVenta)}</div>
-          </div>
-        )}
-        {data.resumen.totalDesc && parseFloat(data.resumen.totalDesc) > 0 && (
-          <div className="fxvKpi">
-            <div className="fxvKpiLbl">Descuentos</div>
-            <div className="fxvKpiNum fxvKpiRed">− {fmtM(data.resumen.totalDesc)}</div>
-          </div>
-        )}
-        {data.resumen.totalImpuesto && parseFloat(data.resumen.totalImpuesto) > 0 && (
-          <div className="fxvKpi">
-            <div className="fxvKpiLbl">IVA</div>
-            <div className="fxvKpiNum">{fmtM(data.resumen.totalImpuesto)}</div>
-          </div>
-        )}
-        {data.resumen.total && (
-          <div className="fxvKpiTotal">
-            <div className="fxvKpiLbl">Total a pagar</div>
-            <div className="fxvKpiNum">{fmtM(data.resumen.total)}</div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Tabla de líneas ── */}
-      {data.lines.length > 0 && (
-        <div className="fxvCard fxvCardNoP">
-          <div className="fxvLinesHead">
-            <span className="fxvCardLbl" style={{margin:0}}>Detalle de líneas</span>
-            <span className="fxvLinesBadge">{data.lines.length} línea{data.lines.length !== 1 ? "s" : ""}</span>
-          </div>
-          <div className="fxvTableScroll">
-            <table className="fxvTbl">
-              <thead>
-                <tr>
-                  <th>Descripción</th>
-                  <th>Cant.</th>
-                  <th>Precio unit.</th>
-                  <th>IVA</th>
-                  <th>Total línea</th>
-                  <th>CABYS</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.lines.map((l, i) => {
-                  const pct = fmtPct(l.ivaPct)
-                  const cid = `fxv-c-${i}`
-                  return (
-                    <tr key={i}>
-                      <td className="fxvTdMain">{l.descripcion}</td>
-                      <td className="fxvTdR"><span className="fxvMono">{l.cantidad}</span> <span className="fxvUnt">{l.unidad}</span></td>
-                      <td className="fxvTdR fxvMono">{l.precio ? fmtM(l.precio) : "—"}</td>
-                      <td>{pct ? <span className={`taxBadgeV2 ${taxClass(parseFloat(l.ivaPct))}`}>{pct}</span> : <span className="fxvMuted">—</span>}</td>
-                      <td className="fxvTdR fxvMono fxvTdBold">{l.total ? fmtM(l.total) : "—"}</td>
-                      <td>{l.cabys ? <code className="fxvCabys">{l.cabys}</code> : <span className="fxvMuted">—</span>}</td>
-                      <td>
-                        {l.cabys && (
-                          <button className={`fxvCopyMini${fl===cid?" fxvCopied":""}`} type="button"
-                            onClick={() => flash(cid, l.cabys)} title="Copiar CABYS">
-                            {fl===cid ? "✓" : <CopyIco/>}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          )}
         </div>
-      )}
 
-      {/* ── Panel de totales ── */}
-      <div className="fxvSummary">
-        {data.resumen.totalVenta && parseFloat(data.resumen.totalVenta) > 0 &&
-          <div className="fxvSumRow"><span>Subtotal</span><span className="fxvMono">{fmtM(data.resumen.totalVenta)}</span></div>}
-        {data.resumen.totalDesc && parseFloat(data.resumen.totalDesc) > 0 &&
-          <div className="fxvSumRow"><span>Descuentos</span><span className="fxvMono fxvKpiRed">− {fmtM(data.resumen.totalDesc)}</span></div>}
-        {data.resumen.totalImpuesto && parseFloat(data.resumen.totalImpuesto) > 0 &&
-          <div className="fxvSumRow"><span>IVA</span><span className="fxvMono">{fmtM(data.resumen.totalImpuesto)}</span></div>}
-        {data.resumen.total && (
-          <div className="fxvSumRow fxvSumTotal">
-            <span>TOTAL</span>
-            <span className="fxvMono">{fmtM(data.resumen.total)}</span>
+        {/* ── Emisor / Receptor ── */}
+        <div className="xmlParties">
+          <div className="xmlParty">
+            <div className="xmlPartyLabel">Emisor</div>
+            <div className="xmlPartyName">{data.emisor.nombre || "—"}</div>
+            {data.emisor.comercial && <div className="xmlPartyComm">{data.emisor.comercial}</div>}
+            {data.emisor.cedula && <div className="xmlPartyCed mono">{data.emisor.cedula}</div>}
+            {data.emisor.correo && <div className="xmlPartySub">{data.emisor.correo}</div>}
+          </div>
+          {(data.receptor.nombre || data.receptor.cedula) && (
+            <div className="xmlParty">
+              <div className="xmlPartyLabel">Receptor</div>
+              <div className="xmlPartyName">{data.receptor.nombre || "—"}</div>
+              {data.receptor.cedula && <div className="xmlPartyCed mono">{data.receptor.cedula}</div>}
+              {data.receptor.correo && <div className="xmlPartySub">{data.receptor.correo}</div>}
+            </div>
+          )}
+        </div>
+
+        {/* ── Meta ── */}
+        <div className="xmlMeta">
+          {data.fecha && (
+            <div className="xmlMetaItem"><span>Fecha</span><span>{formatFechaCR(data.fecha)}</span></div>
+          )}
+          <div className="xmlMetaItem">
+            <span>Moneda</span>
+            <span className="xmlMonTag">{mon}</span>
+          </div>
+          {fmtTc && (
+            <div className="xmlMetaItem"><span>Tipo de cambio</span><span className="mono">₡{fmtTc}</span></div>
+          )}
+          {data.condicionVenta && (
+            <div className="xmlMetaItem">
+              <span>Condición de venta</span>
+              <span>{{"01":"Contado","02":"Crédito","03":"Consignación","04":"Apartado","99":"Otros"}[data.condicionVenta] || data.condicionVenta}</span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Líneas de detalle ── */}
+        {data.lines.length > 0 && (
+          <div className="xmlLines">
+            <div className="xmlLinesTitle">Detalle de líneas ({data.lines.length})</div>
+            <div className="xmlTableWrap">
+              <table className="xmlLinesTable">
+                <thead>
+                  <tr>
+                    <th className="xmlThNum">#</th>
+                    <th>Descripción</th>
+                    <th>Cant.</th>
+                    <th className="xmlThR">Precio unit.</th>
+                    <th>IVA</th>
+                    <th className="xmlThR">Total</th>
+                    <th>CABYS</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.lines.map((l, i) => {
+                    const pct = fmtPct(l.ivaPct)
+                    const cid = `xml-c-${i}`
+                    return (
+                      <tr key={i}>
+                        <td className="xmlTdNum">{i + 1}</td>
+                        <td className="xmlTdDesc">{l.descripcion}</td>
+                        <td className="mono xmlTdQty">{l.cantidad} <span className="xmlUnt">{l.unidad}</span></td>
+                        <td className="mono xmlTdR">{l.precio ? fmtM(l.precio) : "—"}</td>
+                        <td>{pct ? <span className={`taxBadgeV2 ${taxClass(parseFloat(l.ivaPct))}`}>{pct}</span> : <span className="xmlMuted">—</span>}</td>
+                        <td className="mono xmlTdR xmlTdBold">{l.total ? fmtM(l.total) : "—"}</td>
+                        <td className="mono xmlTdCabys">{l.cabys || <span className="xmlMuted">—</span>}</td>
+                        <td className="xmlTdAct">
+                          {l.cabys && (
+                            <button className={`xmlCopyBtn${fl===cid?" xmlCopyBtnOk":""}`} type="button"
+                              onClick={() => flash(cid, l.cabys)} title="Copiar CABYS">
+                              {fl===cid ? "✓" : <CopyIco/>}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
+
+        {/* ── Totales ── */}
+        <div className="xmlTotals">
+          {data.resumen.totalVenta && parseFloat(data.resumen.totalVenta) > 0 &&
+            <div className="xmlTotalRow"><span>Subtotal</span><span className="mono">{fmtM(data.resumen.totalVenta)}</span></div>}
+          {data.resumen.totalDesc && parseFloat(data.resumen.totalDesc) > 0 &&
+            <div className="xmlTotalRow"><span>Descuentos</span><span className="mono xmlTotalDisc">− {fmtM(data.resumen.totalDesc)}</span></div>}
+          {data.resumen.totalImpuesto && parseFloat(data.resumen.totalImpuesto) > 0 &&
+            <div className="xmlTotalRow"><span>IVA</span><span className="mono">{fmtM(data.resumen.totalImpuesto)}</span></div>}
+          {data.resumen.total && (
+            <div className="xmlTotalRow xmlTotalFinal">
+              <span>TOTAL</span>
+              <span className="mono">{fmtM(data.resumen.total)}</span>
+            </div>
+          )}
+        </div>
+
       </div>
 
+      {/* ── Acciones ── */}
+      <div className="xmlActions">
+        <button type="button" className="btn btnPrimary" onClick={onPrint}>🖨 Imprimir / PDF</button>
+        <CopyBtn id="xml-copy" label="Copiar resumen" fl={fl} flash={flash} disabled={false}
+          getText={() => [data.tipoDoc,
+            `Emisor: ${data.emisor.nombre}`,
+            data.receptor.nombre ? `Receptor: ${data.receptor.nombre}` : "",
+            data.fecha ? `Fecha: ${formatFechaCR(data.fecha)}` : "",
+            data.resumen.total ? `Total: ${fmtM(data.resumen.total)}` : "",
+            data.clave ? `Clave: ${data.clave}` : "",
+          ].filter(Boolean).join("\n")} />
+        {data.lines.length > 0 && (
+          <button type="button" className="btn btnGhost" onClick={onExcelDownload}>Exportar Excel</button>
+        )}
+        <button type="button" className="btn btnGhost" onClick={onReset}>← Cargar otro XML</button>
+      </div>
     </div>
   )
 }
