@@ -551,9 +551,8 @@ function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consul
         </div>
 
         <div className="cmdFooter">
-          <span><kbd>↵</kbd> ejecutar</span>
-          <span><kbd>Esc</kbd> cerrar</span>
-          <span><kbd>⌘K</kbd> abrir</span>
+          <span>↵ ejecutar</span>
+          <span>Esc cerrar</span>
         </div>
       </div>
     </div>
@@ -1065,7 +1064,6 @@ export default function App() {
           <button type="button" className="cmdTriggerBtn" onClick={() => setCmdOpen(true)}>
             {IC.search}
             <span className="cmdTriggerLabel">Búsqueda rápida</span>
-            <kbd className="cmdTriggerKbd">⌘K</kbd>
           </button>
           <button type="button" className="sideCollapseBtn" onClick={() => setSideCollapsed(c => !c)}>
             {sideCollapsed ? IC.expandRight : IC.collapseLeft}
@@ -1095,7 +1093,6 @@ export default function App() {
           <button type="button" className="topbarCmdBtn" onClick={() => setCmdOpen(true)}>
             <span className="topbarCmdIcon">{IC.search}</span>
             <span className="topbarCmdPlaceholder">Buscar…</span>
-            <kbd className="topbarCmdKbd">⌘K</kbd>
           </button>
 
           <div className="topbarRight">
@@ -1121,7 +1118,6 @@ export default function App() {
                 <button type="button" className="spotlightSearchBox" onClick={() => setCmdOpen(true)}>
                   <span className="spotlightSearchIcon">{IC.search}</span>
                   <span className="spotlightSearchText">Buscá empresa, CABYS, factura electrónica…</span>
-                  <kbd className="spotlightKbd">⌘K</kbd>
                 </button>
                 {fx && (
                   <div className="spotlightFx">
@@ -1155,7 +1151,7 @@ export default function App() {
 
           {/* ══ ASISTENTE CABYS ══ */}
           {page === "cabys" && (
-            <div className="pageWrap" style={{ maxWidth: 960 }}>
+            <div className="pageWrap pageCentered" style={{ maxWidth: 960 }}>
               {/* Favoritos */}
               {cabysF_avs.length > 0 && !cabysSearched && (
                 <div className="favSection">
@@ -1230,7 +1226,6 @@ export default function App() {
                 )}
               </div>
 
-              <HistoryRow items={cabysHist} onSelect={h => { setCabysQ(h); setCabysPage(0); consultarCabys({ reset: true, q: h }) }} />
 
               {cabysNorm && (
                 <div className="cabysNormHint">
@@ -1331,7 +1326,7 @@ export default function App() {
 
           {/* ══ CONTRIBUYENTE ══ */}
           {page === "contribuyente" && (
-            <div className="pageWrap">
+            <div className="pageWrap pageCentered">
               <PageHeader icon={IC.user} title="Verificar Contribuyente"
                 description="Consultá el estado fiscal, régimen y actividades económicas. Desde una actividad podés buscar sus códigos CABYS directamente." />
               <div className="toolCard">
@@ -1346,7 +1341,6 @@ export default function App() {
                     </button>
                   </div>
                   {!aeValid && aeId.length > 0 && <div className="hintBad">Debe tener 9, 10 u 11 dígitos.</div>}
-                  <HistoryRow items={aeHist} onSelect={h => { setAeId(h); consultarAE(h) }} />
                 </div>
               </div>
 
@@ -1376,7 +1370,7 @@ export default function App() {
 
           {/* ══ CÉDULAS TSE ══ */}
           {page === "cedulas" && (
-            <div className="pageWrap">
+            <div className="pageWrap pageCentered">
               <PageHeader icon={IC.id} title="Búsqueda de Cédulas TSE"
                 description="Personas físicas y jurídicas registradas en el Tribunal Supremo de Elecciones." />
               <div className="toolCard">
@@ -1390,7 +1384,6 @@ export default function App() {
                       {cedLoading ? "Buscando…" : "Buscar"}
                     </button>
                   </div>
-                  <HistoryRow items={cedHist} onSelect={h => { setCedQ(h); consultarCed(h) }} />
                 </div>
 
                 {cedItems.length > 0 && (
@@ -1436,7 +1429,7 @@ export default function App() {
 
           {/* ══ TIPO DE CAMBIO ══ */}
           {page === "tipocambio" && (
-            <div className="pageWrap">
+            <div className="pageWrap pageCentered">
               <PageHeader icon={IC.currency} title="Tipo de Cambio"
                 description="Tipo de cambio USD/CRC del Banco Central de Costa Rica — actual, histórico y conversor." />
 
@@ -1504,7 +1497,7 @@ export default function App() {
 
           {/* ══ FACTURA ══ */}
           {page === "factura" && (
-            <div className="pageWrap">
+            <div className="pageWrap pageCentered">
               <PageHeader icon={IC.receipt} title="Validación de Factura Electrónica"
                 description="Verificá si un comprobante fue aceptado o rechazado por Hacienda. Ingresá los 50 dígitos de la clave." />
               <div className="toolCard">
@@ -1587,7 +1580,7 @@ export default function App() {
 
           {/* ══ EXONERACIONES ══ */}
           {page === "exoneraciones" && (
-            <div className="pageWrap" style={{ maxWidth: 760 }}>
+            <div className="pageWrap pageCentered" style={{ maxWidth: 760 }}>
               <PageHeader icon={IC.shield} title="Exoneraciones" subtitle="Verificá si una entidad tiene exoneración de impuestos registrada en Hacienda" />
 
               <div className="toolCard">

@@ -331,11 +331,6 @@ a { text-decoration: none; color: inherit }
   border-top: 1px solid var(--border); background: var(--slate-50);
   font-size: var(--font-xs); color: var(--muted);
 }
-.cmdFooter kbd {
-  font-size: 10px; padding: 1px 5px; border-radius: 3px;
-  border: 1px solid var(--border2); background: var(--surface);
-  color: var(--text2); margin-right: 3px;
-}
 
 /* ═══════════════════════════════════════
    SPOTLIGHT HOME
@@ -424,9 +419,11 @@ a { text-decoration: none; color: inherit }
    SHARED PAGE COMPONENTS
 ═══════════════════════════════════════ */
 .pageWrap { max-width: 900px }
+.pageCentered { margin: 0 auto }
 
-.pageHeader { margin-bottom: 20px }
-.pageHeaderTop { display: flex; align-items: center; gap: 10px; margin-bottom: 4px }
+.pageHeader { margin-bottom: 24px; text-align: center }
+.pageHeaderTop { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px }
+
 .pageHeaderIcon {
   width: 34px; height: 34px; border-radius: 8px;
   background: var(--blue-50); color: var(--accent);
