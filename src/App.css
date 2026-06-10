@@ -1492,7 +1492,9 @@ tr:hover td { background: var(--slate-50) }
    CABYS — JERARQUÍA / CATEGORÍA
 ══════════════════════════════════════════════ */
 .cabysCardCat { display:flex; align-items:baseline; flex-wrap:wrap; gap:0; line-height:1.5; }
-.cabysCardCatChip { font-size:10px; color:var(--muted); }
+.cabysCardCatRow { display:flex; align-items:baseline; gap:6px; }
+.cabysCardCatDot { width:4px; height:4px; border-radius:50%; background:var(--border); flex-shrink:0; margin-top:5px; }
+.cabysCardCatChip { font-size:11px; color:var(--muted); line-height:1.4; }
 .cabysCardCatArrow { font-size:9px; color:var(--border); margin:0 3px; flex-shrink:0; }
 
 /* ══════════════════════════════════════════════

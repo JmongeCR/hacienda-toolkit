@@ -616,21 +616,18 @@ function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
       {/* Name — primary content */}
       <div className="cabysCardName">{item.descripcion}</div>
 
-      {/* Categories — compact breadcrumb, expandable */}
+      {/* Categories — vertical list, expandable */}
       {allCats.length > 0 && (
         <div className="cabysCardCatWrap">
-          <div className="cabysCardCat">
-            {hasMore && !catExp && <span className="cabysCardCatEllipsis">…</span>}
-            {visibleCats.map((label, i) => (
-              <span key={i} style={{display:"contents"}}>
-                {(i > 0 || (hasMore && !catExp)) && <span className="cabysCardCatArrow">›</span>}
-                <span className="cabysCardCatChip">{label}</span>
-              </span>
-            ))}
-          </div>
+          {visibleCats.map((label, i) => (
+            <div key={i} className="cabysCardCatRow">
+              <span className="cabysCardCatDot" />
+              <span className="cabysCardCatChip">{label}</span>
+            </div>
+          ))}
           {hasMore && (
             <button className="cabysCardCatToggle" type="button" onClick={() => setCatExp(e => !e)}>
-              {catExp ? "Ver menos" : `+${allCats.length - MAX_CATS} niveles`}
+              {catExp ? "Ver menos" : `+${allCats.length - MAX_CATS} más`}
             </button>
           )}
         </div>
