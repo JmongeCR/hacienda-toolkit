@@ -1407,22 +1407,42 @@ tr:hover td { background: var(--slate-50) }
 }
 .xmlCabysValidBannerOk  { background: var(--green-50); border-color: var(--green-100); }
 .xmlCabysValidBannerWarn { background: #fffbeb; border-color: #fde68a; }
-.xmlCabysValidTitle { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.xmlCabysValidTitle { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); flex-shrink: 0; }
 .xmlCabysValidItem  { color: var(--muted); }
 .xmlCabysValidOk    { color: var(--green-600); font-weight: 600; }
 .xmlCabysValidNf    { color: #b45309; font-weight: 600; }
 .xmlCabysValidErr   { color: var(--muted); font-weight: 500; }
+.xmlValidBannerItems { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-/* Columna estado por línea */
+/* Filtro rápido */
+.xmlFilterToggle {
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  border: 1.5px solid #f59e0b; background: transparent; color: #b45309; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.xmlFilterToggle:hover { background: #fef3c7; }
+.xmlFilterToggleActive { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+.xmlFilterToggleActive:hover { background: #d97706; border-color: #d97706; }
+
+/* Columna validaciones por línea */
 .xmlThCabysVal { white-space: nowrap; }
 .xmlTdCabysVal { white-space: nowrap; font-size: 12px; }
-.xmlCabysValOk      { color: var(--green-600); font-weight: 600; }
-.xmlCabysValNf      { color: #b45309; font-weight: 600; font-size: 11px; }
-.xmlCabysValErr     { color: var(--muted); font-size: 11px; }
+.xmlCabysValOk      { display: block; color: var(--green-600); font-weight: 600; font-size: 11px; }
+.xmlCabysValNf      { display: block; color: #b45309; font-weight: 600; font-size: 11px; }
+.xmlCabysValErr     { display: block; color: var(--muted); font-size: 11px; }
 .xmlCabysValLoading { color: var(--muted); letter-spacing: .1em; }
-.xmlCabysValGroup   { display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; }
-.xmlCabysValMismatch { font-size: 11px; font-weight: 600; color: #b45309; cursor: help; white-space: nowrap; }
-.xmlRowWarn td      { background: #fffbeb !important; }
+.xmlCabysValGroup   { display: flex; flex-direction: column; gap: 2px; }
+.xmlCabysValMismatch { display: block; font-size: 11px; font-weight: 600; color: #b45309; }
+
+/* Fila con advertencia: borde izquierdo naranja (no fondo) */
+.xmlRowWarn td:first-child { border-left: 3px solid #f59e0b; padding-left: 6px; }
+
+/* Aviso legal */
+.xmlLegalDisclaimer {
+  margin-top: 18px; padding: 10px 14px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); line-height: 1.5;
+}
 
 /* ── Documento Relacionado (Notas de Crédito / Débito) ── */
 .xmlRef { margin-bottom:20px; }

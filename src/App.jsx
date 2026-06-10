@@ -2666,6 +2666,7 @@ function AcercaPage({ activities }) {
 
 /* ─── XmlFacturaResult ─── */
 function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onReset, onExcelDownload }) {
+  const [soloInconsistencias, setSoloInconsistencias] = useState(false)
   const mon = data.resumen.moneda || "CRC"
   const tc  = data.resumen.tipoCambio ? parseFloat(data.resumen.tipoCambio) : null
   const isUsd = mon === "USD", isEur = mon === "EUR"
@@ -2826,35 +2827,45 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
           </div>
         )}
 
-        {/* ── Validación CABYS ── */}
+        {/* ── Resumen de validaciones ── */}
         {data.lines.length > 0 && Object.keys(cabysValidation).length > 0 && (() => {
-          const XML_SVC_UNITS = ["Sp","Al","Os","Spe","m2e"]
-          const vals = data.lines.map(l => {
-            if (!l.cabys) return { status: null }
+          const loading = Object.values(cabysValidation).some(v => v.status === "loading")
+          // Por línea: calcular IVA mismatch
+          const lineStats = data.lines.map(l => {
+            if (!l.cabys) return { cabysStatus: null, ivaMismatch: false }
             const cv = cabysValidation[l.cabys] || {}
-            const cabysEsSvc = cabysEsServicio(l.cabys)
-            const xmlEsSvc = l.unidad ? XML_SVC_UNITS.includes(l.unidad) : null
-            const mismatch = cv.status === "ok" && xmlEsSvc !== null && cabysEsSvc !== xmlEsSvc
-            return { ...cv, mismatch }
+            const ivaMismatch = cv.status === "ok" && cv.impuesto !== null && l.ivaPct !== undefined && l.ivaPct !== ""
+              ? parseFloat(l.ivaPct) !== cv.impuesto
+              : false
+            return { cabysStatus: cv.status, ivaMismatch }
           })
-          const loading  = vals.some(v => v.status === "loading")
-          const nOk      = vals.filter(v => v.status === "ok").length
-          const nNf      = vals.filter(v => v.status === "nf").length
-          const nErr     = vals.filter(v => v.status === "err").length
-          const nMismatch = vals.filter(v => v.mismatch).length
-          const hasWarn  = nNf > 0 || nMismatch > 0
+          const nOk      = lineStats.filter(v => v.cabysStatus === "ok" && !v.ivaMismatch).length
+          const nNf      = lineStats.filter(v => v.cabysStatus === "nf").length
+          const nErr     = lineStats.filter(v => v.cabysStatus === "err").length
+          const nIvaDiff = lineStats.filter(v => v.ivaMismatch).length
+          const hasWarn  = nNf > 0 || nIvaDiff > 0
+          const totalInconsistencias = nNf + nIvaDiff
           return (
             <div className={`xmlCabysValidBanner${hasWarn ? " xmlCabysValidBannerWarn" : " xmlCabysValidBannerOk"}`}>
-              <span className="xmlCabysValidTitle">Validación CABYS</span>
+              <span className="xmlCabysValidTitle">Validación tributaria</span>
               {loading ? (
                 <span className="xmlCabysValidItem">Verificando…</span>
               ) : (
-                <>
-                  {nOk  > 0 && <span className="xmlCabysValidOk">✔ {nOk} válido{nOk !== 1 ? "s" : ""}</span>}
-                  {nNf  > 0 && <span className="xmlCabysValidNf">⚠ {nNf} no encontrado{nNf !== 1 ? "s" : ""}</span>}
-                  {nMismatch > 0 && <span className="xmlCabysValMismatch">⚠ {nMismatch} tipo inconsistente</span>}
+                <div className="xmlValidBannerItems">
+                  {nOk  > 0 && <span className="xmlCabysValidOk">✔ {nOk} línea{nOk !== 1 ? "s" : ""} correcta{nOk !== 1 ? "s" : ""}</span>}
+                  {nIvaDiff > 0 && <span className="xmlCabysValidNf">⚠ {nIvaDiff} diferencia{nIvaDiff !== 1 ? "s" : ""} de IVA</span>}
+                  {nNf  > 0 && <span className="xmlCabysValidNf">⚠ {nNf} CABYS no encontrado{nNf !== 1 ? "s" : ""}</span>}
                   {nErr > 0 && <span className="xmlCabysValidErr">⚠ {nErr} sin verificar</span>}
-                </>
+                  {totalInconsistencias > 0 && (
+                    <button
+                      className={`xmlFilterToggle${soloInconsistencias ? " xmlFilterToggleActive" : ""}`}
+                      type="button"
+                      onClick={() => setSoloInconsistencias(v => !v)}
+                    >
+                      {soloInconsistencias ? "Ver todas las líneas" : "Ver solo inconsistencias"}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )
@@ -2875,7 +2886,7 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                     <th>IVA</th>
                     <th className="xmlThR">Total línea</th>
                     <th>CABYS</th>
-                    <th className="xmlThCabysVal">Estado</th>
+                    <th className="xmlThCabysVal">Validaciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2884,15 +2895,15 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                     const cid = `xml-c-${i}`
                     const cv = l.cabys ? cabysValidation[l.cabys] : null
                     const cvStatus = cv?.status
-                    // Tipo CABYS inferido del código (primer dígito)
-                    const cabysEsSvc = l.cabys ? cabysEsServicio(l.cabys) : null
-                    // Tipo XML inferido de UnidadMedida
-                    const XML_SVC_UNITS = ["Sp","Al","Os","Spe","m2e"]
-                    const xmlEsSvc = l.unidad ? XML_SVC_UNITS.includes(l.unidad) : null
-                    // Inconsistencia de tipo: solo cuando ambos son conocidos y difieren
-                    const tipoMismatch = cvStatus === "ok" && cabysEsSvc !== null && xmlEsSvc !== null && cabysEsSvc !== xmlEsSvc
+                    // IVA mismatch: XML vs oficial CABYS
+                    const ivaMismatch = cvStatus === "ok" && cv.impuesto !== null && l.ivaPct !== undefined && l.ivaPct !== ""
+                      ? parseFloat(l.ivaPct) !== cv.impuesto
+                      : false
+                    const hasRowWarn = ivaMismatch || cvStatus === "nf"
+                    // Filtro: ocultar si soloInconsistencias y la fila no tiene problema
+                    if (soloInconsistencias && !hasRowWarn) return null
                     return (
-                      <tr key={i} className={tipoMismatch ? "xmlRowWarn" : ""}>
+                      <tr key={i} className={hasRowWarn ? "xmlRowWarn" : ""}>
                         <td className="xmlTdNum">{i + 1}</td>
                         <td className="xmlTdDesc">{l.descripcion}</td>
                         <td className="mono xmlTdQty">{fmtQty(l.cantidad)} <span className="xmlUnt">{l.unidad}</span></td>
@@ -2916,19 +2927,16 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                           ) : cvStatus === "loading" ? (
                             <span className="xmlCabysValLoading">···</span>
                           ) : cvStatus === "nf" ? (
-                            <span className="xmlCabysValNf">⚠ No encontrado</span>
+                            <span className="xmlCabysValNf">⚠ No encontrado en CABYS</span>
                           ) : cvStatus === "err" ? (
                             <span className="xmlCabysValErr">⚠ Sin verificar</span>
                           ) : cvStatus === "ok" ? (
                             <div className="xmlCabysValGroup">
-                              <span className="xmlCabysValOk">✔</span>
-                              <span className={`cabysTypeBadge${cabysEsSvc ? " cabysTypeSvc" : " cabysTypeArt"}`}>
-                                {cabysEsSvc ? "Servicio" : "Artículo"}
-                              </span>
-                              {tipoMismatch && (
-                                <span className="xmlCabysValMismatch" title={`CABYS es ${cabysEsSvc?"Servicio":"Artículo"} pero XML usa unidad "${l.unidad}"`}>
-                                  ⚠ Tipo
-                                </span>
+                              <span className="xmlCabysValOk">✔ CABYS válido</span>
+                              {ivaMismatch ? (
+                                <span className="xmlCabysValMismatch">⚠ IVA XML: {parseFloat(l.ivaPct)}% / esperado: {cv.impuesto}%</span>
+                              ) : (
+                                <span className="xmlCabysValOk">✔ IVA correcto</span>
                               )}
                             </div>
                           ) : <span className="xmlMuted">—</span>}
@@ -2976,6 +2984,13 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
         )}
         <button type="button" className="btn btnGhost" onClick={onReset}>← Cargar otro XML</button>
       </div>
+
+      {/* ── Aviso legal ── */}
+      {data.lines.length > 0 && Object.keys(cabysValidation).length > 0 && (
+        <div className="xmlLegalDisclaimer">
+          La validación es informativa y no sustituye la revisión tributaria profesional. Los datos se contrastan con la API pública de Hacienda en tiempo real. Ante cualquier duda consulte a un contador autorizado.
+        </div>
+      )}
     </div>
   )
 }
