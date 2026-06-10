@@ -1070,7 +1070,6 @@ const NAV = [
   { id: "cabys",          icon: IC.search,    label: "Asistente CABYS" },
   { id: "contribuyente",  icon: IC.user,      label: "Contribuyente" },
   { id: "cedulas",        icon: IC.id,        label: "Personas y Empresas" },
-  { id: "clientes",       icon: IC.user,      label: "Clientes" },
   { id: "tipocambio",     icon: IC.currency,  label: "Tipo de Cambio" },
   { id: "factura",        icon: IC.receipt,   label: "Factura Electrónica" },
   { id: "exoneraciones",  icon: IC.shield,    label: "Exoneraciones" },
@@ -1081,7 +1080,7 @@ const NAV = [
 const NAV_MAP = Object.fromEntries(NAV.map(n => [n.id, n]))
 const NAV_GROUPS = [
   { items: ["home", "cabys"] },
-  { label: "Consultas",  items: ["contribuyente", "cedulas", "clientes"] },
+  { label: "Consultas",  items: ["contribuyente", "cedulas"] },
   { label: "Finanzas",   items: ["tipocambio", "factura"] },
   { label: "Tributario", items: ["exoneraciones", "calculadora", "asistente"] },
 ]
