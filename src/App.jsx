@@ -3129,6 +3129,9 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                               ) : (
                                 <span className="xmlCabysValOk">✔ IVA correcto</span>
                               )}
+                              <span className={`cabysTypeBadge${cabysEsServicio(l.cabys) ? " cabysTypeSvc" : " cabysTypeArt"}`}>
+                                🏷 {cabysEsServicio(l.cabys) ? "Servicio" : "Artículo"}
+                              </span>
                             </div>
                           ) : <span className="xmlMuted">—</span>}
                         </td>
