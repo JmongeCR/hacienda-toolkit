@@ -1303,18 +1303,7 @@ export default function App() {
   }
 
   const printXmlFe = () => {
-    const area = document.getElementById("xmlPrintArea")
-    if (!area) return
-    const w = window.open("", "_blank", "width=800,height=900")
-    w.document.write(`<!DOCTYPE html><html><head><title>Factura</title>
-      <style>body{font-family:system-ui,sans-serif;font-size:13px;color:#111;padding:32px}
-      table{width:100%;border-collapse:collapse}th,td{padding:7px 6px;border-bottom:1px solid #eee;text-align:left}
-      th{font-size:11px;text-transform:uppercase;color:#666;font-weight:700}
-      .head{margin-bottom:12px}.label{font-size:10px;text-transform:uppercase;color:#888;font-weight:700}
-      .total-final{font-size:18px;font-weight:700;border-top:2px solid #111;padding-top:8px}
-      @media print{button{display:none}}</style></head>
-      <body>${area.innerHTML}<br><button onclick="window.print()">🖨 Imprimir</button></body></html>`)
-    w.document.close()
+    window.print()
   }
 
   /* ─── EXONERACIONES ─── */

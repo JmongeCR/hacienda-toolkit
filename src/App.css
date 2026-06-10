@@ -1520,31 +1520,30 @@ tr:hover td { background: var(--slate-50) }
    IMPRESIÓN @media print — Visor XML
 ══════════════════════════════════════════════ */
 @media print {
-  /* Ocultar todo lo que no es la factura */
-  .sidebar, .topBar, .footerBar, .xmlActions,
-  .feTabRow, .toolCard, .pageWrap > :not(#xmlPrintArea),
-  .pageWrap > .assistantHero, .pageWrap > .cabysGrid,
-  button, .xmlCopyBtn, .favBtn {
-    display: none !important;
-  }
+  /* Ocultar todo salvo el área de factura */
+  body * { visibility: hidden; }
+  #xmlPrintArea, #xmlPrintArea * { visibility: visible; }
 
-  /* Mostrar solo el área de impresión */
-  body, html { background: #fff !important; margin: 0; padding: 0; }
-  .layout { display: block !important; }
-  .mainArea { display: block !important; padding: 0 !important; margin: 0 !important; }
-  main { padding: 0 !important; margin: 0 !important; overflow: visible !important; }
-  .pageWrap { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
-
-  /* El área de la factura */
+  /* Posicionar el área de impresión en el origen */
   #xmlPrintArea {
-    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
     border: none !important;
     border-radius: 0 !important;
     padding: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
-    page-break-inside: avoid;
   }
+
+  /* Ocultar botones y elementos interactivos dentro del área */
+  #xmlPrintArea button,
+  #xmlPrintArea .xmlCopyBtn,
+  #xmlPrintArea .xmlActions,
+  #xmlPrintArea .favBtn { visibility: hidden !important; display: none !important; }
+
+  body, html { background: #fff !important; margin: 0; padding: 0; }
 
   /* Encabezado */
   .xmlResultHead {
