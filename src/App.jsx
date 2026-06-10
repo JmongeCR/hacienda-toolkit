@@ -7,7 +7,7 @@ import "./App.css"
 ───────────────────────────────────────────── */
 async function checkApiStatus() {
   const start = performance.now()
-  const res = await fetch("/hacienda/fe/ae?identificacion=110220294", { cache: "no-store" })
+  const res = await fetch("/hacienda/fe/cabys?q=sal&top=1", { cache: "no-store" })
   const ms = Math.round(performance.now() - start)
   if (!res.ok) throw new Error("API down")
   return ms
@@ -337,17 +337,6 @@ const CABYS_SUGERENCIAS = [
   { label: "Legal / Asesoría",      q: "servicios juridicos legales asesoria" },
 ]
 
-/* ─── matchAeTopN: devuelve los N mejores matches de AE con score ─── */
-function matchAeTopN(desc, n = 3) {
-  const d = desc.toLowerCase()
-  return AE_MAP
-    .map(ae => ({ ...ae, score: ae.kw.filter(k => d.includes(k)).length }))
-    .filter(ae => ae.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, n)
-    .map(ae => ({ ...ae, pct: Math.round(Math.min(ae.score / Math.max(ae.kw.length, 1), 1) * 100) }))
-}
-
 /* ─── XML FE parser (DOMParser, sin librerías) ─── */
 function parseXmlFe(xmlStr) {
   const dp = new DOMParser()
@@ -514,17 +503,7 @@ function CopyBtn({ id, label, getText, disabled, fl, flash }) {
   )
 }
 
-function HistoryRow({ items, onSelect }) {
-  if (!items.length) return null
-  return (
-    <div className="histRow">
-      <span className="histLabel">Recientes:</span>
-      {items.map(h => (
-        <button key={h} type="button" className="histChip" onClick={() => onSelect(h)}>{h}</button>
-      ))}
-    </div>
-  )
-}
+
 
 function EmptyState({ msg }) {
   return (
@@ -991,7 +970,6 @@ export default function App() {
 
   /* ─── API STATUS ─── */
   const [apiStatus, setApiStatus] = useState(null)
-  const [bccrOk,    setBccrOk]    = useState(null)
 
   const refreshApi = async () => {
     try { const ms = await checkApiStatus(); setApiStatus({ ok: true, ms, at: new Date() }) }
@@ -1016,7 +994,6 @@ export default function App() {
       if (!compra && !venta) throw new Error("Sin datos")
       const fechaUsd = json?.fecha ?? json?.data?.fecha ?? pF(cR) ?? pF(vR)
       setFx({ compra, venta, fecha: fechaUsd })
-      setBccrOk(true)
       // EUR desde el mismo endpoint de Hacienda
       try {
         const pV2 = x => x && typeof x === "object" ? x.valor ?? x : x
@@ -1025,7 +1002,7 @@ export default function App() {
         const eurVal = eurColones ? Number(pV2(eurColones)) : null
         if (eurVal) setFxEur({ colones: eurVal, fecha: eurFecha })
       } catch { /* silencioso */ }
-    } catch { setFx(null); setFxError("No disponible"); setBccrOk(false) }
+    } catch { setFx(null); setFxError("No disponible") }
     finally { setFxLoading(false) }
   }, [])
 
@@ -1826,7 +1803,7 @@ export default function App() {
                 <div className="toolSection">
                   <label className="lbl">Número de cédula o nombre</label>
                   <div className="inputRow">
-                    <input className="inp" value={cedQ} placeholder="Ej: 116740278 o Juan Pérez García"
+                    <input className="inp" value={cedQ} placeholder="Ej: 100200300 o Juan Pérez García"
                       onChange={e => setCedQ(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") consultarCed() }} />
                     <button className="btn btnPrimary" onClick={() => consultarCed()} disabled={!cedQ_.length || cedLoading} type="button">
