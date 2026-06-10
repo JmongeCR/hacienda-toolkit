@@ -743,8 +743,8 @@ tr:hover td { background: var(--slate-50) }
 
 .cabysCardHead { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .cabysCardCode {
-  font-family: monospace; font-size: 10px; font-weight: 500;
-  color: var(--muted); letter-spacing: .03em;
+  font-family: monospace; font-size: 12px; font-weight: 700;
+  color: var(--text); letter-spacing: .03em;
   background: var(--bg-alt); border: 1px solid var(--border);
   border-radius: 4px; padding: 1px 6px;
 }
