@@ -1663,9 +1663,9 @@ tr:hover td { background: var(--slate-50) }
   bottom: 0;
   width: 460px;
   max-width: 100vw;
-  background: var(--card);
+  background: var(--surface);
   border-left: 1px solid var(--border);
-  box-shadow: -8px 0 40px rgba(0,0,0,.12);
+  box-shadow: -8px 0 40px rgba(0,0,0,.18);
   z-index: 201;
   display: flex;
   flex-direction: column;
@@ -1839,7 +1839,7 @@ tr:hover td { background: var(--slate-50) }
 }
 .cabysDrawerRelatedItem:hover {
   border-color: var(--accent);
-  background: var(--card);
+  background: var(--surface);
 }
 .cabysDrawerRelatedCode {
   font-family: monospace;
