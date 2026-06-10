@@ -360,7 +360,7 @@ function parseXmlFe(xmlStr) {
     cedula: get("Receptor > Identificacion > Numero"),
     correo: get("Receptor > CorreoElectronico"),
   }
-  // Schema v4.3: CodigoTipoMoneda > CodigoMoneda; versiones anteriores usan Codigo
+  // Schema v4.4: CodigoTipoMoneda > CodigoMoneda; versiones anteriores usan Codigo
   const moneda    = get("CodigoTipoMoneda > CodigoMoneda") || get("CodigoTipoMoneda > Codigo") || get("CodigoMoneda") || "CRC"
   const tipoCambio= get("CodigoTipoMoneda > TipoCambio") || get("TipoCambio") || ""
   const resumen = {
@@ -2280,7 +2280,7 @@ export default function App() {
                       <div className="fxvDropTitle">Arrastre un XML aquí</div>
                       <div className="fxvDropSub">o haga clic para seleccionar el archivo</div>
                       <div className="fxvDropFormats">
-                        <span>XML</span><span>Hacienda CR</span><span>FE v4.3</span>
+                        <span>XML</span><span>Hacienda CR</span><span>FE v4.4</span>
                       </div>
                       <input id="xmlFileInput" type="file" accept=".xml,text/xml,application/xml" style={{display:"none"}}
                         onChange={e => handleXmlFile(e.target.files[0])} />
@@ -3023,21 +3023,26 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
         {/* ── Resumen de validaciones ── */}
         {data.lines.length > 0 && Object.keys(cabysValidation).length > 0 && (() => {
           const loading = Object.values(cabysValidation).some(v => v.status === "loading")
-          // Por línea: calcular IVA mismatch
+          const BANNER_SVC_UNITS = ["Sp","Al","Os","Spe","m2e"]
+          // Por línea: calcular todos los avisos
           const lineStats = data.lines.map(l => {
-            if (!l.cabys) return { cabysStatus: null, ivaMismatch: false }
+            if (!l.cabys) return { cabysStatus: null, ivaMismatch: false, tipoAviso: false }
             const cv = cabysValidation[l.cabys] || {}
             const ivaMismatch = cv.status === "ok" && cv.impuesto !== null && l.ivaPct !== undefined && l.ivaPct !== ""
               ? parseFloat(l.ivaPct) !== cv.impuesto
               : false
-            return { cabysStatus: cv.status, ivaMismatch }
+            const cabysEsSvc = cabysEsServicio(l.cabys)
+            const xmlEsSvc = l.unidad ? BANNER_SVC_UNITS.includes(l.unidad) : null
+            const tipoAviso = cv.status === "ok" && cabysEsSvc !== null && xmlEsSvc !== null && cabysEsSvc !== xmlEsSvc
+            return { cabysStatus: cv.status, ivaMismatch, tipoAviso }
           })
-          const nOk      = lineStats.filter(v => v.cabysStatus === "ok" && !v.ivaMismatch).length
+          const nOk      = lineStats.filter(v => v.cabysStatus === "ok" && !v.ivaMismatch && !v.tipoAviso).length
           const nNf      = lineStats.filter(v => v.cabysStatus === "nf").length
           const nErr     = lineStats.filter(v => v.cabysStatus === "err").length
           const nIvaDiff = lineStats.filter(v => v.ivaMismatch).length
-          const hasWarn  = nNf > 0 || nIvaDiff > 0
-          const totalInconsistencias = nNf + nIvaDiff
+          const nTipo    = lineStats.filter(v => v.tipoAviso).length
+          const hasWarn  = nNf > 0 || nIvaDiff > 0 || nTipo > 0
+          const totalInconsistencias = nNf + nIvaDiff + nTipo
           return (
             <div className={`xmlCabysValidBanner${hasWarn ? " xmlCabysValidBannerWarn" : " xmlCabysValidBannerOk"}`}>
               <span className="xmlCabysValidTitle">Validación tributaria</span>
@@ -3047,6 +3052,7 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                 <div className="xmlValidBannerItems">
                   {nOk  > 0 && <span className="xmlCabysValidOk">✔ {nOk} línea{nOk !== 1 ? "s" : ""} correcta{nOk !== 1 ? "s" : ""}</span>}
                   {nIvaDiff > 0 && <span className="xmlCabysValidNf">⚠ {nIvaDiff} diferencia{nIvaDiff !== 1 ? "s" : ""} de IVA</span>}
+                  {nTipo  > 0 && <span className="xmlCabysValidNf">⚠ {nTipo} verificar tipo</span>}
                   {nNf  > 0 && <span className="xmlCabysValidNf">⚠ {nNf} CABYS no encontrado{nNf !== 1 ? "s" : ""}</span>}
                   {nErr > 0 && <span className="xmlCabysValidErr">⚠ {nErr} sin verificar</span>}
                   {totalInconsistencias > 0 && (
