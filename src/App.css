@@ -1399,6 +1399,28 @@ tr:hover td { background: var(--slate-50) }
 .xmlTdAct { display:none; }
 .xmlMuted { color:var(--muted); }
 
+/* ── Validación CABYS ── */
+.xmlCabysValidBanner {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 14px; border-radius: 10px; margin-bottom: 14px;
+  font-size: 12px; border: 1px solid var(--border);
+}
+.xmlCabysValidBannerOk  { background: var(--green-50); border-color: var(--green-100); }
+.xmlCabysValidBannerWarn { background: #fffbeb; border-color: #fde68a; }
+.xmlCabysValidTitle { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.xmlCabysValidItem  { color: var(--muted); }
+.xmlCabysValidOk    { color: var(--green-600); font-weight: 600; }
+.xmlCabysValidNf    { color: #b45309; font-weight: 600; }
+.xmlCabysValidErr   { color: var(--muted); font-weight: 500; }
+
+/* Columna estado por línea */
+.xmlThCabysVal { white-space: nowrap; }
+.xmlTdCabysVal { white-space: nowrap; font-size: 12px; }
+.xmlCabysValOk      { color: var(--green-600); font-weight: 600; }
+.xmlCabysValNf      { color: #b45309; font-weight: 600; font-size: 11px; }
+.xmlCabysValErr     { color: var(--muted); font-size: 11px; }
+.xmlCabysValLoading { color: var(--muted); letter-spacing: .1em; }
+
 /* ── Documento Relacionado (Notas de Crédito / Débito) ── */
 .xmlRef { margin-bottom:20px; }
 .xmlRefBanner { border-radius:12px; border:1.5px solid var(--border); overflow:hidden; }

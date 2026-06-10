@@ -1270,12 +1270,35 @@ export default function App() {
   const [feLoading,  setFeLoading]  = useState(false)
   const [feError,    setFeError]    = useState("")
   const [feSearched, setFeSearched] = useState(false)
-  const [feXmlData,  setFeXmlData]  = useState(null)
-  const [feXmlError, setFeXmlError] = useState("")
-  const [feXmlDrag,  setFeXmlDrag]  = useState(false)
+  const [feXmlData,       setFeXmlData]       = useState(null)
+  const [feXmlError,      setFeXmlError]      = useState("")
+  const [feXmlDrag,       setFeXmlDrag]       = useState(false)
+  const [cabysValidation, setCabysValidation] = useState({}) // { [codigo]: "loading"|"ok"|"nf"|"err" }
 
   const feClean = useMemo(() => onlyDigits(feKey), [feKey])
   const feValid = feClean.length === 50
+
+  // Validación CABYS: se dispara al cargar un XML
+  useEffect(() => {
+    if (!feXmlData?.lines?.length) { setCabysValidation({}); return }
+    const codigos = [...new Set(feXmlData.lines.map(l => l.cabys).filter(Boolean))]
+    if (!codigos.length) { setCabysValidation({}); return }
+    // Marcar todos como "loading"
+    setCabysValidation(Object.fromEntries(codigos.map(c => [c, "loading"])))
+    // Consultar en paralelo (un fetch por código único)
+    Promise.all(codigos.map(async codigo => {
+      try {
+        const res = await fetch(`/hacienda/fe/cabys?codigo=${encodeURIComponent(codigo)}`, { cache: "no-store" })
+        if (!res.ok) return [codigo, "err"]
+        const json = await res.json()
+        return [codigo, Array.isArray(json) && json.length > 0 ? "ok" : "nf"]
+      } catch {
+        return [codigo, "err"]
+      }
+    })).then(results => {
+      setCabysValidation(Object.fromEntries(results))
+    })
+  }, [feXmlData])
 
   const feDecoded = useMemo(() => {
     if (feClean.length !== 50) return null
@@ -2066,8 +2089,9 @@ export default function App() {
                     <XmlFacturaResult
                       data={feXmlData}
                       fl={fl} flash={flash}
+                      cabysValidation={cabysValidation}
                       onPrint={printXmlFe}
-                      onReset={() => { setFeXmlData(null); setFeXmlError("") }}
+                      onReset={() => { setFeXmlData(null); setFeXmlError(""); setCabysValidation({}) }}
                       onExcelDownload={() => {
                         if (!feXmlData.lines.length) return
                         downloadXlsx("factura_detalle.xlsx", "Detalle",
@@ -2638,7 +2662,7 @@ function AcercaPage({ activities }) {
 }
 
 /* ─── XmlFacturaResult ─── */
-function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }) {
+function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onReset, onExcelDownload }) {
   const mon = data.resumen.moneda || "CRC"
   const tc  = data.resumen.tipoCambio ? parseFloat(data.resumen.tipoCambio) : null
   const isUsd = mon === "USD", isEur = mon === "EUR"
@@ -2799,6 +2823,29 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
           </div>
         )}
 
+        {/* ── Validación CABYS ── */}
+        {data.lines.length > 0 && Object.keys(cabysValidation).length > 0 && (() => {
+          const vals = data.lines.map(l => l.cabys ? cabysValidation[l.cabys] : null)
+          const loading = vals.some(v => v === "loading")
+          const nOk  = vals.filter(v => v === "ok").length
+          const nNf  = vals.filter(v => v === "nf").length
+          const nErr = vals.filter(v => v === "err").length
+          return (
+            <div className={`xmlCabysValidBanner${nNf > 0 || nErr > 0 ? " xmlCabysValidBannerWarn" : " xmlCabysValidBannerOk"}`}>
+              <span className="xmlCabysValidTitle">Validación CABYS</span>
+              {loading ? (
+                <span className="xmlCabysValidItem">Verificando…</span>
+              ) : (
+                <>
+                  {nOk  > 0 && <span className="xmlCabysValidOk">✔ {nOk} válido{nOk !== 1 ? "s" : ""}</span>}
+                  {nNf  > 0 && <span className="xmlCabysValidNf">⚠ {nNf} no encontrado{nNf !== 1 ? "s" : ""}</span>}
+                  {nErr > 0 && <span className="xmlCabysValidErr">⚠ {nErr} sin verificar</span>}
+                </>
+              )}
+            </div>
+          )
+        })()}
+
         {/* ── Líneas de detalle ── */}
         {data.lines.length > 0 && (
           <div className="xmlLines">
@@ -2814,6 +2861,7 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
                     <th>IVA</th>
                     <th className="xmlThR">Total línea</th>
                     <th>CABYS</th>
+                    <th className="xmlThCabysVal">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2837,6 +2885,19 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
                                 {fl===cid ? "✓" : <CopyIco/>}
                               </button>
                             </div>
+                          ) : <span className="xmlMuted">—</span>}
+                        </td>
+                        <td className="xmlTdCabysVal">
+                          {!l.cabys ? (
+                            <span className="xmlMuted">—</span>
+                          ) : cabysValidation[l.cabys] === "loading" ? (
+                            <span className="xmlCabysValLoading">···</span>
+                          ) : cabysValidation[l.cabys] === "ok" ? (
+                            <span className="xmlCabysValOk">✔</span>
+                          ) : cabysValidation[l.cabys] === "nf" ? (
+                            <span className="xmlCabysValNf">⚠ No encontrado</span>
+                          ) : cabysValidation[l.cabys] === "err" ? (
+                            <span className="xmlCabysValErr">⚠ Sin verificar</span>
                           ) : <span className="xmlMuted">—</span>}
                         </td>
                       </tr>
