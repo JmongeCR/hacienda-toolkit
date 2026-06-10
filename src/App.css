@@ -1393,9 +1393,9 @@ tr:hover td { background: var(--slate-50) }
 .xmlTdR { text-align:right; }
 .xmlTdBold { font-weight:700; color:var(--text); }
 /* CABYS — código + copy inline */
-.xmlTdCabys { font-size:11px; line-height:1.6; min-width:140px; }
-.xmlCabysCell { display:flex; align-items:flex-start; gap:6px; }
-.xmlCabysCode { word-break:break-all; flex:1; }
+.xmlTdCabys { font-size:11px; line-height:1.6; min-width:155px; white-space:nowrap; }
+.xmlCabysCell { display:flex; align-items:center; gap:6px; }
+.xmlCabysCode { white-space:nowrap; }
 .xmlTdAct { display:none; }
 .xmlMuted { color:var(--muted); }
 
