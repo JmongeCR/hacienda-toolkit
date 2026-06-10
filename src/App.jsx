@@ -590,51 +590,70 @@ function getCabysHierarchy(codigo) {
 
 /* ─── CABYS result card (enriched) ─── */
 function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
+  const [catExp, setCatExp] = useState(false)
   const isFav = favs?.some(f => f.codigo === item.codigo)
   const idCode = `cc-${item.codigo}`, idDesc = `cd-${item.codigo}`, idBoth = `cb-${item.codigo}`
+  const esSvc = cabysEsServicio(item.codigo)
+
+  const allCats = (item.categorias?.length ? item.categorias : getCabysHierarchy(item.codigo))
+    .filter((v, i, a) => a.indexOf(v) === i)
+  const MAX_CATS = 3
+  const visibleCats = catExp ? allCats : allCats.slice(-MAX_CATS)
+  const hasMore = allCats.length > MAX_CATS
+
   return (
     <div className={`cabysCard${isFav ? " cabysCardFav" : ""}`}>
+      {/* Header: code badge + fav */}
       <div className="cabysCardHead">
         <span className="cabysCardCode">{item.codigo}</span>
-        <div className="cabysCardHeadRight">
-          <button className={`favBtn${isFav ? " favBtnOn" : ""}`} type="button"
-            title={isFav ? "Quitar favorito" : "Guardar favorito"}
-            onClick={() => onToggleFav(item)}>
-            {isFav ? IC.star : IC.starOff}
-          </button>
-        </div>
+        <button className={`favBtn${isFav ? " favBtnOn" : ""}`} type="button"
+          title={isFav ? "Quitar favorito" : "Guardar favorito"}
+          onClick={() => onToggleFav(item)}>
+          {isFav ? IC.star : IC.starOff}
+        </button>
       </div>
+
+      {/* Name — primary content */}
       <div className="cabysCardName">{item.descripcion}</div>
-      {(() => {
-        const cats = item.categorias?.length ? item.categorias : getCabysHierarchy(item.codigo)
-        if (!cats.length) return null
-        const unique = cats.filter((v, i, a) => a.indexOf(v) === i)
-        return (
+
+      {/* Categories — compact breadcrumb, expandable */}
+      {allCats.length > 0 && (
+        <div className="cabysCardCatWrap">
           <div className="cabysCardCat">
-            {unique.map((label, i) => (
+            {hasMore && !catExp && <span className="cabysCardCatEllipsis">…</span>}
+            {visibleCats.map((label, i) => (
               <span key={i} style={{display:"contents"}}>
-                {i > 0 && <span className="cabysCardCatArrow">›</span>}
+                {(i > 0 || (hasMore && !catExp)) && <span className="cabysCardCatArrow">›</span>}
                 <span className="cabysCardCatChip">{label}</span>
               </span>
             ))}
           </div>
-        )
-      })()}
+          {hasMore && (
+            <button className="cabysCardCatToggle" type="button" onClick={() => setCatExp(e => !e)}>
+              {catExp ? "Ver menos" : `+${allCats.length - MAX_CATS} niveles`}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Footer: badges + actions */}
       <div className="cabysCardFoot">
-        <span className={`taxBadgeV2 ${taxClass(item.impuesto)}`}>{item.impuesto}% IVA</span>
-        <span className={`cabysTypeBadge${cabysEsServicio(item.codigo) ? " cabysTypeSvc" : " cabysTypeArt"}`}>
-          {cabysEsServicio(item.codigo) ? "Servicio" : "Artículo"}
-        </span>
-        <div className="cabysCardCopyGroup">
-          <button className={`copyBtn${fl === idCode ? " copied" : ""}`} type="button"
+        <div className="cabysCardBadges">
+          <span className={`taxBadgeV2 ${taxClass(item.impuesto)}`}>{item.impuesto}% IVA</span>
+          <span className={`cabysTypeBadge${esSvc ? " cabysTypeSvc" : " cabysTypeArt"}`}>
+            {esSvc ? "Servicio" : "Artículo"}
+          </span>
+        </div>
+        <div className="cabysCardActions">
+          <button className={`cabysActBtn${fl === idCode ? " cabysActBtnDone" : ""}`} type="button"
             title="Copiar código" onClick={() => flash(idCode, String(item.codigo))}>
-            {fl === idCode ? "✓" : "# Código"}
+            {fl === idCode ? "✓" : "#"}
           </button>
-          <button className={`copyBtn${fl === idDesc ? " copied" : ""}`} type="button"
+          <button className={`cabysActBtn${fl === idDesc ? " cabysActBtnDone" : ""}`} type="button"
             title="Copiar descripción" onClick={() => flash(idDesc, item.descripcion)}>
-            {fl === idDesc ? "✓" : "T Descripción"}
+            {fl === idDesc ? "✓" : "T"}
           </button>
-          <button className={`copyBtn copyBtnBoth${fl === idBoth ? " copied" : ""}`} type="button"
+          <button className={`cabysActBtn cabysActBtnPrimary${fl === idBoth ? " cabysActBtnDone" : ""}`} type="button"
             title="Copiar código y descripción"
             onClick={() => flash(idBoth, `${item.codigo} — ${item.descripcion}`)}>
             {fl === idBoth ? "✓ Copiado" : "Copiar ambos"}
