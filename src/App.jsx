@@ -575,6 +575,11 @@ const CABYS_CAT2 = {
   "98":"Servicios domésticos y personales",
   "99":"Servicios y transacciones especiales",
 }
+function cabysEsServicio(codigo) {
+  const s = String(codigo ?? "").replace(/\D/g, "")
+  return s[0] === "8" || s[0] === "9"
+}
+
 function getCabysHierarchy(codigo) {
   const s = String(codigo ?? "").replace(/\D/g, "")
   if (!s) return []
@@ -594,7 +599,7 @@ function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
         <div className="cabysCardHeadRight">
           {score != null && score > 0 && (
             <span className={`scoreBar score${score >= 80 ? "Hi" : score >= 50 ? "Mid" : "Lo"}`}
-              title="Relevancia del resultado respecto a tu búsqueda">
+              data-tooltip="Relevancia del resultado respecto a tu búsqueda">
               {score}% relevancia
             </span>
           )}
@@ -622,6 +627,9 @@ function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
       <div className="cabysCardName">{item.descripcion}</div>
       <div className="cabysCardFoot">
         <span className={`taxBadgeV2 ${taxClass(item.impuesto)}`}>{item.impuesto}% IVA</span>
+        <span className={`cabysTypeBadge${cabysEsServicio(item.codigo) ? " cabysTypeSvc" : " cabysTypeArt"}`}>
+          {cabysEsServicio(item.codigo) ? "Servicio" : "Artículo"}
+        </span>
         <div className="cabysCardCopyGroup">
           <button className={`copyBtn${fl === idCode ? " copied" : ""}`} type="button"
             title="Copiar código" onClick={() => flash(idCode, String(item.codigo))}>
@@ -1673,9 +1681,12 @@ export default function App() {
                         <button type="button" className={`viewModeBtn${cabysView === "table" ? " active" : ""}`}
                           onClick={() => setCabysView("table")}>{IC.table}</button>
                       </div>
-                      <CopyBtn id="cabys-csv" label="CSV" fl={fl} flash={flash}
-                        getText={() => toCsv(cabysRows.map(c => [c.codigo, c.descripcion, `${c.impuesto}%`]), ["codigo", "descripcion", "impuesto"])}
-                        disabled={!cabysRows.length} />
+                      <button className="btn btnGhost" type="button" disabled={!cabysRows.length}
+                        onClick={() => {
+                          if (!cabysRows.length) return
+                          const csv = toCsv(cabysRows.map(c => [c.codigo, c.descripcion, `${c.impuesto}%`, cabysEsServicio(c.codigo) ? "Servicio" : "Artículo"]), ["codigo", "descripcion", "impuesto", "tipo"])
+                          downloadBlob("cabys.csv", new Blob([csv], { type: "text/csv;charset=utf-8;" }))
+                        }}>CSV</button>
                       <button className="btn btnGhost" onClick={() => {
                         if (!cabysRows.length) return
                         downloadXlsx("cabys.xlsx", "CABYS", cabysRows.map(c => ({ codigo: c.codigo, descripcion: c.descripcion, impuesto: `${c.impuesto}%` })), ["codigo", "descripcion", "impuesto"])
@@ -1703,6 +1714,7 @@ export default function App() {
                             <SortableTH col="codigo" sort={cabysSort} onSort={handleCabysSort}>Código</SortableTH>
                             <SortableTH col="descripcion" sort={cabysSort} onSort={handleCabysSort}>Descripción</SortableTH>
                             <SortableTH col="impuesto" sort={cabysSort} onSort={handleCabysSort}>Impuesto</SortableTH>
+                            <th>Tipo</th>
                             <th className="thR">Copiar</th>
                           </tr>
                         </thead>
@@ -1712,6 +1724,7 @@ export default function App() {
                               <td className="mono">{c.codigo}</td>
                               <td>{c.descripcion}</td>
                               <td><span className={`taxBadgeV2 ${taxClass(c.impuesto)}`}>{c.impuesto}%</span></td>
+                              <td><span className={`cabysTypeBadge${cabysEsServicio(c.codigo) ? " cabysTypeSvc" : " cabysTypeArt"}`}>{cabysEsServicio(c.codigo) ? "Servicio" : "Artículo"}</span></td>
                               <td className="thR">
                                 <button className={`iconBtn${fl === `cc-${c.codigo}` ? " flashed" : ""}`} type="button"
                                   onClick={() => flash(`cc-${c.codigo}`, String(c.codigo || ""))}>
