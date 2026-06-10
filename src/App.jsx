@@ -589,7 +589,7 @@ function getCabysHierarchy(codigo) {
 }
 
 /* ─── CABYS result card (enriched) ─── */
-function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
+function CabysCard({ item, score, fl, flash, favs, onToggleFav, onSelect }) {
   const [catExp, setCatExp] = useState(false)
   const isFav = favs?.some(f => f.codigo === item.codigo)
   const idCode = `cc-${item.codigo}`, idDesc = `cd-${item.codigo}`, idBoth = `cb-${item.codigo}`
@@ -601,8 +601,20 @@ function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
   const visibleCats = catExp ? allCats : allCats.slice(-MAX_CATS)
   const hasMore = allCats.length > MAX_CATS
 
+  const handleCardClick = (e) => {
+    // No abrir drawer si se hizo clic en un botón o su hijo
+    if (e.target.closest("button")) return
+    onSelect?.(item)
+  }
+
   return (
-    <div className={`cabysCard${isFav ? " cabysCardFav" : ""}`}>
+    <div
+      className={`cabysCard${isFav ? " cabysCardFav" : ""}${onSelect ? " cabysCardSelectable" : ""}`}
+      onClick={handleCardClick}
+      role={onSelect ? "button" : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onKeyDown={onSelect ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(item) } } : undefined}
+    >
       {/* Header: code badge + fav */}
       <div className="cabysCardHead">
         <span className="cabysCardCode">{item.codigo}</span>
@@ -658,6 +670,170 @@ function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
         </div>
       </div>
     </div>
+  )
+}
+
+/* ─── CABYS Drawer ─── */
+// Reutilizable: recibe item + lista de relacionados + callbacks
+function CabysDrawer({ item, relatedItems = [], fl, flash, favs, onToggleFav, onClose, onSelectRelated }) {
+  const esSvc = item ? cabysEsServicio(item.codigo) : false
+  const isFav = favs?.some(f => f.codigo === item?.codigo)
+  const idCode  = `drw-c-${item?.codigo}`
+  const idDesc  = `drw-d-${item?.codigo}`
+  const idBoth  = `drw-b-${item?.codigo}`
+
+  const allCats = item
+    ? (item.categorias?.length ? item.categorias : getCabysHierarchy(item.codigo))
+        .filter((v, i, a) => a.indexOf(v) === i)
+    : []
+
+  // Cerrar con ESC
+  useEffect(() => {
+    if (!item) return
+    const handler = (e) => { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [item, onClose])
+
+  // Bloquear scroll del body cuando está abierto
+  useEffect(() => {
+    if (item) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = ""
+    }
+    return () => { document.body.style.overflow = "" }
+  }, [item])
+
+  if (!item) return null
+
+  // Relacionados: del mismo tipo (servicio/artículo) excluyendo el actual
+  const related = relatedItems
+    .filter(r => r.codigo !== item.codigo && cabysEsServicio(r.codigo) === esSvc)
+    .slice(0, 6)
+
+  return (
+    <>
+      {/* Overlay */}
+      <div className="cabysDrawerOverlay" onClick={onClose} aria-hidden="true" />
+
+      {/* Panel */}
+      <div className="cabysDrawerPanel" role="dialog" aria-modal="true" aria-label="Detalle CABYS">
+        {/* Header del drawer */}
+        <div className="cabysDrawerHeader">
+          <div className="cabysDrawerHeaderTop">
+            <div className="cabysDrawerBadges">
+              <span className={`taxBadgeV2 ${taxClass(item.impuesto)}`}>{item.impuesto}% IVA</span>
+              <span className={`cabysTypeBadge${esSvc ? " cabysTypeSvc" : " cabysTypeArt"}`}>
+                {esSvc ? "Servicio" : "Artículo"}
+              </span>
+            </div>
+            <button className="cabysDrawerClose" type="button" onClick={onClose} title="Cerrar (ESC)">
+              ✕
+            </button>
+          </div>
+          <div className="cabysDrawerTitle">{item.descripcion}</div>
+        </div>
+
+        {/* Cuerpo con scroll */}
+        <div className="cabysDrawerBody">
+
+          {/* Código */}
+          <div className="cabysDrawerSection">
+            <div className="cabysDrawerSectionLabel">Código CABYS</div>
+            <div className="cabysDrawerCodeRow">
+              <span className="cabysDrawerCode">{item.codigo}</span>
+              <button
+                className={`cabysDrawerCopyBtn${fl === idCode ? " cabysDrawerCopyBtnOk" : ""}`}
+                type="button"
+                onClick={() => flash(idCode, String(item.codigo))}
+                title="Copiar código"
+              >
+                {fl === idCode ? "✓" : <CopyIco />}
+              </button>
+            </div>
+          </div>
+
+          {/* Ruta completa */}
+          {allCats.length > 0 && (
+            <div className="cabysDrawerSection">
+              <div className="cabysDrawerSectionLabel">Ruta de clasificación</div>
+              <div className="cabysDrawerCatPath">
+                {allCats.map((cat, i) => (
+                  <div key={i} className="cabysDrawerCatStep">
+                    {i > 0 && <span className="cabysDrawerCatArrow">›</span>}
+                    <span className="cabysDrawerCatLabel">{cat}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Descripción completa */}
+          <div className="cabysDrawerSection">
+            <div className="cabysDrawerSectionLabel">Descripción completa</div>
+            <div className="cabysDrawerDesc">{item.descripcion}</div>
+          </div>
+
+          {/* Acciones */}
+          <div className="cabysDrawerSection">
+            <div className="cabysDrawerSectionLabel">Copiar</div>
+            <div className="cabysDrawerActions">
+              <button
+                className={`cabysDrawerActionBtn${fl === idCode ? " cabysDrawerActionBtnOk" : ""}`}
+                type="button"
+                onClick={() => flash(idCode, String(item.codigo))}
+              >
+                {fl === idCode ? "✓ Copiado" : "📋 Copiar código"}
+              </button>
+              <button
+                className={`cabysDrawerActionBtn${fl === idDesc ? " cabysDrawerActionBtnOk" : ""}`}
+                type="button"
+                onClick={() => flash(idDesc, item.descripcion)}
+              >
+                {fl === idDesc ? "✓ Copiado" : "📋 Copiar descripción"}
+              </button>
+              <button
+                className={`cabysDrawerActionBtn cabysDrawerActionBtnPrimary${fl === idBoth ? " cabysDrawerActionBtnOk" : ""}`}
+                type="button"
+                onClick={() => flash(idBoth, `${item.codigo} — ${item.descripcion}`)}
+              >
+                {fl === idBoth ? "✓ Copiado" : "📋 Copiar ambos"}
+              </button>
+              <button
+                className={`cabysDrawerActionBtn${isFav ? " cabysDrawerActionBtnFav" : ""}`}
+                type="button"
+                onClick={() => onToggleFav(item)}
+              >
+                {isFav ? "★ En favoritos" : "☆ Guardar favorito"}
+              </button>
+            </div>
+          </div>
+
+          {/* Relacionados */}
+          {related.length > 0 && (
+            <div className="cabysDrawerSection">
+              <div className="cabysDrawerSectionLabel">También podrían interesarte</div>
+              <div className="cabysDrawerRelated">
+                {related.map(r => (
+                  <button
+                    key={r.codigo}
+                    className="cabysDrawerRelatedItem"
+                    type="button"
+                    onClick={() => onSelectRelated(r)}
+                  >
+                    <span className="cabysDrawerRelatedCode">{r.codigo}</span>
+                    <span className="cabysDrawerRelatedDesc">{r.descripcion}</span>
+                    <span className={`taxBadgeV2 ${taxClass(r.impuesto)}`} style={{ flexShrink: 0, fontSize: 10 }}>{r.impuesto}%</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -1120,6 +1296,7 @@ export default function App() {
   const [cabysNorm,     setCabysNorm]     = useState("")      // query normalizada (con tildes)
   const [cabysMode,     setCabysMode]     = useState("libre") // "libre" | "ae"
   const [aeDesc,        setAeDesc]        = useState("")      // descripción actividad económica
+  const [selectedCabys, setSelectedCabys] = useState(null)   // drawer lateral CABYS
 
   const cabysQ_  = useMemo(() => cabysQ.trim(), [cabysQ])
   const pageSize = useMemo(() => { const n = Number(cabysTop); return Number.isFinite(n) && n > 0 ? Math.min(50, Math.max(6, n)) : 12 }, [cabysTop])
@@ -1610,7 +1787,8 @@ export default function App() {
                   <div className="cabysGrid">
                     {cabysF_avs.map(item => (
                       <CabysCard key={item.codigo} item={item} score={null}
-                        fl={fl} flash={flash} favs={cabysF_avs} onToggleFav={toggleFav} />
+                        fl={fl} flash={flash} favs={cabysF_avs} onToggleFav={toggleFav}
+                        onSelect={setSelectedCabys} />
                     ))}
                   </div>
                 </div>
@@ -1740,7 +1918,8 @@ export default function App() {
                       {cabysRows.map(c => (
                         <CabysCard key={c.codigo} item={c}
                           score={cabysQ_ ? scoreMatch(cabysNorm || cabysQ_, c.descripcion) : null}
-                          fl={fl} flash={flash} favs={cabysF_avs} onToggleFav={toggleFav} />
+                          fl={fl} flash={flash} favs={cabysF_avs} onToggleFav={toggleFav}
+                          onSelect={setSelectedCabys} />
                       ))}
                     </div>
                   ) : (
@@ -1788,6 +1967,18 @@ export default function App() {
                   </div>
                 </>
               )}
+
+              {/* ── Drawer de detalle CABYS ── */}
+              <CabysDrawer
+                item={selectedCabys}
+                relatedItems={cabysData}
+                fl={fl}
+                flash={flash}
+                favs={cabysF_avs}
+                onToggleFav={toggleFav}
+                onClose={() => setSelectedCabys(null)}
+                onSelectRelated={(r) => setSelectedCabys(r)}
+              />
             </div>
           )}
 
