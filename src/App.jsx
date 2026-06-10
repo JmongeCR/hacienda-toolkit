@@ -311,13 +311,13 @@ const IC = {
 }
 
 const ACT_ICONS  = { cabys: IC.search, contribuyente: IC.user, cedulas: IC.id, factura: IC.receipt, tipocambio: IC.currency, exoneraciones: IC.shield }
-const ACT_LABELS = { cabys: "CABYS", contribuyente: "Contribuyente", cedulas: "Cédula TSE", factura: "Factura", tipocambio: "Tipo de Cambio", exoneraciones: "Exoneraciones" }
+const ACT_LABELS = { cabys: "CABYS", contribuyente: "Contribuyente", cedulas: "Personas y Empresas", factura: "Factura", tipocambio: "Tipo de Cambio", exoneraciones: "Exoneraciones" }
 
 /* ─── Hub cards config ─── */
 const HUB_CARDS = [
   { id: "cabys",          icon: IC.search,   color: "blue",    title: "Asistente CABYS",        desc: "Encontrá el código correcto para tus productos y servicios" },
   { id: "contribuyente",  icon: IC.user,     color: "green",   title: "Verificar Contribuyente", desc: "Estado fiscal, régimen y actividades económicas de cualquier contribuyente" },
-  { id: "cedulas",        icon: IC.id,       color: "amber",   title: "Búsqueda de Cédulas",     desc: "Personas físicas y jurídicas registradas en el TSE" },
+  { id: "cedulas",        icon: IC.id,       color: "amber",   title: "Personas y Empresas",     desc: "Personas físicas y jurídicas registradas en el TSE" },
   { id: "tipocambio",     icon: IC.currency, color: "slate",   title: "Tipo de Cambio",          desc: "BCCR en tiempo real, histórico y conversor USD/CRC" },
   { id: "factura",        icon: IC.receipt,  color: "violet",  title: "Factura Electrónica",     desc: "Validá si un comprobante fue aceptado o rechazado por Hacienda" },
   { id: "exoneraciones",  icon: IC.shield,   color: "purple",  title: "Exoneraciones",           desc: "Verificá si una entidad tiene exoneración de impuestos en Hacienda" },
@@ -857,7 +857,7 @@ function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consul
   const actions = [
     { id:"cabys",         icon: IC.search,   label: "Asistente CABYS",         desc: "Buscá códigos por actividad o producto" },
     { id:"contribuyente", icon: IC.user,     label: "Verificar Contribuyente",  desc: "Estado fiscal y actividades económicas" },
-    { id:"cedulas",       icon: IC.id,       label: "Búsqueda de Cédulas TSE",  desc: "Personas físicas y jurídicas" },
+    { id:"cedulas",       icon: IC.id,       label: "Personas y Empresas",       desc: "Personas físicas y jurídicas" },
     { id:"tipocambio",    icon: IC.currency, label: "Tipo de Cambio",           desc: "USD/CRC en tiempo real" },
     { id:"factura",       icon: IC.receipt,  label: "Validar Factura",          desc: "Verificá si fue aceptada por Hacienda" },
     { id:"exoneraciones", icon: IC.shield,   label: "Exoneraciones",            desc: "Verificá exoneraciones de impuestos" },
@@ -872,7 +872,7 @@ function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consul
     const results = []
     if (isLikelyCedula(t)) {
       results.push({ type:"smart", icon: IC.user,   label: `Consultar contribuyente: ${t}`, action: () => { setAeId(t); navigate("contribuyente"); setTimeout(() => consultarAE(t), 50) } })
-      results.push({ type:"smart", icon: IC.id,     label: `Buscar cédula TSE: ${t}`,       action: () => { setCedQ(t); navigate("cedulas");        setTimeout(() => consultarCed(t), 50) } })
+      results.push({ type:"smart", icon: IC.id,     label: `Buscar personas: ${t}`,         action: () => { setCedQ(t); navigate("cedulas");        setTimeout(() => consultarCed(t), 50) } })
     } else if (isLikelyFe(t)) {
       results.push({ type:"smart", icon: IC.receipt, label: `Validar factura electrónica`, action: () => navigate("factura") })
     } else {
@@ -1069,7 +1069,7 @@ const NAV = [
   { id: "home",           icon: IC.dashboard, label: "Inicio" },
   { id: "cabys",          icon: IC.search,    label: "Asistente CABYS" },
   { id: "contribuyente",  icon: IC.user,      label: "Contribuyente" },
-  { id: "cedulas",        icon: IC.id,        label: "Cédulas TSE" },
+  { id: "cedulas",        icon: IC.id,        label: "Personas y Empresas" },
   { id: "clientes",       icon: IC.user,      label: "Clientes" },
   { id: "tipocambio",     icon: IC.currency,  label: "Tipo de Cambio" },
   { id: "factura",        icon: IC.receipt,   label: "Factura Electrónica" },
@@ -2035,10 +2035,10 @@ export default function App() {
             </div>
           )}
 
-          {/* ══ CÉDULAS TSE ══ */}
+          {/* ══ PERSONAS Y EMPRESAS ══ */}
           {page === "cedulas" && (
             <div className="pageWrap pageCentered">
-              <PageHeader icon={IC.id} title="Búsqueda de Cédulas TSE"
+              <PageHeader icon={IC.id} title="Personas y Empresas"
                 description="Personas físicas y jurídicas registradas en el Tribunal Supremo de Elecciones."
                 onClear={(cedItems.length > 0 || cedError) ? () => { setCedItems([]); setCedQ(""); setCedError(""); setCedSearched(false) } : null} />
               <div className="toolCard">
@@ -3052,7 +3052,7 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                 <div className="xmlValidBannerItems">
                   {nOk  > 0 && <span className="xmlCabysValidOk">✔ {nOk} línea{nOk !== 1 ? "s" : ""} correcta{nOk !== 1 ? "s" : ""}</span>}
                   {nIvaDiff > 0 && <span className="xmlCabysValidNf">⚠ {nIvaDiff} diferencia{nIvaDiff !== 1 ? "s" : ""} de IVA</span>}
-                  {nTipo  > 0 && <span className="xmlCabysValidNf">⚠ {nTipo} verificar tipo</span>}
+                  {nTipo  > 0 && <span className="xmlCabysValidTipo">⚠ {nTipo} verificar tipo</span>}
                   {nNf  > 0 && <span className="xmlCabysValidNf">⚠ {nNf} CABYS no encontrado{nNf !== 1 ? "s" : ""}</span>}
                   {nErr > 0 && <span className="xmlCabysValidErr">⚠ {nErr} sin verificar</span>}
                   {totalInconsistencias > 0 && (
@@ -3103,11 +3103,12 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                     const cabysEsSvc = l.cabys ? cabysEsServicio(l.cabys) : null
                     const xmlEsSvc = l.unidad ? XML_SVC_UNITS.includes(l.unidad) : null
                     const tipoAviso = cvStatus === "ok" && cabysEsSvc !== null && xmlEsSvc !== null && cabysEsSvc !== xmlEsSvc
-                    const hasRowWarn = ivaMismatch || cvStatus === "nf"
+                    const hasRowWarn = ivaMismatch || cvStatus === "nf" || tipoAviso
                     // Filtro: ocultar si soloInconsistencias y la fila no tiene problema
                     if (soloInconsistencias && !hasRowWarn) return null
+                    const rowClass = (ivaMismatch || cvStatus === "nf") ? "xmlRowWarn" : tipoAviso ? "xmlRowTipo" : ""
                     return (
-                      <tr key={i} className={hasRowWarn ? "xmlRowWarn" : ""}>
+                      <tr key={i} className={rowClass}>
                         <td className="xmlTdNum">{i + 1}</td>
                         <td className="xmlTdDesc">{l.descripcion}</td>
                         <td className="mono xmlTdQty">{fmtQty(l.cantidad)} <span className="xmlUnt">{l.unidad}</span></td>
