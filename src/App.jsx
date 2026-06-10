@@ -3090,6 +3090,11 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                     const ivaMismatch = cvStatus === "ok" && cv.impuesto !== null && l.ivaPct !== undefined && l.ivaPct !== ""
                       ? parseFloat(l.ivaPct) !== cv.impuesto
                       : false
+                    // Tipo: inferir de unidad XML vs CABYS (advertencia suave, solo informativa)
+                    const XML_SVC_UNITS = ["Sp","Al","Os","Spe","m2e"]
+                    const cabysEsSvc = l.cabys ? cabysEsServicio(l.cabys) : null
+                    const xmlEsSvc = l.unidad ? XML_SVC_UNITS.includes(l.unidad) : null
+                    const tipoAviso = cvStatus === "ok" && cabysEsSvc !== null && xmlEsSvc !== null && cabysEsSvc !== xmlEsSvc
                     const hasRowWarn = ivaMismatch || cvStatus === "nf"
                     // Filtro: ocultar si soloInconsistencias y la fila no tiene problema
                     if (soloInconsistencias && !hasRowWarn) return null
@@ -3129,9 +3134,14 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                               ) : (
                                 <span className="xmlCabysValOk">✔ IVA correcto</span>
                               )}
-                              <span className={`cabysTypeBadge${cabysEsServicio(l.cabys) ? " cabysTypeSvc" : " cabysTypeArt"}`}>
-                                🏷 {cabysEsServicio(l.cabys) ? "Servicio" : "Artículo"}
+                              <span className={`cabysTypeBadge${cabysEsSvc ? " cabysTypeSvc" : " cabysTypeArt"}`}>
+                                🏷 {cabysEsSvc ? "Servicio" : "Artículo"}
                               </span>
+                              {tipoAviso && (
+                                <span className="xmlCabysValTipoAviso" title={`CABYS clasifica como ${cabysEsSvc ? "Servicio" : "Artículo"} pero la unidad XML es "${l.unidad}"`}>
+                                  Verificar tipo
+                                </span>
+                              )}
                             </div>
                           ) : <span className="xmlMuted">—</span>}
                         </td>
