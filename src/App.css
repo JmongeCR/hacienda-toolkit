@@ -1420,6 +1420,9 @@ tr:hover td { background: var(--slate-50) }
 .xmlCabysValNf      { color: #b45309; font-weight: 600; font-size: 11px; }
 .xmlCabysValErr     { color: var(--muted); font-size: 11px; }
 .xmlCabysValLoading { color: var(--muted); letter-spacing: .1em; }
+.xmlCabysValGroup   { display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; }
+.xmlCabysValMismatch { font-size: 11px; font-weight: 600; color: #b45309; cursor: help; white-space: nowrap; }
+.xmlRowWarn td      { background: #fffbeb !important; }
 
 /* ── Documento Relacionado (Notas de Crédito / Débito) ── */
 .xmlRef { margin-bottom:20px; }

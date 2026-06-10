@@ -1273,7 +1273,7 @@ export default function App() {
   const [feXmlData,       setFeXmlData]       = useState(null)
   const [feXmlError,      setFeXmlError]      = useState("")
   const [feXmlDrag,       setFeXmlDrag]       = useState(false)
-  const [cabysValidation, setCabysValidation] = useState({}) // { [codigo]: "loading"|"ok"|"nf"|"err" }
+  const [cabysValidation, setCabysValidation] = useState({}) // { [codigo]: { status:"loading"|"ok"|"nf"|"err", impuesto:number|null } }
 
   const feClean = useMemo(() => onlyDigits(feKey), [feKey])
   const feValid = feClean.length === 50
@@ -1284,16 +1284,19 @@ export default function App() {
     const codigos = [...new Set(feXmlData.lines.map(l => l.cabys).filter(Boolean))]
     if (!codigos.length) { setCabysValidation({}); return }
     // Marcar todos como "loading"
-    setCabysValidation(Object.fromEntries(codigos.map(c => [c, "loading"])))
+    setCabysValidation(Object.fromEntries(codigos.map(c => [c, { status: "loading", impuesto: null }])))
     // Consultar en paralelo (un fetch por código único)
     Promise.all(codigos.map(async codigo => {
       try {
         const res = await fetch(`/hacienda/fe/cabys?codigo=${encodeURIComponent(codigo)}`, { cache: "no-store" })
-        if (!res.ok) return [codigo, "err"]
+        if (!res.ok) return [codigo, { status: "err", impuesto: null }]
         const json = await res.json()
-        return [codigo, Array.isArray(json) && json.length > 0 ? "ok" : "nf"]
+        if (Array.isArray(json) && json.length > 0) {
+          return [codigo, { status: "ok", impuesto: json[0].impuesto ?? null }]
+        }
+        return [codigo, { status: "nf", impuesto: null }]
       } catch {
-        return [codigo, "err"]
+        return [codigo, { status: "err", impuesto: null }]
       }
     })).then(results => {
       setCabysValidation(Object.fromEntries(results))
@@ -2825,13 +2828,23 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
 
         {/* ── Validación CABYS ── */}
         {data.lines.length > 0 && Object.keys(cabysValidation).length > 0 && (() => {
-          const vals = data.lines.map(l => l.cabys ? cabysValidation[l.cabys] : null)
-          const loading = vals.some(v => v === "loading")
-          const nOk  = vals.filter(v => v === "ok").length
-          const nNf  = vals.filter(v => v === "nf").length
-          const nErr = vals.filter(v => v === "err").length
+          const XML_SVC_UNITS = ["Sp","Al","Os","Spe","m2e"]
+          const vals = data.lines.map(l => {
+            if (!l.cabys) return { status: null }
+            const cv = cabysValidation[l.cabys] || {}
+            const cabysEsSvc = cabysEsServicio(l.cabys)
+            const xmlEsSvc = l.unidad ? XML_SVC_UNITS.includes(l.unidad) : null
+            const mismatch = cv.status === "ok" && xmlEsSvc !== null && cabysEsSvc !== xmlEsSvc
+            return { ...cv, mismatch }
+          })
+          const loading  = vals.some(v => v.status === "loading")
+          const nOk      = vals.filter(v => v.status === "ok").length
+          const nNf      = vals.filter(v => v.status === "nf").length
+          const nErr     = vals.filter(v => v.status === "err").length
+          const nMismatch = vals.filter(v => v.mismatch).length
+          const hasWarn  = nNf > 0 || nMismatch > 0
           return (
-            <div className={`xmlCabysValidBanner${nNf > 0 || nErr > 0 ? " xmlCabysValidBannerWarn" : " xmlCabysValidBannerOk"}`}>
+            <div className={`xmlCabysValidBanner${hasWarn ? " xmlCabysValidBannerWarn" : " xmlCabysValidBannerOk"}`}>
               <span className="xmlCabysValidTitle">Validación CABYS</span>
               {loading ? (
                 <span className="xmlCabysValidItem">Verificando…</span>
@@ -2839,6 +2852,7 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                 <>
                   {nOk  > 0 && <span className="xmlCabysValidOk">✔ {nOk} válido{nOk !== 1 ? "s" : ""}</span>}
                   {nNf  > 0 && <span className="xmlCabysValidNf">⚠ {nNf} no encontrado{nNf !== 1 ? "s" : ""}</span>}
+                  {nMismatch > 0 && <span className="xmlCabysValMismatch">⚠ {nMismatch} tipo inconsistente</span>}
                   {nErr > 0 && <span className="xmlCabysValidErr">⚠ {nErr} sin verificar</span>}
                 </>
               )}
@@ -2868,8 +2882,17 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                   {data.lines.map((l, i) => {
                     const pct = fmtPct(l.ivaPct)
                     const cid = `xml-c-${i}`
+                    const cv = l.cabys ? cabysValidation[l.cabys] : null
+                    const cvStatus = cv?.status
+                    // Tipo CABYS inferido del código (primer dígito)
+                    const cabysEsSvc = l.cabys ? cabysEsServicio(l.cabys) : null
+                    // Tipo XML inferido de UnidadMedida
+                    const XML_SVC_UNITS = ["Sp","Al","Os","Spe","m2e"]
+                    const xmlEsSvc = l.unidad ? XML_SVC_UNITS.includes(l.unidad) : null
+                    // Inconsistencia de tipo: solo cuando ambos son conocidos y difieren
+                    const tipoMismatch = cvStatus === "ok" && cabysEsSvc !== null && xmlEsSvc !== null && cabysEsSvc !== xmlEsSvc
                     return (
-                      <tr key={i}>
+                      <tr key={i} className={tipoMismatch ? "xmlRowWarn" : ""}>
                         <td className="xmlTdNum">{i + 1}</td>
                         <td className="xmlTdDesc">{l.descripcion}</td>
                         <td className="mono xmlTdQty">{fmtQty(l.cantidad)} <span className="xmlUnt">{l.unidad}</span></td>
@@ -2890,14 +2913,24 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                         <td className="xmlTdCabysVal">
                           {!l.cabys ? (
                             <span className="xmlMuted">—</span>
-                          ) : cabysValidation[l.cabys] === "loading" ? (
+                          ) : cvStatus === "loading" ? (
                             <span className="xmlCabysValLoading">···</span>
-                          ) : cabysValidation[l.cabys] === "ok" ? (
-                            <span className="xmlCabysValOk">✔</span>
-                          ) : cabysValidation[l.cabys] === "nf" ? (
+                          ) : cvStatus === "nf" ? (
                             <span className="xmlCabysValNf">⚠ No encontrado</span>
-                          ) : cabysValidation[l.cabys] === "err" ? (
+                          ) : cvStatus === "err" ? (
                             <span className="xmlCabysValErr">⚠ Sin verificar</span>
+                          ) : cvStatus === "ok" ? (
+                            <div className="xmlCabysValGroup">
+                              <span className="xmlCabysValOk">✔</span>
+                              <span className={`cabysTypeBadge${cabysEsSvc ? " cabysTypeSvc" : " cabysTypeArt"}`}>
+                                {cabysEsSvc ? "Servicio" : "Artículo"}
+                              </span>
+                              {tipoMismatch && (
+                                <span className="xmlCabysValMismatch" title={`CABYS es ${cabysEsSvc?"Servicio":"Artículo"} pero XML usa unidad "${l.unidad}"`}>
+                                  ⚠ Tipo
+                                </span>
+                              )}
+                            </div>
                           ) : <span className="xmlMuted">—</span>}
                         </td>
                       </tr>
