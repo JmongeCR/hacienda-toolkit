@@ -605,11 +605,12 @@ function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
         </div>
       </div>
       {(() => {
-        const hier = getCabysHierarchy(item.codigo)
-        if (!hier.length) return null
+        const cats = item.categorias?.length ? item.categorias : getCabysHierarchy(item.codigo)
+        if (!cats.length) return null
+        const unique = cats.filter((v, i, a) => a.indexOf(v) === i)
         return (
           <div className="cabysCardCat">
-            {hier.map((label, i) => (
+            {unique.map((label, i) => (
               <span key={i} style={{display:"contents"}}>
                 {i > 0 && <span className="cabysCardCatArrow">›</span>}
                 <span className="cabysCardCatChip">{label}</span>
