@@ -311,13 +311,13 @@ const IC = {
 }
 
 const ACT_ICONS  = { cabys: IC.search, contribuyente: IC.user, cedulas: IC.id, factura: IC.receipt, tipocambio: IC.currency, exoneraciones: IC.shield }
-const ACT_LABELS = { cabys: "CABYS", contribuyente: "Contribuyente", cedulas: "Cédula TSE", factura: "Factura", tipocambio: "Tipo de Cambio", exoneraciones: "Exoneraciones" }
+const ACT_LABELS = { cabys: "CABYS", contribuyente: "Contribuyente", cedulas: "Personas y Empresas", factura: "Factura", tipocambio: "Tipo de Cambio", exoneraciones: "Exoneraciones" }
 
 /* ─── Hub cards config ─── */
 const HUB_CARDS = [
   { id: "cabys",          icon: IC.search,   color: "blue",    title: "Asistente CABYS",        desc: "Encontrá el código correcto para tus productos y servicios" },
   { id: "contribuyente",  icon: IC.user,     color: "green",   title: "Verificar Contribuyente", desc: "Estado fiscal, régimen y actividades económicas de cualquier contribuyente" },
-  { id: "cedulas",        icon: IC.id,       color: "amber",   title: "Búsqueda de Cédulas",     desc: "Personas físicas y jurídicas registradas en el TSE" },
+  { id: "cedulas",        icon: IC.id,       color: "amber",   title: "Personas y Empresas",     desc: "Personas físicas y jurídicas registradas en el TSE" },
   { id: "tipocambio",     icon: IC.currency, color: "slate",   title: "Tipo de Cambio",          desc: "BCCR en tiempo real, histórico y conversor USD/CRC" },
   { id: "factura",        icon: IC.receipt,  color: "violet",  title: "Factura Electrónica",     desc: "Validá si un comprobante fue aceptado o rechazado por Hacienda" },
   { id: "exoneraciones",  icon: IC.shield,   color: "purple",  title: "Exoneraciones",           desc: "Verificá si una entidad tiene exoneración de impuestos en Hacienda" },
@@ -857,7 +857,7 @@ function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consul
   const actions = [
     { id:"cabys",         icon: IC.search,   label: "Asistente CABYS",         desc: "Buscá códigos por actividad o producto" },
     { id:"contribuyente", icon: IC.user,     label: "Verificar Contribuyente",  desc: "Estado fiscal y actividades económicas" },
-    { id:"cedulas",       icon: IC.id,       label: "Búsqueda de Cédulas TSE",  desc: "Personas físicas y jurídicas" },
+    { id:"cedulas",       icon: IC.id,       label: "Personas y Empresas",       desc: "Personas físicas y jurídicas" },
     { id:"tipocambio",    icon: IC.currency, label: "Tipo de Cambio",           desc: "USD/CRC en tiempo real" },
     { id:"factura",       icon: IC.receipt,  label: "Validar Factura",          desc: "Verificá si fue aceptada por Hacienda" },
     { id:"exoneraciones", icon: IC.shield,   label: "Exoneraciones",            desc: "Verificá exoneraciones de impuestos" },
@@ -872,7 +872,7 @@ function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consul
     const results = []
     if (isLikelyCedula(t)) {
       results.push({ type:"smart", icon: IC.user,   label: `Consultar contribuyente: ${t}`, action: () => { setAeId(t); navigate("contribuyente"); setTimeout(() => consultarAE(t), 50) } })
-      results.push({ type:"smart", icon: IC.id,     label: `Buscar cédula TSE: ${t}`,       action: () => { setCedQ(t); navigate("cedulas");        setTimeout(() => consultarCed(t), 50) } })
+      results.push({ type:"smart", icon: IC.id,     label: `Buscar personas: ${t}`,         action: () => { setCedQ(t); navigate("cedulas");        setTimeout(() => consultarCed(t), 50) } })
     } else if (isLikelyFe(t)) {
       results.push({ type:"smart", icon: IC.receipt, label: `Validar factura electrónica`, action: () => navigate("factura") })
     } else {
@@ -1069,7 +1069,7 @@ const NAV = [
   { id: "home",           icon: IC.dashboard, label: "Inicio" },
   { id: "cabys",          icon: IC.search,    label: "Asistente CABYS" },
   { id: "contribuyente",  icon: IC.user,      label: "Contribuyente" },
-  { id: "cedulas",        icon: IC.id,        label: "Cédulas TSE" },
+  { id: "cedulas",        icon: IC.id,        label: "Personas y Empresas" },
   { id: "clientes",       icon: IC.user,      label: "Clientes" },
   { id: "tipocambio",     icon: IC.currency,  label: "Tipo de Cambio" },
   { id: "factura",        icon: IC.receipt,   label: "Factura Electrónica" },
@@ -2035,10 +2035,10 @@ export default function App() {
             </div>
           )}
 
-          {/* ══ CÉDULAS TSE ══ */}
+          {/* ══ PERSONAS Y EMPRESAS ══ */}
           {page === "cedulas" && (
             <div className="pageWrap pageCentered">
-              <PageHeader icon={IC.id} title="Búsqueda de Cédulas TSE"
+              <PageHeader icon={IC.id} title="Personas y Empresas"
                 description="Personas físicas y jurídicas registradas en el Tribunal Supremo de Elecciones."
                 onClear={(cedItems.length > 0 || cedError) ? () => { setCedItems([]); setCedQ(""); setCedError(""); setCedSearched(false) } : null} />
               <div className="toolCard">
