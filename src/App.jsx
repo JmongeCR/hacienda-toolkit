@@ -610,10 +610,10 @@ function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
         return (
           <div className="cabysCardCat">
             {hier.map((label, i) => (
-              <React.Fragment key={i}>
+              <span key={i} style={{display:"contents"}}>
                 {i > 0 && <span className="cabysCardCatArrow">›</span>}
                 <span className="cabysCardCatChip">{label}</span>
-              </React.Fragment>
+              </span>
             ))}
           </div>
         )
