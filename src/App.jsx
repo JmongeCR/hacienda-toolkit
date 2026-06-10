@@ -3052,7 +3052,7 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                 <div className="xmlValidBannerItems">
                   {nOk  > 0 && <span className="xmlCabysValidOk">✔ {nOk} línea{nOk !== 1 ? "s" : ""} correcta{nOk !== 1 ? "s" : ""}</span>}
                   {nIvaDiff > 0 && <span className="xmlCabysValidNf">⚠ {nIvaDiff} diferencia{nIvaDiff !== 1 ? "s" : ""} de IVA</span>}
-                  {nTipo  > 0 && <span className="xmlCabysValidNf">⚠ {nTipo} verificar tipo</span>}
+                  {nTipo  > 0 && <span className="xmlCabysValidTipo">⚠ {nTipo} verificar tipo</span>}
                   {nNf  > 0 && <span className="xmlCabysValidNf">⚠ {nNf} CABYS no encontrado{nNf !== 1 ? "s" : ""}</span>}
                   {nErr > 0 && <span className="xmlCabysValidErr">⚠ {nErr} sin verificar</span>}
                   {totalInconsistencias > 0 && (
@@ -3103,11 +3103,12 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
                     const cabysEsSvc = l.cabys ? cabysEsServicio(l.cabys) : null
                     const xmlEsSvc = l.unidad ? XML_SVC_UNITS.includes(l.unidad) : null
                     const tipoAviso = cvStatus === "ok" && cabysEsSvc !== null && xmlEsSvc !== null && cabysEsSvc !== xmlEsSvc
-                    const hasRowWarn = ivaMismatch || cvStatus === "nf"
+                    const hasRowWarn = ivaMismatch || cvStatus === "nf" || tipoAviso
                     // Filtro: ocultar si soloInconsistencias y la fila no tiene problema
                     if (soloInconsistencias && !hasRowWarn) return null
+                    const rowClass = (ivaMismatch || cvStatus === "nf") ? "xmlRowWarn" : tipoAviso ? "xmlRowTipo" : ""
                     return (
-                      <tr key={i} className={hasRowWarn ? "xmlRowWarn" : ""}>
+                      <tr key={i} className={rowClass}>
                         <td className="xmlTdNum">{i + 1}</td>
                         <td className="xmlTdDesc">{l.descripcion}</td>
                         <td className="mono xmlTdQty">{fmtQty(l.cantidad)} <span className="xmlUnt">{l.unidad}</span></td>
