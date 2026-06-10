@@ -1212,7 +1212,7 @@ export default function App() {
     setAeLoading(true); setAeError(""); setAeSearched(true)
     try {
       const res = await fetch(`/hacienda/fe/ae?identificacion=${digits}`, { cache: "no-store" })
-      if (res.status === 404) throw new Error(`No se encontró contribuyente con identificación ${digits}`)
+      if (res.status === 404) { setAeData(null); return }
       if (!res.ok) throw new Error(`Error consultando Hacienda (${res.status})`)
       const json = await res.json(); setAeData(json)
       aeLastQ.current = digits; saveH("ht_ae", digits); setAeHist(loadH("ht_ae"))
