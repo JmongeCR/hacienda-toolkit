@@ -29,7 +29,7 @@ function relTime(ts) {
 }
 
 function onlyDigits(s) { return (s || "").replace(/\D+/g, "") }
-function isValidAeId(s) { const v = onlyDigits(s); return v.length === 9 || v.length === 10 || v.length === 11 }
+function isValidAeId(s) { const v = onlyDigits(s); return v.length >= 9 && v.length <= 12 }
 function taxClass(imp) { const n = Number(imp); return `t${n === 0 ? 0 : n <= 1 ? 1 : n <= 2 ? 2 : n <= 4 ? 4 : n <= 8 ? 8 : n <= 13 ? 13 : 15}` }
 function nameInitials(name) { return (name || "?").split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase() }
 function saludo() { const h = new Date().getHours(); return h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches" }
@@ -1772,14 +1772,14 @@ export default function App() {
                 <div className="toolSection">
                   <label className="lbl">Cédula, NITE o número de identificación</label>
                   <div className="inputRow">
-                    <input className="inp" value={aeId} inputMode="numeric" placeholder="9, 10 u 11 dígitos"
+                    <input className="inp" value={aeId} inputMode="numeric" placeholder="Cédula, NITE o DIMEX (9–12 dígitos)"
                       onChange={e => setAeId(onlyDigits(e.target.value))}
                       onKeyDown={e => { if (e.key === "Enter") consultarAE() }} />
                     <button className="btn btnPrimary" onClick={() => consultarAE()} disabled={!aeValid || aeLoading} type="button">
                       {aeLoading ? "Consultando…" : "Consultar"}
                     </button>
                   </div>
-                  {!aeValid && aeId.length > 0 && <div className="hintBad">Debe tener 9, 10 u 11 dígitos.</div>}
+                  {!aeValid && aeId.length > 0 && <div className="hintBad">Cédula (9 dígitos), jurídica (10), NITE (10) o DIMEX (12).</div>}
                 </div>
               </div>
 
@@ -1836,7 +1836,23 @@ export default function App() {
                 )}
 
                 {cedError && <div className="alertBox">{IC.warning} {cedError}</div>}
-                {cedSearched && !cedLoading && !cedError && !cedItems.length && <EmptyState msg={`Sin resultados para "${cedQ_}"`} />}
+                {cedSearched && !cedLoading && !cedError && !cedItems.length && (
+                  <div>
+                    <EmptyState msg={`Sin resultados para "${cedQ_}" en el registro del TSE`} />
+                    {onlyDigits(cedQ_).length >= 11 && (
+                      <div className="infoBox" style={{marginTop:8}}>
+                        <div className="infoTitle">¿Es un DIMEX o extranjero?</div>
+                        <div className="infoText">
+                          El TSE solo registra ciudadanos costarricenses. Los extranjeros con DIMEX que tributan en Costa Rica aparecen en Hacienda.
+                          <button type="button" className="btn btnGhost btnSm" style={{marginTop:8,display:"block"}}
+                            onClick={() => { setAeId(cedQ_); navigate("contribuyente"); setTimeout(() => consultarAE(cedQ_), 50) }}>
+                            Buscar en Contribuyentes →
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {cedItems.length > 0 && (
                   <div className="tableWrap">
