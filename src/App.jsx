@@ -604,6 +604,7 @@ function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
           </button>
         </div>
       </div>
+      <div className="cabysCardName">{item.descripcion}</div>
       {(() => {
         const cats = item.categorias?.length ? item.categorias : getCabysHierarchy(item.codigo)
         if (!cats.length) return null
@@ -619,7 +620,6 @@ function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
           </div>
         )
       })()}
-      <div className="cabysCardName">{item.descripcion}</div>
       <div className="cabysCardFoot">
         <span className={`taxBadgeV2 ${taxClass(item.impuesto)}`}>{item.impuesto}% IVA</span>
         <span className={`cabysTypeBadge${cabysEsServicio(item.codigo) ? " cabysTypeSvc" : " cabysTypeArt"}`}>
