@@ -1785,8 +1785,8 @@ export default function App() {
               </div>
 
               {aeError && <div className="alertBox">{IC.warning} {aeError}</div>}
-              {aeSearched && !aeLoading && !aeError && !aeData && (
-                <EmptyState msg={`No se encontró contribuyente para "${aeDigits}"`} />
+              {aeSearched && !aeLoading && !aeError && !aeData && aeLastQ.current && (
+                <EmptyState msg={`No se encontró contribuyente para "${aeLastQ.current}"`} />
               )}
 
               {aeData && (
