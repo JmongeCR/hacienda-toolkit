@@ -1212,9 +1212,11 @@ export default function App() {
     setAeLoading(true); setAeError(""); setAeSearched(true)
     try {
       const res = await fetch(`/hacienda/fe/ae?identificacion=${digits}`, { cache: "no-store" })
-      if (res.status === 404) { setAeData(null); return }
+      if (res.status === 404) { setAeData(null); aeLastQ.current = digits; return }
       if (!res.ok) throw new Error(`Error consultando Hacienda (${res.status})`)
-      const json = await res.json(); setAeData(json)
+      const json = await res.json()
+      if (json?.code === 404 || json?.status?.toLowerCase().includes("not available")) { setAeData(null); aeLastQ.current = digits; return }
+      setAeData(json)
       aeLastQ.current = digits; saveH("ht_ae", digits); setAeHist(loadH("ht_ae"))
       logActivity("contribuyente", digits)
     } catch (e) { setAeData(null); setAeError(e?.message || "Error consultando contribuyente") }
