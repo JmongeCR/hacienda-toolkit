@@ -317,7 +317,7 @@ const ACT_LABELS = { cabys: "CABYS", contribuyente: "Contribuyente", cedulas: "P
 const HUB_CARDS = [
   { id: "cabys",          icon: IC.search,   color: "blue",    title: "Asistente CABYS",        desc: "Encontrá el código correcto para tus productos y servicios" },
   { id: "contribuyente",  icon: IC.user,     color: "green",   title: "Verificar Contribuyente", desc: "Estado fiscal, régimen y actividades económicas de cualquier contribuyente" },
-  { id: "cedulas",        icon: IC.id,       color: "amber",   title: "Personas y Empresas",     desc: "Personas físicas y jurídicas registradas en el TSE" },
+  { id: "cedulas",        icon: IC.id,       color: "amber",   title: "Personas y Empresas",     desc: "Consultá personas físicas y jurídicas por cédula o nombre" },
   { id: "tipocambio",     icon: IC.currency, color: "slate",   title: "Tipo de Cambio",          desc: "BCCR en tiempo real, histórico y conversor USD/CRC" },
   { id: "factura",        icon: IC.receipt,  color: "violet",  title: "Factura Electrónica",     desc: "Validá si un comprobante fue aceptado o rechazado por Hacienda" },
   { id: "exoneraciones",  icon: IC.shield,   color: "purple",  title: "Exoneraciones",           desc: "Verificá si una entidad tiene exoneración de impuestos en Hacienda" },
@@ -2039,7 +2039,7 @@ export default function App() {
           {page === "cedulas" && (
             <div className="pageWrap pageCentered">
               <PageHeader icon={IC.id} title="Personas y Empresas"
-                description="Personas físicas y jurídicas registradas en el Tribunal Supremo de Elecciones."
+                description="Consultá personas físicas y jurídicas por número de cédula o nombre."
                 onClear={(cedItems.length > 0 || cedError) ? () => { setCedItems([]); setCedQ(""); setCedError(""); setCedSearched(false) } : null} />
               <div className="toolCard">
                 <div className="toolSection">
@@ -2066,12 +2066,12 @@ export default function App() {
                 {cedError && <div className="alertBox">{IC.warning} {cedError}</div>}
                 {cedSearched && !cedLoading && !cedError && !cedItems.length && (
                   <div>
-                    <EmptyState msg={`Sin resultados para "${cedQ_}" en el registro del TSE`} />
+                    <EmptyState msg={`Sin resultados para "${cedQ_}" en el Registro Civil`} />
                     {onlyDigits(cedQ_).length >= 11 && (
                       <div className="infoBox" style={{marginTop:8}}>
                         <div className="infoTitle">¿Es un DIMEX o extranjero?</div>
                         <div className="infoText">
-                          El TSE solo registra ciudadanos costarricenses. Los extranjeros con DIMEX que tributan en Costa Rica aparecen en Hacienda.
+                          Este registro cubre únicamente ciudadanos costarricenses. Los extranjeros con DIMEX que tributan en Costa Rica aparecen en Hacienda.
                           <button type="button" className="btn btnGhost btnSm" style={{marginTop:8,display:"block"}}
                             onClick={() => { setAeId(cedQ_); navigate("contribuyente"); setTimeout(() => consultarAE(cedQ_), 50) }}>
                             Buscar en Contribuyentes →
