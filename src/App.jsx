@@ -593,8 +593,9 @@ function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
         <span className="cabysCardCode">{item.codigo}</span>
         <div className="cabysCardHeadRight">
           {score != null && score > 0 && (
-            <span className={`scoreBar score${score >= 80 ? "Hi" : score >= 50 ? "Mid" : "Lo"}`}>
-              {score}%
+            <span className={`scoreBar score${score >= 80 ? "Hi" : score >= 50 ? "Mid" : "Lo"}`}
+              title="Relevancia del resultado respecto a tu búsqueda">
+              {score}% relevancia
             </span>
           )}
           <button className={`favBtn${isFav ? " favBtnOn" : ""}`} type="button"
