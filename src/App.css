@@ -1459,9 +1459,9 @@ tr:hover td { background: var(--slate-50) }
 /* ══════════════════════════════════════════════
    CABYS — JERARQUÍA / CATEGORÍA
 ══════════════════════════════════════════════ */
-.cabysCardCat { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-bottom:6px; }
-.cabysCardCatChip { font-size:10px; font-weight:600; color:var(--muted); background:var(--bg-alt); border:1px solid var(--border); border-radius:6px; padding:2px 7px; white-space:nowrap; }
-.cabysCardCatArrow { font-size:9px; color:var(--muted); }
+.cabysCardCat { display:flex; align-items:center; flex-wrap:wrap; gap:0; margin-bottom:6px; line-height:1.4; }
+.cabysCardCatChip { font-size:11px; color:var(--muted); white-space:normal; }
+.cabysCardCatArrow { font-size:10px; color:var(--border); margin:0 4px; flex-shrink:0; }
 
 /* ══════════════════════════════════════════════
    CALCULADORA IVA
