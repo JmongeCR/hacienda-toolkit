@@ -588,6 +588,14 @@ function getCabysHierarchy(codigo) {
   return [cat1, cat2].filter(Boolean)
 }
 
+/* ─── Ícono copiar (global) ─── */
+const CopyIco = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+    <rect x="4" y="4" width="7" height="7" rx="1.5"/>
+    <path d="M8 4V2.5A1.5 1.5 0 006.5 1H2.5A1.5 1.5 0 001 2.5v4A1.5 1.5 0 002.5 8H4"/>
+  </svg>
+)
+
 /* ─── CABYS result card (enriched) ─── */
 function CabysCard({ item, score, fl, flash, favs, onToggleFav, onSelect }) {
   const [catExp, setCatExp] = useState(false)
@@ -2890,13 +2898,7 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, onPrint, onRe
     ? new Intl.NumberFormat("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}).format(tc)
     : null
 
-  // Ícono copiar reutilizable
-  const CopyIco = () => (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-      <rect x="4" y="4" width="7" height="7" rx="1.5"/>
-      <path d="M8 4V2.5A1.5 1.5 0 006.5 1H2.5A1.5 1.5 0 001 2.5v4A1.5 1.5 0 002.5 8H4"/>
-    </svg>
-  )
+
 
   return (
     <div>
