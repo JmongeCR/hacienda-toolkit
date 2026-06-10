@@ -396,10 +396,27 @@ function parseXmlFe(xmlStr) {
     }
   })
   const condicionVenta = get("CondicionVenta") || ""
+  // InformacionReferencia — puede haber más de una; tomamos todas
+  const refNodes = [...doc.querySelectorAll("InformacionReferencia")]
+  const referencias = refNodes.map(n => {
+    const rg = sel => n.querySelector(sel)?.textContent?.trim() || ""
+    return {
+      tipoDoc:     rg("TipoDoc"),
+      numero:      rg("Numero"),
+      fechaRef:    rg("FechaEmisionDoc"),
+      codigo:      rg("Codigo"),
+      razon:       rg("Razon"),
+    }
+  })
   const tiposDoc = { FacturaElectronica:"Factura Electrónica", TiqueteElectronico:"Tiquete Electrónico",
     NotaDebitoElectronica:"Nota de Débito", NotaCreditoElectronica:"Nota de Crédito",
     FacturaElectronicaCompra:"FE de Compra", FacturaElectronicaExportacion:"FE de Exportación" }
-  return { rootTag, tipoDoc: tiposDoc[rootTag] || rootTag, clave, numConsecutivo, fecha, emisor, receptor, resumen, lines, condicionVenta }
+  const tiposRefDoc = { "01":"Factura Electrónica","02":"Nota de Débito","03":"Nota de Crédito",
+    "04":"Tiquete","05":"Nota despacho","06":"Contrato","07":"Procedimiento","08":"Comprobante emitido en contingencia",
+    "09":"Devolución mercadería","10":"Sustitución FE anulada","11":"Continuación FE","12":"FE de Exportación","99":"Otro" }
+  const codigosRef = { "01":"Anula doc ref","02":"Corrige texto","03":"Corrige monto","04":"Referencia a otro doc",
+    "05":"Sustituye doc provisional","06":"Otros" }
+  return { rootTag, tipoDoc: tiposDoc[rootTag] || rootTag, clave, numConsecutivo, fecha, emisor, receptor, resumen, lines, condicionVenta, referencias, tiposRefDoc, codigosRef }
 }
 
 /* ─── Base de conocimientos tributaria CR ─── */
@@ -548,6 +565,45 @@ function SortableTH({ col, sort, onSort, children, right }) {
   )
 }
 
+/* ─── CABYS — mapa de jerarquía por prefijo de código ─── */
+const CABYS_CAT1 = {
+  "0":"Productos agrícolas y animales","1":"Silvicultura, pesca y minerales",
+  "2":"Combustibles y productos mineros","3":"Alimentos, bebidas y tabaco",
+  "4":"Textiles, confección y cuero","5":"Madera, papel, químicos y farmacéuticos",
+  "6":"Metales, maquinaria y equipo","7":"Equipos de transporte",
+  "8":"Servicios","9":"Transacciones y bienes especiales",
+}
+const CABYS_CAT2 = {
+  "31":"Carnes, pescado y mariscos","32":"Lácteos, huevos y grasas","33":"Frutas y verduras",
+  "34":"Cereales, harinas y almidones","35":"Alimentos procesados","36":"Bebidas",
+  "37":"Tabaco","38":"Alimentos para animales","39":"Otros alimentos",
+  "51":"Productos de madera y corcho","52":"Pasta, papel y cartón",
+  "53":"Productos impresos y grabados","54":"Medicamentos y farmacéuticos",
+  "55":"Caucho y plástico","56":"Vidrio, cerámica y materiales de construcción",
+  "61":"Hierro, acero y metales","62":"Maquinaria y equipo general",
+  "63":"Equipo eléctrico y electrónico","64":"Instrumentos y óptica",
+  "71":"Vehículos automotores","72":"Otro equipo de transporte",
+  "81":"Servicios de construcción e inmobiliarios","82":"Distribución y comercio",
+  "83":"Servicios empresariales y profesionales","84":"Telecomunicaciones e informática",
+  "85":"Servicios de transporte","86":"Soporte a negocios",
+  "87":"Servicios agropecuarios","88":"Servicios financieros y seguros",
+  "89":"Servicios de arrendamiento","91":"Servicios de salud",
+  "92":"Servicios educativos","93":"Servicios de alcantarillado y residuos",
+  "94":"Servicios de asociaciones y organizaciones",
+  "95":"Servicios de reparación y mantenimiento",
+  "96":"Servicios recreativos, culturales y deportivos",
+  "97":"Servicios de hospedaje y alimentación",
+  "98":"Servicios domésticos y personales",
+  "99":"Servicios y transacciones especiales",
+}
+function getCabysHierarchy(codigo) {
+  const s = String(codigo ?? "").replace(/\D/g, "")
+  if (!s) return []
+  const cat1 = CABYS_CAT1[s[0]]
+  const cat2 = CABYS_CAT2[s.slice(0, 2)]
+  return [cat1, cat2].filter(Boolean)
+}
+
 /* ─── CABYS result card (enriched) ─── */
 function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
   const isFav = favs?.some(f => f.codigo === item.codigo)
@@ -569,6 +625,20 @@ function CabysCard({ item, score, fl, flash, favs, onToggleFav }) {
           </button>
         </div>
       </div>
+      {(() => {
+        const hier = getCabysHierarchy(item.codigo)
+        if (!hier.length) return null
+        return (
+          <div className="cabysCardCat">
+            {hier.map((label, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <span className="cabysCardCatArrow">›</span>}
+                <span className="cabysCardCatChip">{label}</span>
+              </React.Fragment>
+            ))}
+          </div>
+        )
+      })()}
       <div className="cabysCardName">{item.descripcion}</div>
       <div className="cabysCardFoot">
         <span className={`taxBadgeV2 ${taxClass(item.impuesto)}`}>{item.impuesto}% IVA</span>
@@ -817,18 +887,20 @@ const NAV = [
   { id: "cabys",          icon: IC.search,    label: "Asistente CABYS" },
   { id: "contribuyente",  icon: IC.user,      label: "Contribuyente" },
   { id: "cedulas",        icon: IC.id,        label: "Cédulas TSE" },
+  { id: "clientes",       icon: IC.user,      label: "Clientes" },
   { id: "tipocambio",     icon: IC.currency,  label: "Tipo de Cambio" },
   { id: "factura",        icon: IC.receipt,   label: "Factura Electrónica" },
   { id: "exoneraciones",  icon: IC.shield,    label: "Exoneraciones" },
+  { id: "calculadora",    icon: IC.bolt,      label: "Calculadora IVA" },
   { id: "asistente",      icon: IC.chat,      label: "Asistente IA" },
   { id: "acerca",         icon: IC.info,      label: "Acerca de" },
 ]
 const NAV_MAP = Object.fromEntries(NAV.map(n => [n.id, n]))
 const NAV_GROUPS = [
   { items: ["home", "cabys"] },
-  { label: "Consultas",  items: ["contribuyente", "cedulas"] },
+  { label: "Consultas",  items: ["contribuyente", "cedulas", "clientes"] },
   { label: "Finanzas",   items: ["tipocambio", "factura"] },
-  { label: "Tributario", items: ["exoneraciones", "asistente"] },
+  { label: "Tributario", items: ["exoneraciones", "calculadora", "asistente"] },
 ]
 
 /* ═════════════════════════════════════════════
@@ -2067,6 +2139,19 @@ export default function App() {
             </div>
           )}
 
+          {/* ══ CALCULADORA IVA ══ */}
+          {page === "calculadora" && <IvaCalculadoraPage />}
+
+          {/* ══ CLIENTES ══ */}
+          {page === "clientes" && (
+            <ClientesPage
+              navigate={navigate}
+              setCabysQ={setCabysQ}
+              consultarCabysRef={consultarCabysRef}
+              setCabysPage={setCabysPage}
+            />
+          )}
+
           {/* ══ ASISTENTE IA ══ */}
           {page === "asistente" && (
             <TaxAssistantPage
@@ -2085,6 +2170,309 @@ export default function App() {
           Datos: Ministerio de Hacienda · BCCR · TSE · Gometa
         </footer>
       </div>
+    </div>
+  )
+}
+
+/* ─── IvaCalculadoraPage ─── */
+function IvaCalculadoraPage() {
+  const TASAS = [13, 4, 2, 1]
+  const [tasa,  setTasa]  = useState(13)
+  const [modo,  setModo]  = useState("siniva") // "siniva" | "coniva"
+  const [monto, setMonto] = useState("")
+
+  const val = parseFloat(monto.replace(/,/g, ".")) || 0
+  const sinIva  = modo === "siniva" ? val : val / (1 + tasa / 100)
+  const ivaAmt  = sinIva * (tasa / 100)
+  const total   = sinIva + ivaAmt
+  const hasVal  = val > 0
+
+  const fmt = (n) => n.toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  return (
+    <div className="pageWrap pageCentered calcWrap">
+      <div className="calcCard">
+        <div className="calcTitle">Calculadora IVA</div>
+        <div className="calcSub">Calculá el IVA según las tarifas vigentes en Costa Rica.</div>
+
+        <div className="calcRow">
+          <label className="calcLbl">{modo === "siniva" ? "Monto sin IVA (₡)" : "Monto con IVA incluido (₡)"}</label>
+          <input className="calcInput" type="number" min="0" step="0.01"
+            value={monto} placeholder="0.00"
+            onChange={e => setMonto(e.target.value)} />
+        </div>
+
+        <div className="calcLbl" style={{ marginBottom: 8 }}>Modo de entrada</div>
+        <div className="calcModoRow">
+          <button type="button" className={`calcModoBtn${modo === "siniva" ? " active" : ""}`}
+            onClick={() => setModo("siniva")}>Monto sin IVA</button>
+          <button type="button" className={`calcModoBtn${modo === "coniva" ? " active" : ""}`}
+            onClick={() => setModo("coniva")}>Monto con IVA</button>
+        </div>
+
+        <div className="calcLbl" style={{ marginBottom: 8 }}>Tarifa IVA</div>
+        <div className="calcTasaRow">
+          {TASAS.map(t => (
+            <button key={t} type="button" className={`calcTasaBtn${tasa === t ? " active" : ""}`}
+              onClick={() => setTasa(t)}>{t}%</button>
+          ))}
+        </div>
+
+        <hr className="calcDivider" />
+
+        <div className="calcResult">
+          {hasVal ? (
+            <>
+              <div className="calcResultRow">
+                <span className="calcResultLbl">Subtotal</span>
+                <span className="calcResultVal">₡{fmt(sinIva)}</span>
+              </div>
+              <div className="calcResultRow">
+                <span className="calcResultLbl">IVA ({tasa}%)</span>
+                <span className="calcResultVal calcIvaVal">+ ₡{fmt(ivaAmt)}</span>
+              </div>
+              <div className="calcResultRow calcResultTotal">
+                <span className="calcResultLbl">TOTAL</span>
+                <span className="calcResultVal">₡{fmt(total)}</span>
+              </div>
+            </>
+          ) : (
+            <div className="calcEmpty">Ingresá un monto para calcular.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── ClientesPage ─── */
+const LS_CLIENTS = "hk_clients"
+
+function loadClients() {
+  try { return JSON.parse(localStorage.getItem(LS_CLIENTS) || "[]") } catch { return [] }
+}
+function saveClients(list) {
+  try { localStorage.setItem(LS_CLIENTS, JSON.stringify(list)) } catch {}
+}
+
+function ClientesPage({ navigate, setCabysQ, consultarCabysRef, setCabysPage }) {
+  const [clients,   setClients]   = useState(() => loadClients())
+  const [selected,  setSelected]  = useState(null) // id del cliente en vista detalle
+  const [showForm,  setShowForm]  = useState(false)
+  const [editMode,  setEditMode]  = useState(false)
+  const [form,      setForm]      = useState({ nombre: "", identificacion: "", notas: "" })
+
+  const persist = (list) => { setClients(list); saveClients(list) }
+
+  const openNew = () => {
+    setForm({ nombre: "", identificacion: "", notas: "" })
+    setEditMode(false); setShowForm(true)
+  }
+
+  const openEdit = (c) => {
+    setForm({ nombre: c.nombre, identificacion: c.identificacion, notas: c.notas || "" })
+    setEditMode(true); setShowForm(true)
+  }
+
+  const saveForm = () => {
+    if (!form.nombre.trim()) return
+    if (editMode) {
+      persist(clients.map(c => c.id === selected ? { ...c, ...form } : c))
+    } else {
+      const nuevo = { id: Date.now().toString(), ...form, favsCabys: [], historial: [], createdAt: new Date().toISOString() }
+      const next = [...clients, nuevo]
+      persist(next); setSelected(nuevo.id)
+    }
+    setShowForm(false)
+  }
+
+  const deleteClient = (id) => {
+    if (!confirm("¿Eliminar este cliente?")) return
+    persist(clients.filter(c => c.id !== id)); setSelected(null)
+  }
+
+  const addFavToClient = (clientId, cabysItem) => {
+    persist(clients.map(c => {
+      if (c.id !== clientId) return c
+      const already = c.favsCabys.some(f => f.codigo === cabysItem.codigo)
+      if (already) return c
+      return { ...c, favsCabys: [...(c.favsCabys || []), { codigo: cabysItem.codigo, descripcion: cabysItem.descripcion, impuesto: cabysItem.impuesto }] }
+    }))
+  }
+
+  const removeFavFromClient = (clientId, codigo) => {
+    persist(clients.map(c => c.id !== clientId ? c : { ...c, favsCabys: c.favsCabys.filter(f => f.codigo !== codigo) }))
+  }
+
+  const addHistToClient = (clientId, q) => {
+    persist(clients.map(c => {
+      if (c.id !== clientId) return c
+      const hist = [q, ...(c.historial || []).filter(h => h !== q)].slice(0, 10)
+      return { ...c, historial: hist }
+    }))
+  }
+
+  const client = clients.find(c => c.id === selected)
+
+  // Vista detalle
+  if (selected && client) {
+    return (
+      <div className="pageWrap pageCentered clienteFichaWrap">
+        <button className="clienteFichaBack" type="button" onClick={() => setSelected(null)}>
+          ← Volver a Clientes
+        </button>
+
+        <div className="clienteFichaCard">
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div>
+              <div className="clienteFichaName">{client.nombre}</div>
+              {client.identificacion && <div className="clienteFichaId">{client.identificacion}</div>}
+            </div>
+            <div style={{ display:"flex", gap:6 }}>
+              <button type="button" className="btn btnGhost btnSm" onClick={() => openEdit(client)}>Editar</button>
+              <button type="button" className="btn btnGhost btnSm" style={{ color:"#dc2626" }}
+                onClick={() => deleteClient(client.id)}>Eliminar</button>
+            </div>
+          </div>
+
+          {client.notas && (
+            <div className="clienteFichaSection">
+              <div className="clienteFichaSectionTitle">Notas</div>
+              <div className="clienteFichaNotas">{client.notas}</div>
+            </div>
+          )}
+
+          {/* Favoritos CABYS */}
+          <div className="clienteFichaSection">
+            <div className="clienteFichaSectionTitle">Favoritos CABYS ({client.favsCabys?.length || 0})</div>
+            {client.favsCabys?.length > 0 ? (
+              <div className="clienteFichaFavs">
+                {client.favsCabys.map(f => (
+                  <div key={f.codigo} className="clienteFichaFavRow">
+                    <span className="clienteFichaFavCode">{f.codigo}</span>
+                    <span className="clienteFichaFavDesc">{f.descripcion}</span>
+                    <span style={{ fontSize:10, color:"var(--muted)", marginLeft:6 }}>{f.impuesto}%</span>
+                    <button className="clienteFichaFavDel" type="button"
+                      onClick={() => removeFavFromClient(client.id, f.codigo)} title="Quitar">✕</button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="clienteFichaEmpty">
+                Sin favoritos aún. Podés guardar CABYS desde la búsqueda y asignarlos aquí.
+              </div>
+            )}
+          </div>
+
+          {/* Historial */}
+          <div className="clienteFichaSection">
+            <div className="clienteFichaSectionTitle">Historial de consultas ({client.historial?.length || 0})</div>
+            {client.historial?.length > 0 ? (
+              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                {client.historial.map((h, i) => (
+                  <div key={i} className="clienteFichaHistRow">
+                    <span>{h}</span>
+                    <button type="button" style={{ background:"none", border:"none", color:"var(--accent)", cursor:"pointer", fontSize:11, padding:0 }}
+                      onClick={() => {
+                        setCabysQ(h); setCabysPage(0); navigate("cabys")
+                        setTimeout(() => consultarCabysRef.current?.({ reset:true, q:h }), 60)
+                      }}>Buscar →</button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="clienteFichaEmpty">Sin consultas registradas.</div>
+            )}
+          </div>
+        </div>
+
+        {showForm && (
+          <div className="clienteModal" onClick={e => { if (e.target === e.currentTarget) setShowForm(false) }}>
+            <div className="clienteModalCard">
+              <div className="clienteModalTitle">Editar cliente</div>
+              <div className="clienteFormRow">
+                <label className="clienteFormLbl">Nombre</label>
+                <input className="clienteFormInput" value={form.nombre} placeholder="Nombre del cliente"
+                  onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} />
+              </div>
+              <div className="clienteFormRow">
+                <label className="clienteFormLbl">Identificación</label>
+                <input className="clienteFormInput" value={form.identificacion} placeholder="Cédula, NITE, pasaporte…"
+                  onChange={e => setForm(f => ({ ...f, identificacion: e.target.value }))} />
+              </div>
+              <div className="clienteFormRow">
+                <label className="clienteFormLbl">Notas</label>
+                <textarea className="clienteFormInput clienteFormTextarea" value={form.notas} placeholder="Actividad económica, régimen, observaciones…"
+                  onChange={e => setForm(f => ({ ...f, notas: e.target.value }))} />
+              </div>
+              <div className="clienteModalBtns">
+                <button type="button" className="btn btnGhost" onClick={() => setShowForm(false)}>Cancelar</button>
+                <button type="button" className="btn btnPrimary" onClick={saveForm} disabled={!form.nombre.trim()}>Guardar</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Vista lista
+  return (
+    <div className="pageWrap pageCentered clientesWrap">
+      <div className="clientesHeader">
+        <div className="clientesHeaderTitle">Clientes</div>
+        <button type="button" className="btn btnPrimary" onClick={openNew}>+ Nuevo cliente</button>
+      </div>
+
+      {clients.length === 0 ? (
+        <div className="clienteEmpty">
+          <div className="clienteEmptyIcon">🏢</div>
+          <div className="clienteEmptyTitle">Sin clientes aún</div>
+          <div className="clienteEmptyDesc">Creá tu primer cliente para organizar favoritos CABYS, historial y notas por empresa.</div>
+          <button type="button" className="btn btnPrimary" style={{ marginTop:16 }} onClick={openNew}>Crear primer cliente</button>
+        </div>
+      ) : (
+        <div className="clientesGrid">
+          {clients.map(c => (
+            <div key={c.id} className="clienteCard" onClick={() => setSelected(c.id)}>
+              <div className="clienteCardName">{c.nombre}</div>
+              {c.identificacion && <div className="clienteCardId">{c.identificacion}</div>}
+              <div className="clienteCardMeta">
+                {(c.favsCabys?.length > 0) && <span className="clienteCardChip">⭐ {c.favsCabys.length} CABYS</span>}
+                {(c.historial?.length > 0) && <span className="clienteCardChip">🕒 {c.historial.length} búsquedas</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showForm && (
+        <div className="clienteModal" onClick={e => { if (e.target === e.currentTarget) setShowForm(false) }}>
+          <div className="clienteModalCard">
+            <div className="clienteModalTitle">Nuevo cliente</div>
+            <div className="clienteFormRow">
+              <label className="clienteFormLbl">Nombre *</label>
+              <input className="clienteFormInput" value={form.nombre} placeholder="Nombre del cliente o empresa"
+                onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
+                onKeyDown={e => { if (e.key === "Enter") saveForm() }} autoFocus />
+            </div>
+            <div className="clienteFormRow">
+              <label className="clienteFormLbl">Identificación</label>
+              <input className="clienteFormInput" value={form.identificacion} placeholder="Cédula, NITE, pasaporte…"
+                onChange={e => setForm(f => ({ ...f, identificacion: e.target.value }))} />
+            </div>
+            <div className="clienteFormRow">
+              <label className="clienteFormLbl">Notas</label>
+              <textarea className="clienteFormInput clienteFormTextarea" value={form.notas} placeholder="Actividad económica, régimen, observaciones…"
+                onChange={e => setForm(f => ({ ...f, notas: e.target.value }))} />
+            </div>
+            <div className="clienteModalBtns">
+              <button type="button" className="btn btnGhost" onClick={() => setShowForm(false)}>Cancelar</button>
+              <button type="button" className="btn btnPrimary" onClick={saveForm} disabled={!form.nombre.trim()}>Crear cliente</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -2287,7 +2675,7 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
 
         {/* ── Encabezado ── */}
         <div className="xmlResultHead">
-          <div className="xmlDocType">{data.tipoDoc}</div>
+          <div className={`xmlDocType${data.rootTag==="NotaCreditoElectronica"?" xmlDocType-nc":data.rootTag==="NotaDebitoElectronica"?" xmlDocType-nd":data.rootTag==="TiqueteElectronico"?" xmlDocType-tiquete":data.rootTag==="FacturaElectronicaCompra"?" xmlDocType-compra":""}`}>{data.tipoDoc}</div>
           {data.numConsecutivo && (
             <div className="xmlHeadField">
               <span className="xmlHeadLbl">Consecutivo</span>
@@ -2353,6 +2741,54 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
           )}
         </div>
 
+        {/* ── Documento Relacionado (Notas de Crédito / Débito) ── */}
+        {data.referencias && data.referencias.length > 0 && (
+          <div className="xmlRef">
+            {data.referencias.map((r, i) => {
+              const isNc = data.rootTag === "NotaCreditoElectronica"
+              const isNd = data.rootTag === "NotaDebitoElectronica"
+              const bannerCls = `xmlRefBanner${isNc ? " xmlRefBanner-nc" : isNd ? " xmlRefBanner-nd" : ""}`
+              const badgeCls  = `xmlRefBannerBadge${isNc ? " xmlRefBannerBadge-nc" : isNd ? " xmlRefBannerBadge-nd" : " xmlRefBannerBadge-default"}`
+              return (
+                <div key={i} className={bannerCls}>
+                  <div className="xmlRefBannerHead">
+                    <span className="xmlRefBannerType">Documento Relacionado</span>
+                    {r.tipoDoc && (
+                      <span className={badgeCls}>{data.tiposRefDoc?.[r.tipoDoc] || r.tipoDoc}</span>
+                    )}
+                  </div>
+                  <div className="xmlRefBody">
+                    {r.numero && (
+                      <div className="xmlRefField xmlRefField-full">
+                        <span className="xmlRefLbl">Clave / Consecutivo</span>
+                        <span className="xmlRefVal xmlRefNumero">{r.numero}</span>
+                      </div>
+                    )}
+                    {r.fechaRef && (
+                      <div className="xmlRefField">
+                        <span className="xmlRefLbl">Fecha</span>
+                        <span className="xmlRefVal">{formatFechaCR(r.fechaRef)}</span>
+                      </div>
+                    )}
+                    {r.codigo && (
+                      <div className="xmlRefField">
+                        <span className="xmlRefLbl">Código de referencia</span>
+                        <span className="xmlRefVal">{data.codigosRef?.[r.codigo] || r.codigo}</span>
+                      </div>
+                    )}
+                    {r.razon && (
+                      <div className="xmlRefField xmlRefField-full">
+                        <span className="xmlRefLbl">Motivo</span>
+                        <span className="xmlRefVal xmlRefRazon">{r.razon}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         {/* ── Líneas de detalle ── */}
         {data.lines.length > 0 && (
           <div className="xmlLines">
@@ -2363,12 +2799,11 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
                   <tr>
                     <th className="xmlThNum">#</th>
                     <th>Descripción</th>
-                    <th>Cant.</th>
-                    <th className="xmlThR">Precio unit.</th>
+                    <th>Cantidad</th>
+                    <th className="xmlThR">Precio unitario</th>
                     <th>IVA</th>
-                    <th className="xmlThR">Total</th>
+                    <th className="xmlThR">Total línea</th>
                     <th>CABYS</th>
-                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2383,14 +2818,16 @@ function XmlFacturaResult({ data, fl, flash, onPrint, onReset, onExcelDownload }
                         <td className="mono xmlTdR">{l.precio ? fmtM(l.precio) : "—"}</td>
                         <td>{pct ? <span className={`taxBadgeV2 ${taxClass(parseFloat(l.ivaPct))}`}>{pct}</span> : <span className="xmlMuted">—</span>}</td>
                         <td className="mono xmlTdR xmlTdBold">{l.total ? fmtM(l.total) : "—"}</td>
-                        <td className="mono xmlTdCabys">{l.cabys || <span className="xmlMuted">—</span>}</td>
-                        <td className="xmlTdAct">
-                          {l.cabys && (
-                            <button className={`xmlCopyBtn${fl===cid?" xmlCopyBtnOk":""}`} type="button"
-                              onClick={() => flash(cid, l.cabys)} title="Copiar CABYS">
-                              {fl===cid ? "✓" : <CopyIco/>}
-                            </button>
-                          )}
+                        <td className="mono xmlTdCabys">
+                          {l.cabys ? (
+                            <div className="xmlCabysCell">
+                              <span className="xmlCabysCode">{l.cabys}</span>
+                              <button className={`xmlCopyBtn${fl===cid?" xmlCopyBtnOk":""}`} type="button"
+                                onClick={() => flash(cid, l.cabys)} title="Copiar CABYS">
+                                {fl===cid ? "✓" : <CopyIco/>}
+                              </button>
+                            </div>
+                          ) : <span className="xmlMuted">—</span>}
                         </td>
                       </tr>
                     )
