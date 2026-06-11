@@ -1,7 +1,6 @@
 {
   "rewrites": [
     { "source": "/hacienda/:path*", "destination": "https://api.hacienda.go.cr/:path*" },
-    { "source": "/gometa/:path*", "destination": "https://apis.gometa.org/:path*" },
     { "source": "/bccr/:path*", "destination": "https://gee.bccr.fi.cr/:path*" }
   ]
 }

@@ -11,12 +11,6 @@ export default defineConfig({
         secure: true,
         rewrite: (path) => path.replace(/^\/hacienda/, ""),
       },
-      "/gometa": {
-        target: "https://apis.gometa.org",
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/gometa/, ""),
-      },
       "/bccr": {
         target: "https://gee.bccr.fi.cr",
         changeOrigin: true,
