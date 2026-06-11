@@ -225,17 +225,6 @@ async function fetchJsonSafe(url) {
   try { return JSON.parse(text) } catch { throw new Error(`JSON inválido: ${text.slice(0, 100)}`) }
 }
 
-function normalizeGometa(json) {
-  if (!json) return []
-  const arr = Array.isArray(json?.results) ? json.results : Array.isArray(json) ? json : [json]
-  return arr.map((x, i) => ({
-    id: x?.cedula || x?.rawcedula || x?.id || String(i),
-    cedula: x?.cedula || x?.rawcedula || "",
-    nombre: x?.fullname || x?.nombre || x?.name || "",
-    tipo: x?.guess_type || x?.tipo || x?.type || "",
-  })).filter(x => x.cedula || x.nombre)
-}
-
 /* ─── Historial localStorage ─── */
 const H = 5
 const loadH = k => { try { return JSON.parse(localStorage.getItem(k) || "[]") } catch { return [] } }
@@ -310,14 +299,13 @@ const IC = {
   xml:          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l-3 3 3 3M14 6l3 3-3 3M11 3L7 15"/></svg>,
 }
 
-const ACT_ICONS  = { cabys: IC.search, contribuyente: IC.user, cedulas: IC.id, factura: IC.receipt, tipocambio: IC.currency, exoneraciones: IC.shield }
-const ACT_LABELS = { cabys: "CABYS", contribuyente: "Contribuyente", cedulas: "Personas y Empresas", factura: "Factura", tipocambio: "Tipo de Cambio", exoneraciones: "Exoneraciones" }
+const ACT_ICONS  = { cabys: IC.search, contribuyente: IC.user, factura: IC.receipt, tipocambio: IC.currency, exoneraciones: IC.shield }
+const ACT_LABELS = { cabys: "CABYS", contribuyente: "Contribuyente", factura: "Factura", tipocambio: "Tipo de Cambio", exoneraciones: "Exoneraciones" }
 
 /* ─── Hub cards config ─── */
 const HUB_CARDS = [
   { id: "cabys",          icon: IC.search,   color: "blue",    title: "Asistente CABYS",        desc: "Encontrá el código correcto para tus productos y servicios" },
   { id: "contribuyente",  icon: IC.user,     color: "green",   title: "Verificar Contribuyente", desc: "Estado fiscal, régimen y actividades económicas de cualquier contribuyente" },
-  { id: "cedulas",        icon: IC.id,       color: "amber",   title: "Personas y Empresas",     desc: "Consultá personas físicas y jurídicas por cédula o nombre" },
   { id: "tipocambio",     icon: IC.currency, color: "slate",   title: "Tipo de Cambio",          desc: "BCCR en tiempo real, histórico y conversor USD/CRC" },
   { id: "factura",        icon: IC.receipt,  color: "violet",  title: "Factura Electrónica",     desc: "Validá si un comprobante fue aceptado o rechazado por Hacienda" },
   { id: "exoneraciones",  icon: IC.shield,   color: "purple",  title: "Exoneraciones",           desc: "Verificá si una entidad tiene exoneración de impuestos en Hacienda" },
@@ -846,7 +834,7 @@ function CabysDrawer({ item, relatedItems = [], fl, flash, favs, onToggleFav, on
 }
 
 /* ─── Command Palette ─── */
-function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consultarCabysRef, setAeId, consultarAE, setCedQ, consultarCed }) {
+function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consultarCabysRef, setAeId, consultarAE }) {
   const [q, setQ] = useState("")
   const inputRef = useRef(null)
 
@@ -857,7 +845,6 @@ function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consul
   const actions = [
     { id:"cabys",         icon: IC.search,   label: "Asistente CABYS",         desc: "Buscá códigos por actividad o producto" },
     { id:"contribuyente", icon: IC.user,     label: "Verificar Contribuyente",  desc: "Estado fiscal y actividades económicas" },
-    { id:"cedulas",       icon: IC.id,       label: "Personas y Empresas",       desc: "Personas físicas y jurídicas" },
     { id:"tipocambio",    icon: IC.currency, label: "Tipo de Cambio",           desc: "USD/CRC en tiempo real" },
     { id:"factura",       icon: IC.receipt,  label: "Validar Factura",          desc: "Verificá si fue aceptada por Hacienda" },
     { id:"exoneraciones", icon: IC.shield,   label: "Exoneraciones",            desc: "Verificá exoneraciones de impuestos" },
@@ -872,7 +859,6 @@ function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consul
     const results = []
     if (isLikelyCedula(t)) {
       results.push({ type:"smart", icon: IC.user,   label: `Consultar contribuyente: ${t}`, action: () => { setAeId(t); navigate("contribuyente"); setTimeout(() => consultarAE(t), 50) } })
-      results.push({ type:"smart", icon: IC.id,     label: `Buscar personas: ${t}`,         action: () => { setCedQ(t); navigate("cedulas");        setTimeout(() => consultarCed(t), 50) } })
     } else if (isLikelyFe(t)) {
       results.push({ type:"smart", icon: IC.receipt, label: `Validar factura electrónica`, action: () => navigate("factura") })
     } else {
@@ -947,7 +933,6 @@ function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consul
                 <button key={i} className="cmdItem" type="button" onClick={() => handleAction(() => {
                   if (a.type === "cabys") { setCabysQ(a.q); navigate("cabys"); setTimeout(() => consultarCabysRef.current?.({ reset:true, q:a.q }), 50) }
                   else if (a.type === "contribuyente") { setAeId(a.q); navigate("contribuyente"); setTimeout(() => consultarAE(a.q), 50) }
-                  else if (a.type === "cedulas") { setCedQ(a.q); navigate("cedulas"); setTimeout(() => consultarCed(a.q), 50) }
                   else navigate(a.type)
                 })}>
                   <span className="cmdItemIcon">{ACT_ICONS[a.type] || IC.search}</span>
@@ -1069,7 +1054,6 @@ const NAV = [
   { id: "home",           icon: IC.dashboard, label: "Inicio" },
   { id: "cabys",          icon: IC.search,    label: "Asistente CABYS" },
   { id: "contribuyente",  icon: IC.user,      label: "Contribuyente" },
-  { id: "cedulas",        icon: IC.id,        label: "Personas y Empresas" },
   { id: "tipocambio",     icon: IC.currency,  label: "Tipo de Cambio" },
   { id: "factura",        icon: IC.receipt,   label: "Factura Electrónica" },
   { id: "exoneraciones",  icon: IC.shield,    label: "Exoneraciones" },
@@ -1080,7 +1064,7 @@ const NAV = [
 const NAV_MAP = Object.fromEntries(NAV.map(n => [n.id, n]))
 const NAV_GROUPS = [
   { items: ["home", "cabys"] },
-  { label: "Consultas",  items: ["contribuyente", "cedulas"] },
+  { label: "Consultas",  items: ["contribuyente"] },
   { label: "Finanzas",   items: ["tipocambio", "factura"] },
   { label: "Tributario", items: ["exoneraciones", "calculadora", "asistente"] },
 ]
@@ -1425,27 +1409,6 @@ export default function App() {
     return toCsv(aeData.actividades.map(a => [a.codigo, a.descripcion, a.tipo === "P" ? "Principal" : "Secundaria", a.estado === "A" ? "Activa" : "Inactiva"]), ["codigo", "descripcion", "tipo", "estado"])
   }
 
-  /* ─── CÉDULAS ─── */
-  const [cedQ,        setCedQ]        = useState("")
-  const [cedItems,    setCedItems]    = useState([])
-  const [cedLoading,  setCedLoading]  = useState(false)
-  const [cedError,    setCedError]    = useState("")
-  const [cedSearched, setCedSearched] = useState(false)
-  const [cedHist,     setCedHist]     = useState(() => loadH("ht_ced"))
-  const cedQ_ = useMemo(() => cedQ.trim(), [cedQ])
-
-  const consultarCed = async (qOv) => {
-    const q = (qOv ?? cedQ_).trim(); if (!q) return
-    setCedLoading(true); setCedError(""); setCedItems([]); setCedSearched(true)
-    try {
-      const json = await fetchJsonSafe(`/gometa/cedulas/${encodeURIComponent(q)}`)
-      setCedItems(normalizeGometa(json))
-      saveH("ht_ced", q); setCedHist(loadH("ht_ced"))
-      logActivity("cedulas", q)
-    } catch (e) { setCedError(e?.message || "Error") }
-    finally { setCedLoading(false) }
-  }
-
   /* ─── FACTURA ─── */
   const [feTab,      setFeTab]      = useState("clave") // "clave" | "xml"
   const [feKey,      setFeKey]      = useState("")
@@ -1580,8 +1543,7 @@ export default function App() {
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)}
         activities={activities} navigate={navigate}
         setCabysQ={setCabysQ} consultarCabysRef={consultarCabysRef}
-        setAeId={setAeId} consultarAE={consultarAE}
-        setCedQ={setCedQ} consultarCed={consultarCed} />
+        setAeId={setAeId} consultarAE={consultarAE} />
 
       {/* ── SIDEBAR ── */}
       <aside className={`sidebar${sideOpen ? " sideOpen" : ""}`}>
@@ -2039,82 +2001,6 @@ export default function App() {
                   }}
                 />
               )}
-            </div>
-          )}
-
-          {/* ══ PERSONAS Y EMPRESAS ══ */}
-          {page === "cedulas" && (
-            <div className="pageWrap pageCentered">
-              <PageHeader icon={IC.id} title="Personas y Empresas"
-                description="Consultá personas físicas y jurídicas por número de cédula o nombre."
-                onClear={(cedItems.length > 0 || cedError) ? () => { setCedItems([]); setCedQ(""); setCedError(""); setCedSearched(false) } : null} />
-              <div className="toolCard">
-                <div className="toolSection">
-                  <label className="lbl">Número de cédula o nombre</label>
-                  <div className="inputRow">
-                    <input className="inp" value={cedQ} placeholder="Ej: 100200300 o Juan Pérez García"
-                      onChange={e => setCedQ(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") consultarCed() }} />
-                    <button className="btn btnPrimary" onClick={() => consultarCed()} disabled={!cedQ_.length || cedLoading} type="button">
-                      {cedLoading ? "Buscando…" : "Buscar"}
-                    </button>
-                  </div>
-                </div>
-
-                {cedItems.length > 0 && (
-                  <div className="toolActions">
-                    <button className="btn btnGhost" onClick={() => downloadXlsx("cedulas_tse.xlsx", "Cedulas",
-                      cedItems.map(x => ({ cedula: x.cedula, nombre: x.nombre, tipo: x.tipo })), ["cedula", "nombre", "tipo"])} type="button">
-                      Descargar XLSX
-                    </button>
-                  </div>
-                )}
-
-                {cedError && <div className="alertBox">{IC.warning} {cedError}</div>}
-                {cedSearched && !cedLoading && !cedError && !cedItems.length && (
-                  <div>
-                    <EmptyState msg={`Sin resultados para "${cedQ_}" en el Registro Civil`} />
-                    {onlyDigits(cedQ_).length >= 11 && (
-                      <div className="infoBox" style={{marginTop:8}}>
-                        <div className="infoTitle">¿Es un DIMEX o extranjero?</div>
-                        <div className="infoText">
-                          Este registro cubre únicamente ciudadanos costarricenses. Los extranjeros con DIMEX que tributan en Costa Rica aparecen en Hacienda.
-                          <button type="button" className="btn btnGhost btnSm" style={{marginTop:8,display:"block"}}
-                            onClick={() => { setAeId(cedQ_); navigate("contribuyente"); setTimeout(() => consultarAE(cedQ_), 50) }}>
-                            Buscar en Contribuyentes →
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {cedItems.length > 0 && (
-                  <div className="tableWrap">
-                    <div className="tableToolbar">
-                      <span className="tableToolbarLeft">{cedItems.length} resultado{cedItems.length !== 1 ? "s" : ""}</span>
-                    </div>
-                    <table>
-                      <thead><tr><th>Cédula</th><th>Nombre</th><th>Tipo</th><th className="thR">Copiar</th></tr></thead>
-                      <tbody>
-                        {cedItems.map(x => (
-                          <tr key={x.id}>
-                            <td className="mono">{x.cedula}</td>
-                            <td>{x.nombre}</td>
-                            <td className="mono">{x.tipo}</td>
-                            <td className="thR">
-                              <button className={`iconBtn${fl === `ced-${x.id}` ? " flashed" : ""}`} type="button"
-                                onClick={() => flash(`ced-${x.id}`, String(x.cedula || ""))}>
-                                {fl === `ced-${x.id}` ? "✓" : "📋"}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
@@ -2738,7 +2624,7 @@ function ClientesPage({ navigate, setCabysQ, consultarCabysRef, setCabysPage }) 
 function AcercaPage({ activities }) {
   const favCount   = loadFavs().length
   const actCount   = activities.length
-  const histCount  = ["ht_cabys","ht_ae","ht_ced"].reduce((n,k) => n + loadH(k).length, 0)
+  const histCount  = ["ht_cabys","ht_ae"].reduce((n,k) => n + loadH(k).length, 0)
 
   const TOOLS = [
     { icon:IC.search,   name:"Asistente CABYS",          desc:"Búsqueda de códigos por producto, actividad o descripción de negocio" },
@@ -2755,7 +2641,6 @@ function AcercaPage({ activities }) {
   const SOURCES = [
     { name:"Ministerio de Hacienda de Costa Rica", url:"api.hacienda.go.cr",       desc:"CABYS, Contribuyentes, Facturas, Exoneraciones, Tipo de Cambio",  color:"#f0fdf4", dot:"#16a34a" },
     { name:"Banco Central de Costa Rica (BCCR)",   url:"gee.bccr.fi.cr",           desc:"Indicadores económicos, tipo de cambio histórico USD/CRC",         color:"#eff6ff", dot:"#2563eb" },
-    { name:"Tribunal Supremo de Elecciones",       url:"apis.gometa.org (Gometa)", desc:"Búsqueda de cédulas de personas físicas y jurídicas",              color:"#fdf4ff", dot:"#9333ea" },
   ]
 
   const TECH = [
