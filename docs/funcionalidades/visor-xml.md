@@ -1,4 +1,4 @@
-# Módulo: Visor XML Factura Electrónica
+# Módulo: Validador XML
 
 **ID de página:** `factura`  
 **Estado:** Activo y completo

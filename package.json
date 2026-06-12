@@ -1,7 +1,7 @@
 {
   "name": "hacienda-toolkit",
-  "version": "1.1.0",
-  "description": "Herramientas tributarias para Costa Rica: validación de XML, búsqueda CABYS, consulta de contribuyentes, tipo de cambio y calculadora de IVA.",
+  "version": "2.0.0",
+  "description": "Visor y validador de comprobantes electrónicos XML para Costa Rica: CABYS, IVA, contribuyentes, exoneraciones y tipo de cambio.",
   "private": true,
   "type": "module",
   "homepage": "https://hacienda-toolkit.vercel.app",

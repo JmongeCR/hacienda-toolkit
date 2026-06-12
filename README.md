@@ -1,25 +1,38 @@
-# HaciendaKit
+# HaciendaKit V2.0
 
 [![Producción](https://img.shields.io/badge/Vercel-Producción-black?logo=vercel)](https://hacienda-toolkit.vercel.app)
 [![License](https://img.shields.io/badge/licencia-MIT-green)](./LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-JmongeCR%2Fhacienda--toolkit-181717?logo=github)](https://github.com/JmongeCR/hacienda-toolkit)
+[![Versión](https://img.shields.io/badge/versión-2.0.0-blue)](./CHANGELOG.md)
 
-Herramientas tributarias para Costa Rica — directamente en el navegador.
+Plataforma especializada para validación y análisis de comprobantes electrónicos de Costa Rica.
 
 🌐 **[hacienda-toolkit.vercel.app](https://hacienda-toolkit.vercel.app)**
 
 ---
 
-## Funcionalidades
+## Propósito
 
-- **Visor XML** — analiza facturas electrónicas (FE v4.4), notas de crédito/débito y tiquetes
-- **Validación Tributaria** — verifica CABYS y tasa de IVA por línea contra el catálogo oficial de Hacienda
-- **Buscador CABYS** — búsqueda en el catálogo oficial con drawer de detalle, favoritos y exportación CSV/Excel
-- **Contribuyentes** — consulta estado tributario por cédula, DIMEX o NITE
-- **Tipo de Cambio** — USD/EUR en tiempo real desde BCCR, conversor y sparkline 30 días
-- **Calculadora IVA** — todas las tarifas vigentes en CR (0%, 1%, 2%, 4%, 8%, 13%, 15%)
-- **Exoneraciones** — consulta por cédula y tipo de documento
-- **Asistente Tributario** — respuestas a dudas frecuentes sobre IVA, renta y regímenes
+HaciendaKit V2.0 está enfocado en la revisión de comprobantes electrónicos XML emitidos bajo el esquema de Hacienda CR:
+
+- Analizar el contenido de facturas electrónicas XML (FE v4.4)
+- Validar códigos CABYS por línea contra el catálogo oficial
+- Revisar tasas de IVA y detectar inconsistencias
+- Identificar diferencias entre el XML y los datos oficiales de Hacienda
+- Facilitar la investigación de rechazos y errores tributarios
+
+---
+
+## Módulos activos
+
+| Módulo | Descripción |
+|--------|-------------|
+| **Validador XML** | Carga y analiza comprobantes XML: emisor, receptor, líneas, CABYS, IVA, totales |
+| **Asistente CABYS** | Búsqueda en el catálogo oficial con favoritos y exportación CSV/Excel |
+| **Contribuyentes** | Consulta estado tributario, régimen y actividades económicas por cédula/DIMEX/NITE |
+| **Exoneraciones** | Verifica exoneraciones de impuestos registradas en Hacienda |
+| **Tipo de Cambio** | USD/EUR en tiempo real desde BCCR, conversor y sparkline 30 días |
+| **Clientes** | Agenda local de clientes con favoritos CABYS por cliente (localStorage) |
 
 ---
 
@@ -37,14 +50,36 @@ npm run dev
 | `npm run dev` | Desarrollo en `localhost:5173` |
 | `npm run build` | Build de producción |
 | `npm run preview` | Vista previa del build |
+| `npm run lint` | Verificación ESLint |
 
 ---
 
 ## Stack
 
-React 19 · Vite 7 · CSS puro · SheetJS · Vercel
+React 19 · Vite 7 · CSS puro · SheetJS (XLSX) · Vercel
 
-APIs: Ministerio de Hacienda CR · BCCR · GoMeta · TSE
+---
+
+## Dependencias de datos
+
+Únicamente APIs públicas oficiales:
+
+| API | Uso |
+|-----|-----|
+| `api.hacienda.go.cr` | CABYS, contribuyentes, facturas electrónicas, exoneraciones, tipo de cambio EUR |
+| `gee.bccr.fi.cr` | Tipo de cambio USD (compra/venta, histórico) |
+
+Las llamadas a estas APIs se proxean a través de Vercel Rewrites para evitar CORS. No existe ningún backend propio.
+
+---
+
+## Arquitectura
+
+- **SPA sin router externo** — navegación por estado `page` string
+- **Archivo único** — toda la lógica en `src/App.jsx`
+- **Sin backend propio** — proxies Vercel como único intermediario
+- **Sin estado global** — `useState` en el componente raíz, props drilling
+- **Persistencia local** — `localStorage` con prefijo `hk_`
 
 ---
 

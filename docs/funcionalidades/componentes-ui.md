@@ -132,6 +132,6 @@ cmd, info, arrowRight, x, bot, send, upload, chat, xml
 | `tc*` | Tipo de cambio |
 | `fe*` | Factura electrónica (tab clave) |
 | `exo*` | Exoneraciones |
-| `calc*` | Calculadora IVA |
+| ~~`calc*`~~ | ~~Calculadora IVA~~ — eliminado en V2.0 |
 | `cliente*` | Módulo clientes |
 | `home*` | Página home |

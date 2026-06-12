@@ -304,11 +304,11 @@ const ACT_LABELS = { cabys: "CABYS", contribuyente: "Contribuyente", factura: "F
 
 /* ─── Hub cards config ─── */
 const HUB_CARDS = [
-  { id: "cabys",          icon: IC.search,   color: "blue",    title: "Asistente CABYS",        desc: "Encontrá el código correcto para tus productos y servicios" },
+  { id: "factura",        icon: IC.xml,      color: "violet",  title: "Validador XML",               desc: "Cargá un comprobante XML y revisá líneas, CABYS, IVA e inconsistencias" },
+  { id: "cabys",          icon: IC.search,   color: "blue",    title: "Asistente CABYS",         desc: "Encontrá el código correcto para tus productos y servicios" },
   { id: "contribuyente",  icon: IC.user,     color: "green",   title: "Verificar Contribuyente", desc: "Estado fiscal, régimen y actividades económicas de cualquier contribuyente" },
-  { id: "tipocambio",     icon: IC.currency, color: "slate",   title: "Tipo de Cambio",          desc: "BCCR en tiempo real, histórico y conversor USD/CRC" },
-  { id: "factura",        icon: IC.receipt,  color: "violet",  title: "Factura Electrónica",     desc: "Validá si un comprobante fue aceptado o rechazado por Hacienda" },
   { id: "exoneraciones",  icon: IC.shield,   color: "purple",  title: "Exoneraciones",           desc: "Verificá si una entidad tiene exoneración de impuestos en Hacienda" },
+  { id: "tipocambio",     icon: IC.currency, color: "slate",   title: "Tipo de Cambio",          desc: "BCCR en tiempo real, histórico y conversor USD/CRC" },
 ]
 
 /* ─── CABYS suggested searches ─── */
@@ -796,11 +796,11 @@ function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consul
 
   const filteredActions = useMemo(() => {
     const all = [
-      { id:"cabys",         icon: IC.search,   label: "Asistente CABYS",         desc: "Buscá códigos por actividad o producto" },
+      { id:"factura",       icon: IC.xml,      label: "Validador XML",                desc: "Cargá un comprobante y revisá CABYS e IVA" },
+      { id:"cabys",         icon: IC.search,   label: "Asistente CABYS",          desc: "Buscá códigos por actividad o producto" },
       { id:"contribuyente", icon: IC.user,     label: "Verificar Contribuyente",  desc: "Estado fiscal y actividades económicas" },
-      { id:"tipocambio",    icon: IC.currency, label: "Tipo de Cambio",           desc: "USD/CRC en tiempo real" },
-      { id:"factura",       icon: IC.receipt,  label: "Validar Factura",          desc: "Verificá si fue aceptada por Hacienda" },
       { id:"exoneraciones", icon: IC.shield,   label: "Exoneraciones",            desc: "Verificá exoneraciones de impuestos" },
+      { id:"tipocambio",    icon: IC.currency, label: "Tipo de Cambio",           desc: "USD/CRC en tiempo real" },
     ]
     if (!q.trim()) return all
     const low = q.toLowerCase()
@@ -986,19 +986,21 @@ function FichaContribuyente({ data, aeJsonId, onBuscarCabys, fl, flash, aeResume
 ───────────────────────────────────────────── */
 const NAV = [
   { id: "home",           icon: IC.dashboard, label: "Inicio" },
+  { id: "factura",        icon: IC.xml,       label: "Validador XML" },
   { id: "cabys",          icon: IC.search,    label: "Asistente CABYS" },
   { id: "contribuyente",  icon: IC.user,      label: "Contribuyente" },
-  { id: "tipocambio",     icon: IC.currency,  label: "Tipo de Cambio" },
-  { id: "factura",        icon: IC.receipt,   label: "Factura Electrónica" },
   { id: "exoneraciones",  icon: IC.shield,    label: "Exoneraciones" },
+  { id: "tipocambio",     icon: IC.currency,  label: "Tipo de Cambio" },
+  { id: "clientes",       icon: IC.star,      label: "Clientes" },
   { id: "acerca",         icon: IC.info,      label: "Acerca de" },
 ]
 const NAV_MAP = Object.fromEntries(NAV.map(n => [n.id, n]))
 const NAV_GROUPS = [
-  { items: ["home", "cabys"] },
-  { label: "Consultas",  items: ["contribuyente"] },
-  { label: "Finanzas",   items: ["tipocambio", "factura"] },
-  { label: "Tributario", items: ["exoneraciones"] },
+  { items: ["home"] },
+  { label: "Comprobantes",  items: ["factura", "cabys"] },
+  { label: "Consultas",     items: ["contribuyente", "exoneraciones"] },
+  { label: "Finanzas",      items: ["tipocambio"] },
+  { label: "Gestión",       items: ["clientes"] },
 ]
 
 /* ═════════════════════════════════════════════
@@ -1353,7 +1355,7 @@ export default function App() {
   const [feXmlError,      setFeXmlError]      = useState("")
   const [feXmlDrag,       setFeXmlDrag]       = useState(false)
   const [cabysValidation, setCabysValidation] = useState({}) // { [codigo]: { status, impuesto, descripcion, categorias } }
-  const [xmlDrawerItem,   setXmlDrawerItem]   = useState(null) // drawer CABYS desde visor XML
+  const [xmlDrawerItem,   setXmlDrawerItem]   = useState(null) // drawer CABYS desde validador XML
   const [soloInconsistencias, setSoloInconsistencias] = useState(false) // filtro filas XML
 
   const feClean = useMemo(() => onlyDigits(feKey), [feKey])
@@ -1576,8 +1578,8 @@ export default function App() {
               {/* ── Hero ── */}
               <div className="homeHero">
                 <div className="homeGreeting">{saludo()}</div>
-                <h1 className="homeTitle">¿Qué desea consultar?</h1>
-                <p className="homeSub">Busque empresas, contribuyentes, actividades económicas, CABYS o facturas electrónicas.</p>
+                <h1 className="homeTitle">Revisión de comprobantes XML</h1>
+                <p className="homeSub">Cargá un XML de Hacienda para validar CABYS, IVA y detectar inconsistencias. También consultá contribuyentes, exoneraciones y tipo de cambio.</p>
               </div>
 
               {/* ── Buscador inteligente ── */}
@@ -1618,14 +1620,14 @@ export default function App() {
               <div className="homeSectionTitle">Accesos rápidos</div>
               <div className="homeQuickGrid">
                 {[
-                  { id:"cabys",         icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L5 11h4v7l6-9h-4L10 2z" fill="currentColor"/></svg>,
-                    label:"Asistente CABYS",    desc:"Códigos y tarifas de IVA",         color:"#f0f9ff", iconColor:"#2563eb" },
+                  { id:"factura",        icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l-3 3 3 3M16 6l3 3-3 3M13 3L7 17"/></svg>,
+                    label:"Validador XML",           desc:"CABYS, IVA e inconsistencias",      color:"#f5f3ff", iconColor:"#7c3aed" },
+                  { id:"cabys",          icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L5 11h4v7l6-9h-4L10 2z" fill="currentColor"/></svg>,
+                    label:"Asistente CABYS",     desc:"Códigos y tarifas de IVA",          color:"#f0f9ff", iconColor:"#2563eb" },
                   { id:"contribuyente",  icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="7" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="1.7"/><path d="M7 7V5a3 3 0 016 0v2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>,
-                    label:"Contribuyentes",      desc:"Estado fiscal y actividades",       color:"#f0fdf4", iconColor:"#16a34a" },
-                  { id:"factura",        icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="2" width="12" height="16" rx="2" stroke="currentColor" strokeWidth="1.7"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
-                    label:"Facturas",            desc:"Validar comprobantes electrónicos", color:"#fefce8", iconColor:"#ca8a04" },
+                    label:"Contribuyentes",      desc:"Estado fiscal y actividades",        color:"#f0fdf4", iconColor:"#16a34a" },
                   { id:"tipocambio",     icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 8h12M13 5l3 3-3 3M16 12H4M7 15l-3-3 3-3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-                    label:"Tipo de Cambio",      desc:"USD y EUR en tiempo real",          color:"#fdf4ff", iconColor:"#9333ea" },
+                    label:"Tipo de Cambio",      desc:"USD y EUR en tiempo real",           color:"#fdf4ff", iconColor:"#9333ea" },
                 ].map(q => (
                   <button key={q.id} type="button" className="homeQuickCard" onClick={() => navigate(q.id)}>
                     <div className="homeQuickIcon" style={{ background: q.color, color: q.iconColor }}>{q.icon}</div>

@@ -7,7 +7,7 @@ Inferidas del código fuente. Fuente de verdad: implementación actual.
 ## Decisiones de arquitectura
 
 ### D-001: Archivo monolítico
-**Decisión:** mantener todo en `src/App.jsx` (~3530 líneas)  
+**Decisión:** mantener todo en `src/App.jsx` (~3100 líneas en V2.0)  
 **Contexto:** proyecto de un solo desarrollador, sin necesidad de separación por equipos  
 **Consecuencia:** navegación compleja pero zero overhead de imports/módulos  
 **Estado:** activo
@@ -58,7 +58,7 @@ Inferidas del código fuente. Fuente de verdad: implementación actual.
 ### D-013: Drawer lateral en lugar de modal o navegación
 **Decisión:** al hacer clic en una tarjeta CABYS, abrir panel lateral sin abandonar la búsqueda  
 **Contexto:** el usuario debe poder explorar detalles sin perder el contexto de búsqueda  
-**Implementación:** `CabysDrawer` — componente reutilizable, preparado para integrar con visor XML  
+**Implementación:** `CabysDrawer` — reutilizable, integrado también con el Validador XML  
 **Estado:** activo
 
 ### D-014: Relacionados sin fetch adicional
@@ -67,11 +67,10 @@ Inferidas del código fuente. Fuente de verdad: implementación actual.
 **Consecuencia:** los relacionados solo aparecen cuando hay resultados de búsqueda previos  
 **Estado:** activo
 
-### D-015: Asistente tributario sin IA externa
-**Decisión:** base de conocimientos local hardcodeada (`TAX_KB`) en lugar de llamadas a GPT u otro LLM  
-**Contexto:** costo, latencia, dependencia de terceros  
-**Consecuencia:** respuestas limitadas a 12 temas predefinidos; no aprende  
-**Estado:** activo
+### D-015: Chat / Asistente IA eliminado en V2.0
+**Decisión:** módulo `TaxAssistantPage` y `TAX_KB` eliminados  
+**Contexto:** base de conocimientos local limitada, sin valor diferencial respecto al enfoque XML  
+**Estado:** eliminado — no reintroducir
 
 ### D-016: Parser XML propio
 **Decisión:** usar `DOMParser` nativo del browser en lugar de una librería XML  
@@ -99,18 +98,13 @@ Inferidas del código fuente. Fuente de verdad: implementación actual.
 **Prioridad:** media
 
 ### DP-003: Separación en módulos
-**Problema:** `App.jsx` supera 3500 líneas y sigue creciendo  
+**Problema:** `App.jsx` tiene ~3100 líneas  
 **Acción sugerida:** evaluar separación progresiva por página en archivos independientes  
 **Bloqueo:** requiere decisión de arquitectura y tiempo de refactor  
 **Prioridad:** media a largo plazo
 
-### DP-004: Calculadora IVA incompleta
-**Problema:** solo soporta 4 tarifas (13%, 4%, 2%, 1%). Faltan 0%, 8%, 15%  
-**Acción sugerida:** agregar las tarifas restantes  
-**Prioridad:** baja
+### DP-004: ~~Calculadora IVA incompleta~~
+**Estado:** eliminado en V2.0 — módulo completo removido
 
-### DP-005: Integración Drawer CABYS con visor XML
-**Problema:** el `CabysDrawer` fue diseñado para ser reutilizable pero aún no se integra con el visor XML  
-**Acción sugerida:** al hacer clic en un código CABYS en la tabla del XML, abrir el drawer con ese ítem  
-**Nota:** el componente ya acepta `relatedItems = []` para el caso sin contexto de búsqueda  
-**Prioridad:** media
+### DP-005: Integración Drawer CABYS con Validador XML
+**Estado:** resuelto en V1.1 — el drawer se abre al hacer clic en cualquier código CABYS validado en la tabla del XML

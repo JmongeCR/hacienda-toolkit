@@ -6,7 +6,9 @@
 
 ---
 
-## 1. Mapa de dependencias actual
+## 1. Mapa de dependencias actual (V2.0)
+
+> **Nota:** Los módulos Cédulas/GoMeta, Calculadora IVA y Asistente IA fueron eliminados en V2.0.
 
 ### Estructura de llamadas entre secciones
 
@@ -23,24 +25,20 @@ App()                          (shell: navegación, layout, estado global compar
 │   ├── CABYS: cabysQ, cabysData, cabysPage, cabysSort, cabysView, cabysNorm,
 │   │          cabysMode, aeDesc, selectedCabys, cabysLoading, cabysError...
 │   ├── Contribuyente: aeId, aeData, aeLoading, aeError, aeSearched, aeHist
-│   ├── Cédulas: cedQ, cedItems, cedLoading, cedError, cedSearched, cedHist
-│   ├── Factura: feTab, feKey, feData, feXmlData, feXmlError, feXmlDrag,
-│   │            feLoading, feError, feSearched, cabysValidation
+│   ├── Validador XML: feTab, feKey, feData, feXmlData, feXmlError, feXmlDrag,
+│   │                  feLoading, feError, feSearched, cabysValidation
 │   ├── Tipo de cambio: fx, fxEur, fxLoading, convFrom, convTo, convAmount,
 │   │                   tcHistory, tcHistLoading, tcFecha, tcData
 │   └── Exoneraciones: exoQ, exoTipo, exoData, exoLoading, exoError
 │
 ├── [dependencias cruzadas — el nudo del problema]
 │   ├── cabysF_avs: leído por Home, CABYS page, Clientes, CabysDrawer
-│   ├── consultarCabysRef: usado por Home, CommandPalette, FichaContribuyente,
-│   │                      CédulasTSE (sugerencia DIMEX)
+│   ├── consultarCabysRef: usado por Home, CommandPalette, FichaContribuyente
 │   ├── setCabysQ + setCabysPage: pasados como props a CommandPalette,
-│   │                              ClientesPage, TaxAssistantPage, FichaContribuyente
+│   │                              ClientesPage, FichaContribuyente
 │   └── navigate(): pasado a casi todos los componentes
 │
 └── [componentes ya independientes — solo dependen de props]
-    ├── IvaCalculadoraPage       (sin estado compartido)
-    ├── TaxAssistantPage         (recibe setCabysQ, consultarCabysRef, navigate)
     ├── ClientesPage             (recibe setCabysQ, consultarCabysRef, navigate)
     ├── AcercaPage               (recibe activities)
     ├── XmlFacturaResult         (recibe data, cabysValidation, callbacks)
@@ -67,10 +65,10 @@ App()                          (shell: navegación, layout, estado global compar
 
 ### Prioridad ALTA — ya son independientes, solo mover
 
+> V2.0: `IvaCalculadoraPage` y `TaxAssistantPage` fueron eliminados. No aplican.
+
 | Componente | Líneas actuales | Archivo propuesto | Dependencias externas |
 |---|---|---|---|
-| `IvaCalculadoraPage` | 71 | `src/pages/Calculadora.jsx` | Ninguna |
-| `TaxAssistantPage` | 125 | `src/pages/Asistente.jsx` | `queryAssistant`, `IC` |
 | `AcercaPage` | 150 | `src/pages/Acerca.jsx` | `IC`, `relTime` |
 | `CabysCard` | 86 | `src/components/cabys/CabysCard.jsx` | `cabysEsServicio`, `getCabysHierarchy`, `taxClass`, `IC` |
 | `CabysDrawer` | 163 | `src/components/cabys/CabysDrawer.jsx` | `cabysEsServicio`, `getCabysHierarchy`, `CopyIco`, `taxClass` |
@@ -134,12 +132,7 @@ Encapsula todo el estado y lógica de búsqueda CABYS:
 // Dependencias: isValidAeId, onlyDigits, fetchJsonSafe, logActivity
 ```
 
-### `useCedulas` → `src/hooks/useCedulas.js`
-```js
-// Estado: cedQ, cedItems, cedLoading, cedError, cedSearched, cedHist
-// Acciones: consultarCed
-// Dependencias: normalizeGometa, fetchJsonSafe, logActivity
-```
+### ~~`useCedulas`~~ — eliminado en V2.0 (módulo GoMeta/TSE removido)
 
 ### `useFacturaElectronica` → `src/hooks/useFacturaElectronica.js`
 ```js
@@ -229,14 +222,9 @@ HOME_FAVS_DEFAULT          — favoritos por defecto
 ```
 fetchJsonSafe(url)          — fetch con validación JSON
 checkApiStatus()            — ping a la API de Hacienda
-normalizeGometa(json)       — normaliza respuesta variable de GoMeta
 ```
 
-### `src/utils/taxKb.js`
-```
-TAX_KB                      — 12 entradas de base de conocimientos
-queryAssistant(q)           — query → respuesta con scoring
-```
+> `normalizeGometa` y `src/utils/taxKb.js` eliminados en V2.0
 
 ### `src/utils/ids.js`
 ```

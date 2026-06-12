@@ -7,6 +7,31 @@ y el proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
+## [2.0.0] — 2026-06-11
+
+### Removido
+- **GoMeta / Personas y Empresas** — módulo de búsqueda en el registro TSE eliminado (dependencia externa no oficial)
+- **Chat / Asistente IA** — módulo de chat tributario con base de conocimientos local (`TAX_KB`, `queryAssistant`) eliminado
+- **Calculadora IVA** — módulo de cálculo offline eliminado (`IvaCalculadoraPage`)
+- **Proxy GoMeta** — rewrite de Vercel y proxy de desarrollo eliminados de `vercel.json` y `vite.config.js`
+- **CSS huérfano** — bloques `.chat*` y `.calc*` eliminados de `App.css` (−6.4 KB minificado)
+
+### Mejorado
+- **Identidad** — módulo principal renombrado de "Visor XML" a "Validador XML"
+- **Navegación** — menú lateral reordenado por prioridad: Validador XML → CABYS → Contribuyente → Exoneraciones → Tipo de Cambio → Clientes
+- **Grupos de menú** — nuevo grupo "Comprobantes" (Validador XML + CABYS), "Consultas" (Contribuyente + Exoneraciones), "Finanzas" (Tipo de Cambio), "Gestión" (Clientes)
+- **Dashboard** — tarjetas del home reordenadas con Validador XML como primera tarjeta
+- **Accesos rápidos** — sección del home actualizada con Validador XML primero
+- **Hero principal** — texto actualizado: "Revisión de comprobantes XML" con subtítulo enfocado en validación
+- **Tabla XML** — columna descripción más legible (`max-width: 380px`, `min-width: 160px`); código CABYS más grande (`font-size: 12px`)
+
+### Arquitectura
+- Dependencias externas reducidas únicamente a `api.hacienda.go.cr` y `gee.bccr.fi.cr`
+- Codebase simplificado: ~3100 líneas en `App.jsx`, 72 KB en `App.css`
+- `package.json` versión 2.0.0, descripción actualizada
+
+---
+
 ## [1.1.0] — 2026-06-10
 
 ### Añadido

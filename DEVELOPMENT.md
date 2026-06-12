@@ -50,7 +50,7 @@ vercel.json        # Proxy rewrites (NO modificar sin análisis de impacto)
 | `cabys` | Inline en App | ✅ Activo |
 | `contribuyente` | `FichaContribuyente` | ✅ Activo |
 | `tipocambio` | `ConversorWise` + `TcSparkline` | ✅ Activo |
-| `factura` | `XmlFacturaResult` + validación CABYS | ✅ Activo |
+| `factura` | `XmlFacturaResult` — Validador XML + validación CABYS | ✅ Activo |
 | `exoneraciones` | Inline en App | ✅ Activo |
 | `clientes` | `ClientesPage` | ✅ Activo (solo localStorage) |
 | `acerca` | `AcercaPage` | ✅ Activo |
@@ -67,7 +67,7 @@ vercel.json        # Proxy rewrites (NO modificar sin análisis de impacto)
 - Vista cards / tabla con ordenamiento
 - Exportación CSV y XLSX
 
-### Visor XML Factura Electrónica
+### Validador XML
 - Parser propio con `DOMParser` — sin librerías XML
 - Soporta FE v4.4 (schema actual Hacienda)
 - Tipos: FacturaElectronica, TiqueteElectronico, NotaDebito, NotaCredito, FECompra, FEExportacion
@@ -107,7 +107,7 @@ extractAeTerms(desc)      // extrae 5 palabras clave de descripción de AE
 ```js
 selectedCabys      // null | item — controla apertura del drawer CABYS
 cabysValidation    // { [codigo]: { status, impuesto } } — resultados de validación XML
-soloInconsistencias // boolean — filtro de filas en visor XML
+soloInconsistencias // boolean — filtro de filas en validador XML
 ```
 
 ---
