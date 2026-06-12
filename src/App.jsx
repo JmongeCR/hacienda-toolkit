@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import "./App.css"
 
 /* ─── Constants ─── */
 import { IC } from "./constants/icons.jsx"
-import { NAV, NAV_GROUPS } from "./constants/navigation.jsx"
+import { NAV, NAV_MAP, NAV_GROUPS } from "./constants/navigation.jsx"
 import { loadActs, appendAct, loadFavs, saveFavs } from "./constants/storage.js"
 
 /* ─── Utils ─── */
@@ -16,14 +16,14 @@ import { useCopyFlash } from "./hooks/useCopyFlash.js"
 import { CommandPalette } from "./components/CommandPalette.jsx"
 
 /* ─── Pages ─── */
-import { HomePage }          from "./pages/HomePage.jsx"
-import { XmlValidatorPage }  from "./pages/XmlValidatorPage.jsx"
-import { CabysPage }         from "./pages/CabysPage.jsx"
+import { HomePage }           from "./pages/HomePage.jsx"
+import { XmlValidatorPage }   from "./pages/XmlValidatorPage.jsx"
+import { CabysPage }          from "./pages/CabysPage.jsx"
 import { ContribuyentesPage } from "./pages/ContribuyentesPage.jsx"
-import { ExoneracionesPage } from "./pages/ExoneracionesPage.jsx"
-import { TipoCambioPage }    from "./pages/TipoCambioPage.jsx"
-import { ClientesPage }      from "./pages/ClientesPage.jsx"
-import { AcercaPage }        from "./pages/AcercaPage.jsx"
+import { ExoneracionesPage }  from "./pages/ExoneracionesPage.jsx"
+import { TipoCambioPage }     from "./pages/TipoCambioPage.jsx"
+import { ClientesPage }       from "./pages/ClientesPage.jsx"
+import { AcercaPage }         from "./pages/AcercaPage.jsx"
 
 /* ─── API Status helper ─── */
 async function checkApiStatus() {
@@ -42,9 +42,9 @@ export default function App() {
   const [cmdOpen,       setCmdOpen]       = useState(false)
 
   /* ─── Cross-page prefill state ─── */
-  const [cabysInitialQuery,    setCabysInitialQuery]    = useState(null)  // { q, ts }
-  const [contribuyentePrefill, setContribuyentePrefill] = useState(null)  // { id, ts }
-  const [facturaPrefill,       setFacturaPrefill]       = useState(null)  // { key, ts }
+  const [cabysInitialQuery,    setCabysInitialQuery]    = useState(null) // { q, ts }
+  const [contribuyentePrefill, setContribuyentePrefill] = useState(null) // { id, ts }
+  const [facturaPrefill,       setFacturaPrefill]       = useState(null) // { key, ts }
 
   /* ─── navigate(id, opts?) ─── */
   const navigate = useCallback((id, opts) => {
@@ -168,98 +168,11 @@ export default function App() {
     return () => clearInterval(t)
   }, [refreshApi, fetchFx, fetchTcHistory])
 
-  /* ─── Sidebar active nav detection ─── */
-  const activeGroup = useMemo(() => {
-    return NAV_GROUPS.find(g => g.items?.includes(page))
-  }, [page])
-
   /* ────────────────────────────────────
-     RENDER
+     RENDER — estructura idéntica a V2.0
   ──────────────────────────────────── */
   return (
-    <div className={`appShell${sideCollapsed ? " sideCollapsed" : ""}`}>
-
-      {/* ── Sidebar ── */}
-      <aside className={`sidebar${sideOpen ? " sidebarOpen" : ""}`}>
-        <div className="sidebarHeader">
-          <div className="sidebarLogo">
-            <span className="sidebarLogoIco">{IC.bolt}</span>
-            {!sideCollapsed && <span className="sidebarLogoText">HaciendaKit</span>}
-          </div>
-          <button className="sidebarCollapseBtn" type="button" title="Colapsar menú"
-            onClick={() => setSideCollapsed(c => !c)}>
-            {sideCollapsed ? IC.arrowRight : IC.arrowLeft}
-          </button>
-        </div>
-
-        <nav className="sidebarNav">
-          {NAV_GROUPS.map((group, gi) => (
-            <div key={gi} className="navGroup">
-              {group.label && !sideCollapsed && <div className="navGroupLabel">{group.label}</div>}
-              {group.items.map(id => {
-                const item = NAV.find(n => n.id === id)
-                if (!item) return null
-                return (
-                  <button key={id} type="button"
-                    className={`navItem${page === id ? " navItemActive" : ""}`}
-                    onClick={() => navigate(id)}
-                    title={sideCollapsed ? item.label : undefined}>
-                    <span className="navItemIcon">{item.icon}</span>
-                    {!sideCollapsed && <span className="navItemLabel">{item.label}</span>}
-                  </button>
-                )
-              })}
-            </div>
-          ))}
-        </nav>
-
-        <div className="sidebarFooter">
-          <button type="button" className={`cmdTrigger${sideCollapsed ? " cmdTriggerCollapsed" : ""}`}
-            onClick={() => setCmdOpen(true)} title="Búsqueda rápida (⌘K)">
-            {IC.search}
-            {!sideCollapsed && <><span>Búsqueda rápida</span><kbd>⌘K</kbd></>}
-          </button>
-          {apiStatus && !sideCollapsed && (
-            <div className={`apiStatusChip${apiStatus.ok ? " apiOk" : " apiErr"}`}
-              title={`Hacienda API — ${apiStatus.ok ? `${apiStatus.ms}ms` : "No disponible"}`}
-              onClick={refreshApi}>
-              <span className="apiDot" />
-              {apiStatus.ok ? `API ${apiStatus.ms}ms` : "API sin respuesta"}
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* ── Topbar ── */}
-      <div className="topbar">
-        <button className="topbarMenuBtn" type="button" onClick={() => setSideOpen(o => !o)}>
-          {IC.menu}
-        </button>
-        <div className="topbarBreadcrumb">
-          {activeGroup?.label && <span className="topbarGroup">{activeGroup.label}</span>}
-          {activeGroup?.label && <span className="topbarSep">/</span>}
-          <span className="topbarPage">{NAV.find(n => n.id === page)?.label || "HaciendaKit"}</span>
-        </div>
-        <div className="topbarRight">
-          {fx && (
-            <div className="topbarFx" title={`Compra ₡${fx.compra?.toLocaleString("es-CR")} · Venta ₡${fx.venta?.toLocaleString("es-CR")}`}>
-              <span className="topbarFxFlag">🇺🇸</span>
-              <span className="topbarFxRate">₡{fx.venta?.toLocaleString("es-CR")}</span>
-            </div>
-          )}
-          {fxEur && (
-            <div className="topbarFx" title={`EUR referencia Hacienda`}>
-              <span className="topbarFxFlag">🇪🇺</span>
-              <span className="topbarFxRate">₡{fxEur.colones?.toLocaleString("es-CR")}</span>
-            </div>
-          )}
-          <button type="button" className="topbarCmdBtn" onClick={() => setCmdOpen(true)} title="Búsqueda rápida ⌘K">
-            {IC.search}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Overlay móvil ── */}
+    <div className={`layout${sideCollapsed ? " sideCollapsed" : ""}`}>
       {sideOpen && <div className="sideOverlay" onClick={() => setSideOpen(false)} />}
 
       {/* ── Command Palette ── */}
@@ -272,75 +185,169 @@ export default function App() {
         navigateToContribuyente={navigateToContribuyente}
       />
 
-      {/* ── Main content ── */}
-      <main className="mainContent">
-        {page === "home" && (
-          <HomePage
-            navigate={navigate}
-            activities={activities}
-            setActivities={setActivities}
-            navigateToCabys={navigateToCabys}
-            navigateToContribuyente={navigateToContribuyente}
-          />
-        )}
+      {/* ── SIDEBAR ── */}
+      <aside className={`sidebar${sideOpen ? " sideOpen" : ""}`}>
+        <div className="sideTop">
+          <div className="sideBrand">
+            <div className="sideLogo">{IC.bolt}</div>
+            <span className="sideName">HaciendaKit</span>
+          </div>
+        </div>
 
-        {page === "factura" && (
-          <XmlValidatorPage
-            fl={fl} flash={flash}
-            cabysF_avs={cabysF_avs}
-            toggleFav={toggleFav}
-            logActivity={logActivity}
-            navigate={navigate}
-            prefillKey={facturaPrefill?.key || ""}
-          />
-        )}
+        <nav className="sideNav">
+          {NAV_GROUPS.map((g, gi) => (
+            <div key={gi} className="navGroup">
+              {g.label && <div className="navGroupLabel">{g.label}</div>}
+              {g.items.map(id => {
+                const n = NAV_MAP[id]; if (!n) return null
+                return (
+                  <button key={n.id} type="button"
+                    className={`navItem${page === n.id ? " navActive" : ""}`}
+                    title={n.label}
+                    onClick={() => navigate(n.id)}>
+                    <span className="navIcon">{n.icon}</span>
+                    <span className="navLabel">{n.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+        </nav>
 
-        {page === "cabys" && (
-          <CabysPage
-            fl={fl} flash={flash}
-            favs={cabysF_avs}
-            onToggleFav={toggleFav}
-            consultarCabysRef={consultarCabysRef}
-            initialQuery={cabysInitialQuery}
-            logActivity={logActivity}
-          />
-        )}
+        <div className="sideBottom">
+          <button type="button"
+            className={`navItem navItemAcerca${page === "acerca" ? " navActive" : ""}`}
+            onClick={() => navigate("acerca")}>
+            <span className="navIcon">{IC.info}</span>
+            <span className="navLabel">Acerca de</span>
+          </button>
+          <div className="sideBottomSep" />
+          <button type="button" className="cmdTriggerBtn" onClick={() => setCmdOpen(true)}>
+            {IC.search}
+            <span className="cmdTriggerLabel">Búsqueda rápida</span>
+          </button>
+          <button type="button" className="sideCollapseBtn"
+            onClick={() => setSideCollapsed(c => !c)}>
+            {sideCollapsed ? IC.expandRight : IC.collapseLeft}
+          </button>
+          <div className={`apiPill${apiStatus == null ? "" : apiStatus.ok ? " apiPillOk" : " apiPillBad"}`}>
+            <span className={`dot${apiStatus?.ok ? " ok" : apiStatus == null ? " loading" : " bad"}`} />
+            <span className="apiPillText">
+              {apiStatus == null ? "…" : apiStatus.ok ? `Hacienda · ${apiStatus.ms}ms` : "Sin respuesta"}
+            </span>
+          </div>
+        </div>
+      </aside>
 
-        {page === "contribuyente" && (
-          <ContribuyentesPage
-            fl={fl} flash={flash}
-            navigateToCabys={navigateToCabys}
-            logActivity={logActivity}
-            prefillId={contribuyentePrefill?.id || ""}
-          />
-        )}
+      {/* ── MAIN ── */}
+      <div className="mainArea">
+        <header className="topbar">
+          <button className="menuBtn" type="button" onClick={() => setSideOpen(s => !s)}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M2 4.5h14M2 9h14M2 13.5h14"/>
+            </svg>
+          </button>
 
-        {page === "exoneraciones" && (
-          <ExoneracionesPage logActivity={logActivity} />
-        )}
+          <div className="topbarBread">
+            <span className="topbarApp">HaciendaKit</span>
+            <span className="topbarSep">/</span>
+            <span className="topbarPage">{NAV_MAP[page]?.label}</span>
+          </div>
 
-        {page === "tipocambio" && (
-          <TipoCambioPage
-            fx={fx} fxEur={fxEur}
-            fxLoading={fxLoading}
-            fetchFx={fetchFx}
-            tcHistory={tcHistory}
-            tcHistLoading={tcHistLoading}
-            fetchTcHistory={fetchTcHistory}
-          />
-        )}
+          <button type="button" className="topbarCmdBtn" onClick={() => setCmdOpen(true)}>
+            <span className="topbarCmdIcon">{IC.search}</span>
+            <span className="topbarCmdPlaceholder">Buscar…</span>
+          </button>
 
-        {page === "clientes" && (
-          <ClientesPage
-            navigate={navigate}
-            navigateToCabys={navigateToCabys}
-          />
-        )}
+          <div className="topbarRight">
+            <span className={`apiDot${apiStatus?.ok ? " apiDotOk" : apiStatus == null ? "" : " apiDotBad"}`}
+              title={apiStatus?.ok ? `Hacienda ${apiStatus.ms}ms` : "Sin respuesta"} />
+            {fx && (
+              <div className="topbarFx" onClick={() => navigate("tipocambio")} style={{ cursor: "pointer" }}>
+                <span className="topbarFxLabel">USD</span>
+                <span className="topbarFxVal">₡{fx.venta.toLocaleString("es-CR")}</span>
+              </div>
+            )}
+            {fxEur && (
+              <div className="topbarFx topbarFxEur" onClick={() => navigate("tipocambio")} style={{ cursor: "pointer" }}>
+                <span className="topbarFxLabel">EUR</span>
+                <span className="topbarFxVal">₡{fxEur.colones.toLocaleString("es-CR")}</span>
+              </div>
+            )}
+          </div>
+        </header>
 
-        {page === "acerca" && (
-          <AcercaPage activities={activities} />
-        )}
-      </main>
+        <main className="content">
+
+          {page === "home" && (
+            <HomePage
+              navigate={navigate}
+              activities={activities}
+              setActivities={setActivities}
+              navigateToCabys={navigateToCabys}
+              navigateToContribuyente={navigateToContribuyente}
+            />
+          )}
+
+          {page === "factura" && (
+            <XmlValidatorPage
+              fl={fl} flash={flash}
+              cabysF_avs={cabysF_avs}
+              toggleFav={toggleFav}
+              logActivity={logActivity}
+              navigate={navigate}
+              prefillKey={facturaPrefill?.key || ""}
+            />
+          )}
+
+          {page === "cabys" && (
+            <CabysPage
+              fl={fl} flash={flash}
+              favs={cabysF_avs}
+              onToggleFav={toggleFav}
+              consultarCabysRef={consultarCabysRef}
+              initialQuery={cabysInitialQuery}
+              logActivity={logActivity}
+            />
+          )}
+
+          {page === "contribuyente" && (
+            <ContribuyentesPage
+              fl={fl} flash={flash}
+              navigateToCabys={navigateToCabys}
+              logActivity={logActivity}
+              prefillId={contribuyentePrefill?.id || ""}
+            />
+          )}
+
+          {page === "exoneraciones" && (
+            <ExoneracionesPage logActivity={logActivity} />
+          )}
+
+          {page === "tipocambio" && (
+            <TipoCambioPage
+              fx={fx} fxEur={fxEur}
+              fxLoading={fxLoading}
+              fetchFx={fetchFx}
+              tcHistory={tcHistory}
+              tcHistLoading={tcHistLoading}
+              fetchTcHistory={fetchTcHistory}
+            />
+          )}
+
+          {page === "clientes" && (
+            <ClientesPage
+              navigate={navigate}
+              navigateToCabys={navigateToCabys}
+            />
+          )}
+
+          {page === "acerca" && (
+            <AcercaPage activities={activities} />
+          )}
+
+        </main>
+      </div>
     </div>
   )
 }
