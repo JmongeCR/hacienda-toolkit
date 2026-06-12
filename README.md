@@ -6,20 +6,20 @@
 [![Versión](https://img.shields.io/badge/versión-2.0.0-blue)](./CHANGELOG.md)
 
 Plataforma especializada para validación y análisis de comprobantes electrónicos de Costa Rica.
+Diseñada para acelerar la revisión de XML de facturación electrónica y facilitar la investigación de rechazos relacionados con CABYS, IVA y configuración tributaria.
 
 🌐 **[hacienda-toolkit.vercel.app](https://hacienda-toolkit.vercel.app)**
 
 ---
 
-## Propósito
+## Casos de uso
 
-HaciendaKit V2.0 está enfocado en la revisión de comprobantes electrónicos XML emitidos bajo el esquema de Hacienda CR:
-
-- Analizar el contenido de facturas electrónicas XML (FE v4.4)
-- Validar códigos CABYS por línea contra el catálogo oficial
-- Revisar tasas de IVA y detectar inconsistencias
-- Identificar diferencias entre el XML y los datos oficiales de Hacienda
-- Facilitar la investigación de rechazos y errores tributarios
+- Revisión de XML rechazados por Hacienda.
+- Validación rápida de códigos CABYS.
+- Verificación de tasas de IVA.
+- Consulta de contribuyentes.
+- Investigación de inconsistencias tributarias.
+- Apoyo a equipos de soporte e implementación.
 
 ---
 
@@ -33,30 +33,6 @@ HaciendaKit V2.0 está enfocado en la revisión de comprobantes electrónicos XM
 | **Exoneraciones** | Verifica exoneraciones de impuestos registradas en Hacienda |
 | **Tipo de Cambio** | USD/EUR en tiempo real desde BCCR, conversor y sparkline 30 días |
 | **Clientes** | Agenda local de clientes con favoritos CABYS por cliente (localStorage) |
-
----
-
-## Instalación local
-
-```bash
-git clone https://github.com/JmongeCR/hacienda-toolkit.git
-cd hacienda-toolkit
-npm install
-npm run dev
-```
-
-| Comando | Descripción |
-|---------|-------------|
-| `npm run dev` | Desarrollo en `localhost:5173` |
-| `npm run build` | Build de producción |
-| `npm run preview` | Vista previa del build |
-| `npm run lint` | Verificación ESLint |
-
----
-
-## Stack
-
-React 19 · Vite 7 · CSS puro · SheetJS (XLSX) · Vercel
 
 ---
 
@@ -75,11 +51,10 @@ Las llamadas a estas APIs se proxean a través de Vercel Rewrites para evitar CO
 
 ## Arquitectura
 
-- **SPA sin router externo** — navegación por estado `page` string
-- **Archivo único** — toda la lógica en `src/App.jsx`
-- **Sin backend propio** — proxies Vercel como único intermediario
-- **Sin estado global** — `useState` en el componente raíz, props drilling
-- **Persistencia local** — `localStorage` con prefijo `hk_`
+- **Frontend React + Vite** — SPA sin router externo ni backend propio
+- **Arquitectura SPA sin backend propio** — proxies Vercel como único intermediario
+- **Persistencia local mediante localStorage** — historial, favoritos y clientes en el dispositivo
+- **Integración con APIs oficiales de Costa Rica** — Hacienda y BCCR únicamente
 
 ---
 
