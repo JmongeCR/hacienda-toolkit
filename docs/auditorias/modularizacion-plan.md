@@ -262,8 +262,8 @@ Crear src/utils/search.js     → restoreAccents, ACCENT_MAP, extractAeTerms, ma
                                  scoreMatch, AE_MAP, STOP_WORDS
 Crear src/utils/xmlParser.js  → parseXmlFe
 Crear src/utils/storage.js    → todas las funciones de localStorage
-Crear src/utils/api.js        → fetchJsonSafe, checkApiStatus, normalizeGometa
-Crear src/utils/taxKb.js      → TAX_KB, queryAssistant
+Crear src/utils/api.js        → fetchJsonSafe, checkApiStatus
+# normalizeGometa, TAX_KB y queryAssistant eliminados en V2.0
 Crear src/constants/icons.js  → IC, ACT_ICONS, ACT_LABELS, HUB_CARDS, CABYS_SUGERENCIAS
 ```
 
@@ -289,8 +289,7 @@ App.jsx queda en ~2.820 líneas.
 Estos componentes ya reciben todo por props. Mover sin cambiar interfaz.
 
 ```
-src/pages/Calculadora.jsx      ← IvaCalculadoraPage (71 líneas)
-src/pages/Asistente.jsx        ← TaxAssistantPage (125 líneas)
+# Calculadora.jsx y Asistente.jsx eliminados en V2.0
 src/pages/Acerca.jsx           ← AcercaPage (150 líneas)
 src/pages/Clientes.jsx         ← ClientesPage (223 líneas)
 ```
@@ -405,14 +404,14 @@ src/
     search.js                restoreAccents, ACCENT_MAP, matchAe, AE_MAP, etc.
     xmlParser.js             parseXmlFe
     storage.js               loadFavs, loadClients, appendAct, etc.
-    api.js                   fetchJsonSafe, checkApiStatus, normalizeGometa
-    taxKb.js                 TAX_KB, queryAssistant
+    api.js                   fetchJsonSafe, checkApiStatus
+    # taxKb.js y normalizeGometa: eliminados en V2.0
   hooks/
     useCopyFlash.js
     useActivityLog.js
     useCabys.js
     useContribuyente.js
-    useCedulas.js
+    # useCedulas.js: eliminado en V2.0 (módulo GoMeta removido)
     useFacturaElectronica.js
     useTipoCambio.js
     useExoneraciones.js

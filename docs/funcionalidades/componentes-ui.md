@@ -127,7 +127,7 @@ cmd, info, arrowRight, x, bot, send, upload, chat, xml
 |---------|--------|
 | `cabys*` | CABYS search cards |
 | `cabysDrawer*` | Drawer lateral CABYS |
-| `xml*` | Visor XML |
+| `xml*` | Validador XML |
 | `xmlCabys*` | Validación CABYS en XML |
 | `tc*` | Tipo de cambio |
 | `fe*` | Factura electrónica (tab clave) |

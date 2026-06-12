@@ -107,7 +107,7 @@ Se verifican por cédula en la API de Hacienda. El estado "Activo" o "Inactivo" 
 
 ---
 
-## Impuesto sobre la renta (referencia en TAX_KB)
+## Impuesto sobre la renta
 
 **Personas Jurídicas:**
 - Hasta ₡119M: 5%

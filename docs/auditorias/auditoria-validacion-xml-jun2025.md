@@ -1,14 +1,14 @@
 # Auditoría: Validación XML — Junio 2025
 
 **Fecha:** Junio 2025  
-**Módulo:** Visor XML Factura Electrónica  
+**Módulo:** Validador XML  
 **Resultado:** Cambios de comportamiento implementados
 
 ---
 
 ## Contexto
 
-Se implementó la validación de tipo (Artículo vs Servicio) en el visor XML usando la unidad de medida del campo `UnidadMedida` para inferir si la línea es un servicio, y compararlo contra la clasificación del código CABYS.
+Se implementó la validación de tipo (Artículo vs Servicio) en el Validador XML usando la unidad de medida del campo `UnidadMedida` para inferir si la línea es un servicio, y compararlo contra la clasificación del código CABYS.
 
 ## Problema detectado
 
