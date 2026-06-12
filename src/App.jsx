@@ -1069,7 +1069,8 @@ export default function App() {
       setTimeout(() => { setCabysQ(q); setCabysPage(0); consultarCabysRef.current?.({ reset: true, q }) }, 50)
     }
     setHomeSearch("")
-  }, [homeSearch, homeSearchIntent, consultarAE])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [homeSearch, homeSearchIntent])
 
   const consultarCabysRef = useRef(null)
 
