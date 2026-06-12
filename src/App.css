@@ -1252,7 +1252,8 @@ tr:hover td { background: var(--slate-50) }
 .acercaHero { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:28px; display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start; margin-bottom:24px; }
 .acercaHeroLeft { display:flex; align-items:center; gap:16px; flex:1; min-width:240px; }
 .acercaLogo { width:52px; height:52px; background:var(--accent); color:#fff; border-radius:16px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:22px; }
-.acercaAppName { font-size:1.6rem; font-weight:800; color:var(--text); margin:0 0 4px; letter-spacing:-.02em; }
+.acercaAppName { font-size:1.6rem; font-weight:800; color:var(--text); margin:0 0 4px; letter-spacing:-.02em; display:flex; align-items:center; gap:8px; }
+.acercaV2Badge { font-size:11px; font-weight:800; background:var(--accent); color:#fff; padding:2px 8px; border-radius:6px; letter-spacing:.04em; flex-shrink:0; }
 .acercaTagline { font-size:var(--font-sm); color:var(--muted); margin:0; line-height:1.5; max-width:320px; }
 .acercaMeta { display:flex; flex-wrap:wrap; gap:16px 28px; }
 .acercaMetaItem { display:flex; flex-direction:column; gap:4px; }

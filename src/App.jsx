@@ -2477,17 +2477,15 @@ function ClientesPage({ navigate, setCabysQ, consultarCabysRef, setCabysPage }) 
 function AcercaPage({ activities }) {
   const favCount   = loadFavs().length
   const actCount   = activities.length
-  const histCount  = ["ht_cabys","ht_ae"].reduce((n,k) => n + loadH(k).length, 0)
+  const histCount  = ["ht_cabys","ht_ae","ht_fe","ht_exo"].reduce((n,k) => n + loadH(k).length, 0)
 
   const TOOLS = [
-    { icon:IC.search,   name:"Asistente CABYS",          desc:"Búsqueda de códigos por producto, actividad o descripción de negocio" },
-    { icon:IC.user,     name:"Consulta de Contribuyentes",desc:"Estado fiscal, régimen tributario y actividades económicas registradas" },
-    { icon:IC.receipt,  name:"Facturas Electrónicas",     desc:"Validación de comprobantes por clave numérica de 50 dígitos" },
-    { icon:IC.xml,      name:"Validación XML",            desc:"Análisis completo de archivos XML con detalle de líneas y CABYS" },
-    { icon:IC.currency, name:"Tipo de Cambio",            desc:"USD y EUR en tiempo real con historial 30 días y conversor 3 divisas" },
+    { icon:IC.xml,      name:"Validador XML",             desc:"Carga y analiza comprobantes XML: emisor, receptor, líneas, CABYS, IVA e inconsistencias" },
+    { icon:IC.search,   name:"Asistente CABYS",           desc:"Búsqueda en el catálogo oficial por producto, actividad o descripción de negocio" },
+    { icon:IC.user,     name:"Contribuyentes",            desc:"Estado fiscal, régimen tributario y actividades económicas por cédula, DIMEX o NITE" },
     { icon:IC.shield,   name:"Exoneraciones",             desc:"Verificación de exoneraciones de impuestos registradas en Hacienda" },
-    { icon:IC.star,     name:"Favoritos CABYS",           desc:"Guardado y acceso rápido a los códigos CABYS más usados" },
-    { icon:IC.clock,    name:"Historial Inteligente",     desc:"Registro de consultas recientes para retomar cualquier búsqueda" },
+    { icon:IC.currency, name:"Tipo de Cambio",            desc:"USD y EUR en tiempo real desde BCCR, historial 30 días y conversor de divisas" },
+    { icon:IC.star,     name:"Clientes",                  desc:"Agenda local de clientes con favoritos CABYS por cliente (almacenamiento en dispositivo)" },
   ]
 
   const SOURCES = [
@@ -2517,14 +2515,14 @@ function AcercaPage({ activities }) {
             {IC.bolt}
           </div>
           <div>
-            <h1 className="acercaAppName">HaciendaKit</h1>
-            <p className="acercaTagline">Plataforma de consulta tributaria y herramientas fiscales para Costa Rica.</p>
+            <h1 className="acercaAppName">HaciendaKit <span className="acercaV2Badge">V2</span></h1>
+            <p className="acercaTagline">Plataforma especializada en validación y análisis de comprobantes electrónicos de Costa Rica.</p>
           </div>
         </div>
         <div className="acercaMeta">
           <div className="acercaMetaItem">
             <span className="acercaMetaLabel">Versión</span>
-            <span className="acercaVersionBadge">v1.0.0</span>
+            <span className="acercaVersionBadge">v2.0.0</span>
           </div>
           <div className="acercaMetaItem">
             <span className="acercaMetaLabel">Última actualización</span>
