@@ -1071,6 +1071,8 @@ export default function App() {
     setHomeSearch("")
   }, [homeSearch, homeSearchIntent, consultarAE])
 
+  const consultarCabysRef = useRef(null)
+
   /* ─── Navigate to CABYS with pre-filled query ─── */
   const navigateToCabys = useCallback((q) => {
     navigate("cabys")
@@ -1080,7 +1082,6 @@ export default function App() {
       consultarCabysRef.current({ reset: true, q })
     }, 50)
   }, [])
-  const consultarCabysRef = useRef(null)
 
   /* ─── Search dropdown ─── */
   const _searchResults = useMemo(() => {
