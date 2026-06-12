@@ -189,7 +189,7 @@ const loadFavs = () => { try { return JSON.parse(localStorage.getItem(FAV_KEY) |
 const saveFavs = (items) => localStorage.setItem(FAV_KEY, JSON.stringify(items.slice(0, 30)))
 
 async function copyText(text) {
-  try { await navigator.clipboard.writeText(text); return true } catch {}
+  try { await navigator.clipboard.writeText(text); return true } catch (_e) { /* fallback */ }
   try {
     const ta = document.createElement("textarea")
     ta.value = text; document.body.appendChild(ta); ta.select()
@@ -396,77 +396,6 @@ function parseXmlFe(xmlStr) {
   return { rootTag, tipoDoc: tiposDoc[rootTag] || rootTag, clave, numConsecutivo, fecha, emisor, receptor, resumen, lines, condicionVenta, referencias, tiposRefDoc, codigosRef }
 }
 
-/* ─── Base de conocimientos tributaria CR ─── */
-const TAX_KB = [
-  { id:"iva-tarifas", kw:["iva","impuesto","tasa","tarifa","porcentaje","cuánto","cuanto","tari"],
-    q:"¿Cuáles son las tarifas de IVA?",
-    a:"En Costa Rica el IVA tiene 6 tarifas:\n• **0%** — Canasta básica, medicamentos esenciales, educación pública, exportaciones\n• **1%** — Primas de seguros\n• **2%** — Boletos de avión internacional\n• **4%** — Servicios de salud privada, veterinarios, algunos alimentos procesados\n• **8%** — Planes de salud, seguros médicos privados\n• **13%** — Tarifa general (mayoría de bienes y servicios)\n• **15%** — Licores, cervezas, cigarrillos y tabaco",
-    src:["Ley 6826 mod. por Ley 9635","Art. 10 LIVA"], acts:[{label:"Buscar CABYS",page:"cabys"}] },
-  { id:"barberia", kw:["barberia","barbería","peluqueria","peluquería","belleza","estetica","estética","manicure","salon","salón"],
-    q:"¿Qué CABYS aplica para barberías?",
-    a:"Para barberías y salones de belleza:\n• **Servicio de peluquería/barbería** — búscalo en CABYS como 'peluqueria barberia belleza' (13% IVA)\n• Actividad económica CIIU: **9602 — Peluquería y tratamientos de belleza**\n\nLos servicios de belleza en general tributan al 13% IVA.",
-    src:["CABYS Hacienda","CIIU Rev.4"], acts:[{label:"Buscar CABYS barbería",page:"cabys",q:"peluqueria barberia belleza estetica"}] },
-  { id:"software", kw:["software","programacion","programación","desarrollo","sistemas","tecnologia","tecnología","app","ti","informatica"],
-    q:"¿Qué CABYS aplica para software?",
-    a:"Para servicios tecnológicos y software:\n• **Desarrollo de software** — buscar 'servicios software programacion' (13% IVA)\n• **Consultoría TI** — buscar 'consultoria informatica tecnologia'\n• **Mantenimiento de sistemas** — buscar 'mantenimiento software sistemas'\n\nActividad económica CIIU: **6201 — Actividades de programación informática**.",
-    src:["CABYS Hacienda","CIIU 6201"], acts:[{label:"Buscar CABYS software",page:"cabys",q:"servicios software programacion tecnologia informatica"}] },
-  { id:"restaurante", kw:["restaurante","soda","comida","alimentacion","cafeteria","cafetería","almuerzo","cena"],
-    q:"¿Qué CABYS aplica para restaurantes?",
-    a:"Para restaurantes y sodas:\n• **Servicio de comidas** — buscar 'servicio comidas restaurante' (13% IVA)\n• Actividad económica CIIU: **5610 — Restaurantes y servicio móvil de comidas**\n\n📌 Los **alimentos de canasta básica sin procesar** (frijoles, arroz, verduras crudas) tienen 0% IVA si se venden en supermercados, no en restaurantes preparados.",
-    src:["CABYS Hacienda","CIIU 5610"], acts:[{label:"Buscar CABYS restaurante",page:"cabys",q:"servicio comidas restaurante alimentacion"}] },
-  { id:"exento", kw:["exento","exenta","exencion","exención","no paga","sin iva","canasta","basica","básica","cero"],
-    q:"¿Qué está exento de IVA?",
-    a:"Los principales bienes/servicios con 0% IVA:\n• Productos de la canasta básica (arroz, frijoles, leche, pan, carne, etc.)\n• Medicamentos y productos farmacéuticos esenciales\n• Servicios educativos públicos\n• Servicios de la CCSS\n• Exportaciones de bienes y servicios\n• Arrendamiento de vivienda\n• Intereses bancarios y servicios financieros básicos\n• Seguros de vida",
-    src:["Anexo 1 Ley 6826","LIVA Art. 8"], acts:[] },
-  { id:"actividad-economica", kw:["actividad","económica","economica","ciiu","registro","inscripcion","inscripción","hacienda"],
-    q:"¿Qué actividad económica debo usar?",
-    a:"La actividad económica (CIIU) se asigna al inscribirse en Hacienda. Actividades comunes:\n• **5610** — Restaurantes\n• **6201** — Programación / software\n• **6920** — Contabilidad y auditoría\n• **9602** — Peluquería y belleza\n• **4100** — Construcción\n• **7311** — Publicidad y marketing\n• **8621** — Médicos y odontólogos\n• **4771** — Comercio ropa y calzado\n\nPodés verificar el régimen actual en la sección Contribuyentes.",
-    src:["CIIU Rev.4","Hacienda CR"], acts:[{label:"Verificar contribuyente",page:"contribuyente"}] },
-  { id:"factura-electronica", kw:["factura","electronica","electrónica","comprobante","clave","obligacion","obligación","emitir","tiquete"],
-    q:"¿Quiénes deben emitir factura electrónica?",
-    a:"**Todos los contribuyentes inscritos** en Hacienda están obligados a emitir comprobantes electrónicos:\n• **Factura Electrónica (FE)** — ventas a personas jurídicas o que la soliciten\n• **Tiquete Electrónico** — ventas de mostrador al consumidor final\n• **Nota de Débito/Crédito** — ajustes a facturas emitidas\n\nLa clave del comprobante tiene **50 dígitos**. Podés validar cualquier factura en la sección correspondiente.",
-    src:["Resolución DGT-R-48-2016","Hacienda CR"], acts:[{label:"Validar factura",page:"factura"}] },
-  { id:"regimen", kw:["simplificado","régimen","regimen","pequeño","contribuyente","trad"],
-    q:"¿Qué es el régimen simplificado?",
-    a:"El **Régimen de Tributación Simplificada** aplica cuando los ingresos anuales son menores a ~₡106 millones:\n• Pago trimestral según factor de tributación (2.5%–5.5%)\n• No se cobra IVA por separado (ya incluido)\n• Obligado a emitir factura electrónica\n\n**Régimen Tradicional**: aplica cuando superás el límite o decidís inscribirte voluntariamente. Se declara IVA mensual y Renta anual.",
-    src:["Decreto 37672-H","DGT-CR"], acts:[{label:"Verificar régimen",page:"contribuyente"}] },
-  { id:"renta", kw:["renta","income","utilidades","ganancia","beneficio","tasa renta","impuesto renta"],
-    q:"¿Cuánto es el impuesto sobre la renta?",
-    a:"**Impuesto sobre la Renta** en Costa Rica:\n\n**Personas Jurídicas:**\n• Hasta ₡119M de ingresos: 5%\n• ₡119M a ₡238M: 10%\n• ₡238M a ₡476M: 15%\n• Más de ₡476M: 30%\n\n**Personas Físicas con actividad lucrativa:**\n• Tramos progresivos del 10% al 25% según ingresos\n\n*Los tramos se actualizan anualmente por decreto.*",
-    src:["Ley 7092 reformada","DGT-CR"], acts:[] },
-  { id:"salud", kw:["medico","médico","clinica","clínica","salud","doctor","consulta","hospital","veterinario"],
-    q:"¿Qué IVA aplica para servicios de salud?",
-    a:"Servicios de salud — tarifas diferenciadas:\n• **CCSS / salud pública** → 0% IVA\n• **Consulta médica privada** → 4% IVA\n• **Hospital privado** → 4% IVA\n• **Medicamentos esenciales** → 0% IVA\n• **Medicamentos no esenciales** → 4% IVA\n• **Seguros/planes de salud privados** → 8% IVA\n• **Servicios veterinarios** → 4% IVA\n\nActividad económica: **8621 — Médicos y odontólogos**.",
-    src:["LIVA Art. 10","Anexo 2 LIVA"], acts:[{label:"Buscar CABYS salud",page:"cabys",q:"servicios medicos salud clinica consulta"}] },
-  { id:"construccion", kw:["construccion","construcción","obra","edificacion","contratista","plomero","electricista"],
-    q:"¿Qué CABYS aplica para construcción?",
-    a:"Para servicios de construcción:\n• **Construcción general** — buscar 'servicios construccion' (13% IVA)\n• **Instalaciones eléctricas** — buscar 'instalacion electrica'\n• **Plomería** — buscar 'servicios plomeria'\n\nActividad CIIU: **4100 — Construcción de edificios** / **4321 — Instalaciones eléctricas**\n\n📌 Los **materiales de construcción** (cemento, varilla, pintura) también tienen 13% IVA.",
-    src:["CABYS Hacienda","CIIU 4100"], acts:[{label:"Buscar CABYS construcción",page:"cabys",q:"servicios construccion obra instalacion"}] },
-  { id:"exoneraciones", kw:["exoneracion","exoneración","exonerado","libre","dispensa","exenta"],
-    q:"¿Cómo verificar exoneraciones?",
-    a:"Las **exoneraciones** permiten a ciertas entidades no pagar IVA:\n• Entidades del Estado y autónomas\n• Misiones diplomáticas\n• ONGs autorizadas\n• Zonas Francas\n• Instituciones educativas reconocidas\n\nPodés verificar si una empresa tiene exoneración ingresando su cédula en la sección Exoneraciones.",
-    src:["Ley 6826 Art. 8","Hacienda CR"], acts:[{label:"Verificar exoneración",page:"exoneraciones"}] },
-  { id:"contabilidad", kw:["contabilidad","contador","auditoria","auditoría","fiscal","contable"],
-    q:"¿Qué CABYS aplica para contabilidad?",
-    a:"Para servicios contables y de auditoría:\n• **Servicios de contabilidad** — buscar 'servicios contables auditoria' (13% IVA)\n• **Auditoría financiera** — buscar 'auditoria contable'\n• Actividad CIIU: **6920 — Actividades de contabilidad y auditoría**\n\n📌 Los servicios profesionales (abogados, contadores, ingenieros) tributan al 13% en general.",
-    src:["CABYS Hacienda","CIIU 6920"], acts:[{label:"Buscar CABYS contabilidad",page:"cabys",q:"servicios contables auditoria contabilidad"}] },
-]
-
-function queryAssistant(q) {
-  const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
-  const low = norm(q)
-  let best = null, bestScore = 0
-  for (const entry of TAX_KB) {
-    const score = entry.kw.filter(k => low.includes(norm(k))).length
-    if (score > bestScore) { best = entry; bestScore = score }
-  }
-  if (!best || bestScore === 0) return {
-    a:"No encontré una respuesta específica en mi base de conocimientos tributarios. Te recomiendo:\n• Buscar el código exacto en **Asistente CABYS**\n• Consultar **hacienda.go.cr** para información oficial\n• Contactar a tu **contador o asesor tributario** para casos específicos",
-    src:[], acts:[{label:"Buscar CABYS",page:"cabys"}]
-  }
-  return { a: best.a, src: best.src, acts: best.acts || [] }
-}
-
 /* ─────────────────────────────────────────────
    COMPONENTS
 ───────────────────────────────────────────── */
@@ -585,7 +514,7 @@ const CopyIco = () => (
 )
 
 /* ─── CABYS result card (enriched) ─── */
-function CabysCard({ item, score, fl, flash, favs, onToggleFav, onSelect }) {
+function CabysCard({ item, score: _score, fl, flash, favs, onToggleFav, onSelect }) {
   const [catExp, setCatExp] = useState(false)
   const isFav = favs?.some(f => f.codigo === item.codigo)
   const idCode = `cc-${item.codigo}`, idDesc = `cd-${item.codigo}`, idBoth = `cb-${item.codigo}`
@@ -842,16 +771,13 @@ function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consul
     if (open) { setQ(""); setTimeout(() => inputRef.current?.focus(), 30) }
   }, [open])
 
-  const actions = [
-    { id:"cabys",         icon: IC.search,   label: "Asistente CABYS",         desc: "Buscá códigos por actividad o producto" },
-    { id:"contribuyente", icon: IC.user,     label: "Verificar Contribuyente",  desc: "Estado fiscal y actividades económicas" },
-    { id:"tipocambio",    icon: IC.currency, label: "Tipo de Cambio",           desc: "USD/CRC en tiempo real" },
-    { id:"factura",       icon: IC.receipt,  label: "Validar Factura",          desc: "Verificá si fue aceptada por Hacienda" },
-    { id:"exoneraciones", icon: IC.shield,   label: "Exoneraciones",            desc: "Verificá exoneraciones de impuestos" },
-  ]
-
   const isLikelyCedula = (s) => /^\d{9,11}$/.test(s.replace(/[-\s]/g,""))
   const isLikelyFe     = (s) => /^\d{30,50}$/.test(s.replace(/\s/g,""))
+
+  const searchCabys = useCallback((t) => {
+    navigate("cabys")
+    setTimeout(() => { setCabysQ(t); consultarCabysRef.current?.({ reset: true, q: t }) }, 50)
+  }, [navigate, setCabysQ, consultarCabysRef])
 
   const smartActions = useMemo(() => {
     const t = q.trim()
@@ -862,15 +788,23 @@ function CommandPalette({ open, onClose, activities, navigate, setCabysQ, consul
     } else if (isLikelyFe(t)) {
       results.push({ type:"smart", icon: IC.receipt, label: `Validar factura electrónica`, action: () => navigate("factura") })
     } else {
-      results.push({ type:"smart", icon: IC.search,  label: `Buscar CABYS: "${t}"`, action: () => { navigate("cabys"); setTimeout(() => { setCabysQ(t); consultarCabysRef.current?.({ reset:true, q:t }) }, 50) } })
+      // eslint-disable-next-line react-hooks/refs
+      results.push({ type:"smart", icon: IC.search,  label: `Buscar CABYS: "${t}"`, action: () => searchCabys(t) })
     }
     return results
-  }, [q])
+  }, [q, setAeId, navigate, consultarAE, searchCabys])
 
   const filteredActions = useMemo(() => {
-    if (!q.trim()) return actions
+    const all = [
+      { id:"cabys",         icon: IC.search,   label: "Asistente CABYS",         desc: "Buscá códigos por actividad o producto" },
+      { id:"contribuyente", icon: IC.user,     label: "Verificar Contribuyente",  desc: "Estado fiscal y actividades económicas" },
+      { id:"tipocambio",    icon: IC.currency, label: "Tipo de Cambio",           desc: "USD/CRC en tiempo real" },
+      { id:"factura",       icon: IC.receipt,  label: "Validar Factura",          desc: "Verificá si fue aceptada por Hacienda" },
+      { id:"exoneraciones", icon: IC.shield,   label: "Exoneraciones",            desc: "Verificá exoneraciones de impuestos" },
+    ]
+    if (!q.trim()) return all
     const low = q.toLowerCase()
-    return actions.filter(a => a.label.toLowerCase().includes(low) || a.desc.toLowerCase().includes(low))
+    return all.filter(a => a.label.toLowerCase().includes(low) || a.desc.toLowerCase().includes(low))
   }, [q])
 
   const recentItems = useMemo(() => {
@@ -1057,8 +991,6 @@ const NAV = [
   { id: "tipocambio",     icon: IC.currency,  label: "Tipo de Cambio" },
   { id: "factura",        icon: IC.receipt,   label: "Factura Electrónica" },
   { id: "exoneraciones",  icon: IC.shield,    label: "Exoneraciones" },
-  { id: "calculadora",    icon: IC.bolt,      label: "Calculadora IVA" },
-  { id: "asistente",      icon: IC.chat,      label: "Asistente IA" },
   { id: "acerca",         icon: IC.info,      label: "Acerca de" },
 ]
 const NAV_MAP = Object.fromEntries(NAV.map(n => [n.id, n]))
@@ -1066,7 +998,7 @@ const NAV_GROUPS = [
   { items: ["home", "cabys"] },
   { label: "Consultas",  items: ["contribuyente"] },
   { label: "Finanzas",   items: ["tipocambio", "factura"] },
-  { label: "Tributario", items: ["exoneraciones", "calculadora", "asistente"] },
+  { label: "Tributario", items: ["exoneraciones"] },
 ]
 
 /* ═════════════════════════════════════════════
@@ -1078,7 +1010,7 @@ export default function App() {
   const [sideCollapsed, setSideCollapsed] = useState(false)
   const [activities,    setActivities]    = useState(() => loadActs())
   const [searchQ,       setSearchQ]       = useState("")
-  const [searchFocus,   setSearchFocus]   = useState(false)
+  const [_searchFocus,  setSearchFocus]   = useState(false)
   const [cmdOpen,       setCmdOpen]       = useState(false)
   const [cabysF_avs,    setCabysF_avs]    = useState(() => loadFavs())
   const [cabysAeMatch,  setCabysAeMatch]  = useState(null)
@@ -1135,7 +1067,7 @@ export default function App() {
       setTimeout(() => { setCabysQ(q); setCabysPage(0); consultarCabysRef.current?.({ reset: true, q }) }, 50)
     }
     setHomeSearch("")
-  }, [homeSearch, homeSearchIntent])
+  }, [homeSearch, homeSearchIntent, consultarAE])
 
   /* ─── Navigate to CABYS with pre-filled query ─── */
   const navigateToCabys = useCallback((q) => {
@@ -1149,7 +1081,7 @@ export default function App() {
   const consultarCabysRef = useRef(null)
 
   /* ─── Search dropdown ─── */
-  const searchResults = useMemo(() => {
+  const _searchResults = useMemo(() => {
     const q = searchQ.trim().toLowerCase()
     if (!q) return NAV
     return NAV.filter(n => n.label.toLowerCase().includes(q) || n.id.includes(q))
@@ -1166,7 +1098,7 @@ export default function App() {
   /* ─── TIPO DE CAMBIO ─── */
   const [fx,        setFx]        = useState(null)
   const [fxLoading, setFxLoading] = useState(false)
-  const [fxError,   setFxError]   = useState("")
+  const [_fxError,  setFxError]   = useState("")
   const [fxEur,     setFxEur]     = useState(null)
 
   const fetchFx = useCallback(async () => {
@@ -1246,13 +1178,13 @@ export default function App() {
 
   /* ─── TC HISTÓRICO ─── */
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), [])
-  const [tcFecha,    setTcFecha]    = useState(todayStr)
-  const [tcData,     setTcData]     = useState(null)
-  const [tcLoading,  setTcLoading]  = useState(false)
-  const [tcError,    setTcError]    = useState("")
-  const [tcSearched, setTcSearched] = useState(false)
+  const [tcFecha,    _setTcFecha]   = useState(todayStr)
+  const [_tcData,    setTcData]     = useState(null)
+  const [_tcLoading, setTcLoading]  = useState(false)
+  const [_tcError,   setTcError]    = useState("")
+  const [_tcSearched,setTcSearched] = useState(false)
 
-  const consultarTc = async () => {
+  const _consultarTc = async () => {
     if (!tcFecha) return
     setTcLoading(true); setTcError(""); setTcSearched(true)
     try {
@@ -1274,14 +1206,14 @@ export default function App() {
 
   /* ─── CABYS ─── */
   const [cabysQ,        setCabysQ]        = useState("")
-  const [cabysTop,      setCabysTop]      = useState(12)
+  const [cabysTop,      _setCabysTop]     = useState(12)
   const [cabysData,     setCabysData]     = useState([])
   const [cabysLoading,  setCabysLoading]  = useState(false)
   const [cabysError,    setCabysError]    = useState("")
   const [cabysPage,     setCabysPage]     = useState(0)
   const [cabysLastTop,  setCabysLastTop]  = useState(0)
   const [cabysSearched, setCabysSearched] = useState(false)
-  const [cabysHist,     setCabysHist]     = useState(() => loadH("ht_cabys"))
+  const [_cabysHist,    setCabysHist]     = useState(() => loadH("ht_cabys"))
   const [cabysSort,     setCabysSort]     = useState({ col: null, dir: "asc" })
   const [cabysView,     setCabysView]     = useState("cards") // "cards" | "table"
   const [cabysNorm,     setCabysNorm]     = useState("")      // query normalizada (con tildes)
@@ -1368,13 +1300,13 @@ export default function App() {
   const [aeLoading,  setAeLoading]  = useState(false)
   const [aeError,    setAeError]    = useState("")
   const [aeSearched, setAeSearched] = useState(false)
-  const [aeHist,     setAeHist]     = useState(() => loadH("ht_ae"))
+  const [_aeHist,    setAeHist]     = useState(() => loadH("ht_ae"))
   const aeLastQ = useRef("")
 
   const aeDigits = useMemo(() => onlyDigits(aeId), [aeId])
   const aeValid  = useMemo(() => isValidAeId(aeId), [aeId])
 
-  const consultarAE = async (idOv) => {
+  const consultarAE = useCallback(async (idOv) => {
     const digits = idOv ? onlyDigits(idOv) : aeDigits
     if (!isValidAeId(digits)) return
     setAeLoading(true); setAeError(""); setAeSearched(true)
@@ -1389,7 +1321,7 @@ export default function App() {
       logActivity("contribuyente", digits)
     } catch (e) { setAeData(null); setAeError(e?.message || "Error consultando contribuyente") }
     finally { setAeLoading(false) }
-  }
+  }, [aeDigits, logActivity])
 
   const aeJsonId = useMemo(() => {
     const raw = aeData?.identificacion ?? aeData?.identificacionTributaria ?? aeData?.cedula ?? aeData?.id ?? ""
@@ -1416,7 +1348,7 @@ export default function App() {
   const [feNotFound, setFeNotFound] = useState(false)
   const [feLoading,  setFeLoading]  = useState(false)
   const [feError,    setFeError]    = useState("")
-  const [feSearched, setFeSearched] = useState(false)
+  const [_feSearched, setFeSearched] = useState(false)
   const [feXmlData,       setFeXmlData]       = useState(null)
   const [feXmlError,      setFeXmlError]      = useState("")
   const [feXmlDrag,       setFeXmlDrag]       = useState(false)
@@ -2282,9 +2214,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ══ CALCULADORA IVA ══ */}
-          {page === "calculadora" && <IvaCalculadoraPage />}
-
           {/* ══ CLIENTES ══ */}
           {page === "clientes" && (
             <ClientesPage
@@ -2295,94 +2224,14 @@ export default function App() {
             />
           )}
 
-          {/* ══ ASISTENTE IA ══ */}
-          {page === "asistente" && (
-            <TaxAssistantPage
-              navigate={navigate}
-              setCabysQ={setCabysQ}
-              consultarCabysRef={consultarCabysRef}
-            />
-          )}
-
           {/* ══ ACERCA DE ══ */}
           {page === "acerca" && <AcercaPage activities={activities} />}
 
         </main>
 
         <footer className="footerBar">
-          Datos: Ministerio de Hacienda · BCCR · TSE · Gometa
+          Datos: Ministerio de Hacienda · BCCR
         </footer>
-      </div>
-    </div>
-  )
-}
-
-/* ─── IvaCalculadoraPage ─── */
-function IvaCalculadoraPage() {
-  const TASAS = [13, 4, 2, 1]
-  const [tasa,  setTasa]  = useState(13)
-  const [modo,  setModo]  = useState("siniva") // "siniva" | "coniva"
-  const [monto, setMonto] = useState("")
-
-  const val = parseFloat(monto.replace(/,/g, ".")) || 0
-  const sinIva  = modo === "siniva" ? val : val / (1 + tasa / 100)
-  const ivaAmt  = sinIva * (tasa / 100)
-  const total   = sinIva + ivaAmt
-  const hasVal  = val > 0
-
-  const fmt = (n) => n.toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-
-  return (
-    <div className="pageWrap pageCentered calcWrap">
-      <div className="calcCard">
-        <div className="calcTitle">Calculadora IVA</div>
-        <div className="calcSub">Calculá el IVA según las tarifas vigentes en Costa Rica.</div>
-
-        <div className="calcRow">
-          <label className="calcLbl">{modo === "siniva" ? "Monto sin IVA (₡)" : "Monto con IVA incluido (₡)"}</label>
-          <input className="calcInput" type="number" min="0" step="0.01"
-            value={monto} placeholder="0.00"
-            onChange={e => setMonto(e.target.value)} />
-        </div>
-
-        <div className="calcLbl" style={{ marginBottom: 8 }}>Modo de entrada</div>
-        <div className="calcModoRow">
-          <button type="button" className={`calcModoBtn${modo === "siniva" ? " active" : ""}`}
-            onClick={() => setModo("siniva")}>Monto sin IVA</button>
-          <button type="button" className={`calcModoBtn${modo === "coniva" ? " active" : ""}`}
-            onClick={() => setModo("coniva")}>Monto con IVA</button>
-        </div>
-
-        <div className="calcLbl" style={{ marginBottom: 8 }}>Tarifa IVA</div>
-        <div className="calcTasaRow">
-          {TASAS.map(t => (
-            <button key={t} type="button" className={`calcTasaBtn${tasa === t ? " active" : ""}`}
-              onClick={() => setTasa(t)}>{t}%</button>
-          ))}
-        </div>
-
-        <hr className="calcDivider" />
-
-        <div className="calcResult">
-          {hasVal ? (
-            <>
-              <div className="calcResultRow">
-                <span className="calcResultLbl">Subtotal</span>
-                <span className="calcResultVal">₡{fmt(sinIva)}</span>
-              </div>
-              <div className="calcResultRow">
-                <span className="calcResultLbl">IVA ({tasa}%)</span>
-                <span className="calcResultVal calcIvaVal">+ ₡{fmt(ivaAmt)}</span>
-              </div>
-              <div className="calcResultRow calcResultTotal">
-                <span className="calcResultLbl">TOTAL</span>
-                <span className="calcResultVal">₡{fmt(total)}</span>
-              </div>
-            </>
-          ) : (
-            <div className="calcEmpty">Ingresá un monto para calcular.</div>
-          )}
-        </div>
       </div>
     </div>
   )
@@ -2395,7 +2244,7 @@ function loadClients() {
   try { return JSON.parse(localStorage.getItem(LS_CLIENTS) || "[]") } catch { return [] }
 }
 function saveClients(list) {
-  try { localStorage.setItem(LS_CLIENTS, JSON.stringify(list)) } catch {}
+  try { localStorage.setItem(LS_CLIENTS, JSON.stringify(list)) } catch (_e) { /* silencioso */ }
 }
 
 function ClientesPage({ navigate, setCabysQ, consultarCabysRef, setCabysPage }) {
@@ -2434,7 +2283,7 @@ function ClientesPage({ navigate, setCabysQ, consultarCabysRef, setCabysPage }) 
     persist(clients.filter(c => c.id !== id)); setSelected(null)
   }
 
-  const addFavToClient = (clientId, cabysItem) => {
+  const _addFavToClient = (clientId, cabysItem) => {
     persist(clients.map(c => {
       if (c.id !== clientId) return c
       const already = c.favsCabys.some(f => f.codigo === cabysItem.codigo)
@@ -2447,7 +2296,7 @@ function ClientesPage({ navigate, setCabysQ, consultarCabysRef, setCabysPage }) 
     persist(clients.map(c => c.id !== clientId ? c : { ...c, favsCabys: c.favsCabys.filter(f => f.codigo !== codigo) }))
   }
 
-  const addHistToClient = (clientId, q) => {
+  const _addHistToClient = (clientId, q) => {
     persist(clients.map(c => {
       if (c.id !== clientId) return c
       const hist = [q, ...(c.historial || []).filter(h => h !== q)].slice(0, 10)
@@ -2633,7 +2482,6 @@ function AcercaPage({ activities }) {
     { icon:IC.xml,      name:"Validación XML",            desc:"Análisis completo de archivos XML con detalle de líneas y CABYS" },
     { icon:IC.currency, name:"Tipo de Cambio",            desc:"USD y EUR en tiempo real con historial 30 días y conversor 3 divisas" },
     { icon:IC.shield,   name:"Exoneraciones",             desc:"Verificación de exoneraciones de impuestos registradas en Hacienda" },
-    { icon:IC.chat,     name:"Asistente Tributario",      desc:"Consultas sobre IVA, CABYS y normativa fiscal costarricense" },
     { icon:IC.star,     name:"Favoritos CABYS",           desc:"Guardado y acceso rápido a los códigos CABYS más usados" },
     { icon:IC.clock,    name:"Historial Inteligente",     desc:"Registro de consultas recientes para retomar cualquier búsqueda" },
   ]
@@ -3129,124 +2977,6 @@ function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloInconsist
   )
 }
 
-/* ─── TaxAssistantPage ─── */
-function TaxAssistantPage({ navigate, setCabysQ, consultarCabysRef }) {
-  const [msgs, setMsgs] = useState([
-    { role:"bot", text:"¡Hola! Soy el **Asistente Tributario** de HaciendaKit. Puedo ayudarte con preguntas sobre IVA, CABYS, factura electrónica, regímenes tributarios y más en Costa Rica.\n\n¿En qué te puedo ayudar hoy?", src:[], acts:[] }
-  ])
-  const [input, setInput] = useState("")
-  const [loading, setLoading] = useState(false)
-  const bottomRef = useRef(null)
-  const inputRef  = useRef(null)
-
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }) }, [msgs, loading])
-
-  const sendMsg = () => {
-    const q = input.trim(); if (!q || loading) return
-    setMsgs(prev => [...prev, { role:"user", text:q }])
-    setInput(""); setLoading(true)
-    setTimeout(() => {
-      const res = queryAssistant(q)
-      setMsgs(prev => [...prev, { role:"bot", text:res.a, src:res.src, acts:res.acts }])
-      setLoading(false)
-    }, 350 + Math.random() * 500)
-  }
-
-  const handleAct = (act) => {
-    if (act.page === "cabys" && act.q) {
-      navigate("cabys")
-      setTimeout(() => { setCabysQ(act.q); consultarCabysRef.current?.({ reset:true, q:act.q }) }, 60)
-    } else { navigate(act.page) }
-  }
-
-  const renderText = (text) => text.split("\n").map((line, i) => {
-    const parts = line.split(/\*\*(.*?)\*\*/g)
-    const rendered = parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p)
-    if (line.startsWith("•") || line.startsWith("-"))
-      return <div key={i} className="chatBullet">{rendered}</div>
-    if (/^[📌⚠️📝]/.test(line))
-      return <div key={i} className="chatNote">{rendered}</div>
-    return <div key={i} className={line ? "chatLine" : "chatLineBreak"}>{rendered.every(r => r === "") ? <>&nbsp;</> : rendered}</div>
-  })
-
-  const SUGGS = [
-    "¿Qué tarifas de IVA existen en Costa Rica?",
-    "¿Qué CABYS aplica para una barbería?",
-    "¿Cuándo debo emitir factura electrónica?",
-    "¿Qué actividad económica uso para un restaurante?",
-  ]
-
-  return (
-    <div className="chatWrap">
-      <div className="chatHeader">
-        <div className="chatHeaderIcon">{IC.bot}</div>
-        <div className="chatHeaderInfo">
-          <div className="chatHeaderTitle">Asistente Tributario IA</div>
-          <div className="chatHeaderSub">IVA · CABYS · Factura Electrónica · Regímenes · Actividades</div>
-        </div>
-        <span className="chatHeaderBadge">Beta</span>
-      </div>
-
-      <div className="chatBody">
-        {msgs.map((m, i) => (
-          <div key={i} className={`chatMsg chatMsg${m.role === "user" ? "User" : "Bot"}`}>
-            {m.role === "bot" && <div className="chatAvatar">{IC.bot}</div>}
-            <div className="chatBubble">
-              <div className="chatBubbleText">{renderText(m.text)}</div>
-              {m.src?.length > 0 && (
-                <div className="chatSources">
-                  <span className="chatSourcesLabel">Fuentes:</span>
-                  {m.src.map((s, j) => <span key={j} className="chatSourceChip">{s}</span>)}
-                </div>
-              )}
-              {m.acts?.length > 0 && (
-                <div className="chatActions">
-                  {m.acts.map((a, j) => (
-                    <button key={j} type="button" className="chatActionBtn" onClick={() => handleAct(a)}>
-                      {a.label} {IC.arrowRight}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-        {loading && (
-          <div className="chatMsg chatMsgBot">
-            <div className="chatAvatar">{IC.bot}</div>
-            <div className="chatBubble chatBubbleLoading"><span/><span/><span/></div>
-          </div>
-        )}
-        <div ref={bottomRef} />
-      </div>
-
-      {msgs.length === 1 && (
-        <div className="chatSuggs">
-          {SUGGS.map((s, i) => (
-            <button key={i} type="button" className="chatSuggChip"
-              onClick={() => { setInput(s); setTimeout(() => inputRef.current?.focus(), 10) }}>
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="chatInputWrap">
-        <input ref={inputRef} className="chatInput" value={input}
-          placeholder="Preguntá sobre IVA, CABYS, factura electrónica..."
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMsg() } }} />
-        <button type="button" className="chatSendBtn" onClick={sendMsg} disabled={!input.trim() || loading}>
-          {IC.send}
-        </button>
-      </div>
-      <div className="chatDisclaimer">
-        ⚠️ Base de conocimientos local. Para asesoría fiscal oficial consultá a un contador certificado o a Hacienda.
-      </div>
-    </div>
-  )
-}
-
 /* ─── CURRENCIES constant ─── */
 const CURRENCIES = [
   { id: "crc", flag: "🇨🇷", code: "CRC", name: "Colón costarricense", symbol: "₡" },
@@ -3402,7 +3132,7 @@ function TcSparkline({ data, loading }) {
   const pathD  = vals.map((v,i) => `${i===0?"M":"L"}${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(" ")
   const areaD  = `${pathD} L${sx(vals.length-1).toFixed(1)},${H} L${sx(0).toFixed(1)},${H} Z`
   const color  = isUp ? "#2563eb" : "#dc2626"
-  const colorA = isUp ? "#dbeafe" : "#fee2e2"
+  const _colorA = isUp ? "#dbeafe" : "#fee2e2"
   const fmtV = v => `₡${v.toLocaleString("es-CR",{ minimumFractionDigits:2, maximumFractionDigits:2 })}`
   return (
     <div className="sparkCard">

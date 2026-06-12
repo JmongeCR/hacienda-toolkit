@@ -1,14 +1,14 @@
-# HaciendaKit — Guía de desarrollo
+# HaciendaKit V2 — Guía de desarrollo
 
 ## Resumen del proyecto
 
-HaciendaKit es una SPA de herramientas tributarias para Costa Rica. Consume APIs públicas de Hacienda, TSE, GoMeta y BCCR. No tiene backend propio: las llamadas a APIs externas se proxean a través de Vercel Rewrites para evitar CORS.
+HaciendaKit V2 es una herramienta especializada en revisión y validación de comprobantes electrónicos XML de Costa Rica. Consume APIs públicas de Hacienda y BCCR. No tiene backend propio: las llamadas a APIs externas se proxean a través de Vercel Rewrites para evitar CORS.
 
 **Stack:** React 19 + Vite 7 · Sin TypeScript · Sin router externo · Sin estado global (todo en `useState` local o `localStorage`)
 
-**Deploy:** Vercel — `main` → producción automática en `hacienda-toolkit.vercel.app`
+**Deploy:** Vercel — `main` → producción automática
 
-**Arquitectura:** archivo único `src/App.jsx` (~3530 líneas) + `src/App.css` (~2000 líneas). No hay componentes en archivos separados.
+**Arquitectura:** archivo único `src/App.jsx` + `src/App.css`. No hay componentes en archivos separados.
 
 ---
 
@@ -22,8 +22,6 @@ src/
 docs/
   funcionalidades/ # Documentación por módulo
   reglas-negocio/  # Reglas implementadas en código
-  roadmap/         # Decisiones y pendientes
-  auditorias/      # Registros de auditorías de código
 vercel.json        # Proxy rewrites (NO modificar sin análisis de impacto)
 ```
 
@@ -34,10 +32,13 @@ vercel.json        # Proxy rewrites (NO modificar sin análisis de impacto)
 | Ruta local | Destino real |
 |------------|-------------|
 | `/hacienda/*` | `https://api.hacienda.go.cr/*` |
-| `/gometa/*` | `https://apis.gometa.org/*` |
 | `/bccr/*` | `https://gee.bccr.fi.cr/*` |
 
-**Regla crítica:** nunca llamar directamente a estas URLs desde el browser. Siempre usar los paths `/hacienda/`, `/gometa/`, `/bccr/`.
+**Regla crítica:** nunca llamar directamente a estas URLs desde el browser. Siempre usar los paths `/hacienda/` y `/bccr/`.
+
+**Dependencias externas permitidas:**
+- `api.hacienda.go.cr` — CABYS, Contribuyentes, Facturas, Exoneraciones, Tipo de Cambio
+- `gee.bccr.fi.cr` — Tipo de cambio histórico USD/CRC
 
 ---
 
@@ -48,13 +49,10 @@ vercel.json        # Proxy rewrites (NO modificar sin análisis de impacto)
 | `home` | Inline en App | ✅ Activo |
 | `cabys` | Inline en App | ✅ Activo |
 | `contribuyente` | `FichaContribuyente` | ✅ Activo |
-| `cedulas` | Inline en App | ✅ Activo |
 | `tipocambio` | `ConversorWise` + `TcSparkline` | ✅ Activo |
 | `factura` | `XmlFacturaResult` + validación CABYS | ✅ Activo |
 | `exoneraciones` | Inline en App | ✅ Activo |
-| `calculadora` | `IvaCalculadoraPage` | ✅ Activo |
 | `clientes` | `ClientesPage` | ✅ Activo (solo localStorage) |
-| `asistente` | `TaxAssistantPage` | ✅ Activo (KB local, sin IA externa) |
 | `acerca` | `AcercaPage` | ✅ Activo |
 
 ---
@@ -89,10 +87,6 @@ vercel.json        # Proxy rewrites (NO modificar sin análisis de impacto)
 - Conversor multi-moneda (CRC/USD/EUR)
 - Sparkline de 30 días
 
-### Asistente Tributario
-- Base de conocimientos local (`TAX_KB` array), sin llamadas a IA externa
-- 12 temas cubiertos: IVA, regímenes, renta, exoneraciones, por sector
-
 ---
 
 ## Funciones globales críticas
@@ -126,7 +120,7 @@ soloInconsistencias // boolean — filtro de filas en visor XML
 4. **No activar validación Artículo/Servicio como error** — auditado en junio 2025, genera falsos positivos. Solo como aviso informativo.
 5. **No usar `var(--card)`** — esa variable CSS no está definida. Usar `var(--surface)`.
 6. **`CopyIco` es un componente global** (definido antes de `CabysCard`). No redefinirlo localmente.
-7. **Constantes de unidades de servicio XML** están duplicadas (`XML_SVC_UNITS` / `BANNER_SVC_UNITS`). Pendiente unificar en constante global.
+7. **Dependencias externas permitidas únicamente:** `api.hacienda.go.cr` y `gee.bccr.fi.cr`. No agregar nuevas fuentes de datos sin aprobación.
 
 ---
 
@@ -149,8 +143,7 @@ soloInconsistencias // boolean — filtro de filas en visor XML
 |------|-------------|--------|
 | `XML_SVC_UNITS` duplicado | Definida dos veces en `XmlFacturaResult` con nombres distintos | Bajo — inconsistencia de mantenimiento |
 | `soloInconsistencias` no se resetea | Al cargar un nuevo XML el filtro puede quedar activo | Bajo — UX confusa |
-| Archivo monolítico | `App.jsx` ~3530 líneas, difícil navegar | Medio |
-| `TAX_KB` hardcodeado | El asistente tributario no aprende ni se actualiza | Medio |
+| Archivo monolítico | `App.jsx`, difícil navegar | Medio |
 | Sin tests | Ninguna cobertura automatizada | Alto a largo plazo |
 
 ---

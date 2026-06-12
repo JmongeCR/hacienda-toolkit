@@ -4,15 +4,16 @@
 
 ## Arquitectura de llamadas a API
 
-**Regla:** nunca llamar directamente a las URLs de Hacienda/BCCR/GoMeta desde el browser. Siempre usar los proxies de Vercel.
+**Regla:** nunca llamar directamente a las URLs de Hacienda/BCCR desde el browser. Siempre usar los proxies de Vercel.
 
 | Servicio | URL directa (no usar) | Proxy Vercel (usar) |
 |----------|----------------------|---------------------|
 | Hacienda | `https://api.hacienda.go.cr/...` | `/hacienda/...` |
-| GoMeta | `https://apis.gometa.org/...` | `/gometa/...` |
 | BCCR | `https://gee.bccr.fi.cr/...` | `/bccr/...` |
 
 **Motivo:** CORS. Las APIs externas no permiten requests directos desde browsers.
+
+**Dependencias externas permitidas únicamente:** `api.hacienda.go.cr` y `gee.bccr.fi.cr`.
 
 ---
 
@@ -40,14 +41,6 @@ GET /hacienda/fe/FacturaElectronica?clave={50digitos}
 GET /hacienda/fe/exoneraciones?tipo={01-04}&numDocumento={numero}
 → Consultar exoneraciones
 → Retorna Array<exoneracion>
-```
-
-### GoMeta (`/gometa/`)
-
-```
-GET /gometa/cedulas?q={texto}&type=&size=10
-→ Buscar en registro TSE
-→ Retorna { results: Array<{ cedula, fullname, guess_type }> }
 ```
 
 ### BCCR (`/bccr/`)
