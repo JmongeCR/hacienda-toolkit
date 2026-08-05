@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contacto — Imprenta McBee · San José</title>
+<meta name="description" content="Encuéntrenos en Barrio Simón Bolívar, San José, San José. Tel: 2101-2175 | WhatsApp: 8887-1415 | artetico506@gmail.com">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:   #1E3A8A;
+  --navy-d: #1E40AF;
+  --navy-l: #DBEAFE;
+  --ink:    #0F172A;
+  --body:   #334155;
+  --muted:  #64748B;
+  --border: #E2E8F0;
+  --bg:     #F8FAFC;
+  --white:  #FFFFFF;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--white); color: var(--body); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+a { text-decoration: none; color: inherit; }
+
+.topbar { background: var(--ink); padding: .45rem 2rem; }
+.topbar-in { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.tb-left { display: flex; gap: 1.5rem; }
+.tb-item { display: flex; align-items: center; gap: .35rem; font-size: .75rem; color: rgba(255,255,255,.55); }
+.tb-item a { color: rgba(255,255,255,.55); transition: color .15s; } .tb-item a:hover { color: #fff; }
+.tb-right { display: flex; gap: .4rem; }
+.tb-social { width: 24px; height: 24px; border-radius: 5px; background: rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.45); transition: background .15s, color .15s; }
+.tb-social:hover { background: rgba(255,255,255,.15); color: #fff; }
+
+nav { background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 300; }
+.nav-in { max-width: 1200px; margin: 0 auto; padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 2rem; }
+.brand { font-size: .95rem; font-weight: 800; color: var(--ink); letter-spacing: -.02em; display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+.brand-mark { width: 28px; height: 28px; background: var(--navy); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.nav-links { display: flex; gap: 0; list-style: none; }
+.nav-links a { font-size: .84rem; font-weight: 500; color: var(--muted); padding: .4rem .85rem; border-radius: 6px; transition: color .15s, background .15s; }
+.nav-links a:hover { color: var(--ink); background: var(--bg); }
+.nav-links a.active { color: var(--navy); font-weight: 700; }
+.nav-right { display: flex; align-items: center; gap: .6rem; }
+.btn-nav { font-size: .82rem; font-weight: 700; padding: .42rem 1rem; border-radius: 6px; border: 1.5px solid var(--border); color: var(--body); transition: border-color .15s, color .15s; }
+.btn-nav:hover { border-color: var(--muted); color: var(--ink); }
+.btn-wa-nav { display: flex; align-items: center; gap: .4rem; font-size: .82rem; font-weight: 700; padding: .42rem 1rem; border-radius: 6px; background: #25D366; color: #fff; transition: opacity .15s; }
+.btn-wa-nav:hover { opacity: .88; }
+@media (max-width: 640px) { .nav-links { display: none; } .btn-nav { display: none; } }
+
+.page-hd { background: var(--navy); padding: 4rem 2rem 3.5rem; }
+.page-hd-in { max-width: 1200px; margin: 0 auto; }
+.breadcrumb { font-size: .75rem; color: rgba(255,255,255,.4); margin-bottom: 1rem; display: flex; gap: .5rem; align-items: center; }
+.breadcrumb a { color: rgba(255,255,255,.4); transition: color .15s; } .breadcrumb a:hover { color: rgba(255,255,255,.7); }
+.page-hd h1 { font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 900; letter-spacing: -.035em; color: #fff; line-height: 1.1; margin-bottom: .6rem; }
+.page-hd p { font-size: .95rem; color: rgba(255,255,255,.55); max-width: 480px; line-height: 1.75; }
+
+/* CONTACT LAYOUT */
+.contact-sec { padding: 4rem 2rem; }
+.contact-in { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 380px 1fr; gap: 3rem; align-items: start; }
+
+/* INFO CARDS */
+.info-stack { display: flex; flex-direction: column; gap: .75rem; }
+.info-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem 1.3rem; display: grid; grid-template-columns: 38px 1fr; gap: .85rem; align-items: start; }
+.ic-icon { width: 38px; height: 38px; border-radius: 8px; background: var(--navy-l); display: flex; align-items: center; justify-content: center; color: var(--navy); flex-shrink: 0; }
+.ic-label { font-size: .65rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: .2rem; }
+.ic-val { font-size: .9rem; font-weight: 700; color: var(--ink); line-height: 1.55; }
+.ic-val a { color: var(--ink); transition: color .15s; } .ic-val a:hover { color: var(--navy); }
+.ic-sub { font-size: .78rem; color: var(--muted); margin-top: .1rem; }
+
+/* HOURS TABLE */
+.hours-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.hours-head { padding: .9rem 1.3rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .5rem; }
+.hours-head span { font-size: .65rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+table.hours { width: 100%; border-collapse: collapse; }
+table.hours tr { border-bottom: 1px solid var(--border); }
+table.hours tr:last-child { border-bottom: none; }
+table.hours td { font-size: .83rem; padding: .65rem 1.3rem; }
+table.hours td:first-child { color: var(--body); }
+table.hours td:last-child { font-weight: 700; color: var(--ink); text-align: right; }
+table.hours tr.closed td { color: var(--muted); }
+table.hours tr.closed td:last-child { color: var(--muted); font-weight: 500; }
+
+/* MAP */
+.map-wrap { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+.map-wrap iframe { display: block; width: 100%; height: 400px; border: none; }
+.map-footer { background: var(--white); border-top: 1px solid var(--border); padding: .9rem 1.2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .8rem; }
+.map-addr { font-size: .85rem; color: var(--body); }
+.map-addr strong { display: block; color: var(--ink); font-weight: 700; }
+.btn-dir { display: inline-flex; align-items: center; gap: .35rem; background: var(--navy); color: #fff; font-size: .8rem; font-weight: 700; padding: .5rem 1rem; border-radius: 6px; transition: opacity .15s; }
+.btn-dir:hover { opacity: .88; }
+
+@media (max-width: 860px) { .contact-in { grid-template-columns: 1fr; } }
+
+/* CHANNELS */
+.channels-sec { background: var(--bg); border-top: 1px solid var(--border); padding: 4rem 2rem; }
+.channels-in { max-width: 1200px; margin: 0 auto; }
+.channels-title { font-size: clamp(1.3rem, 2vw, 1.7rem); font-weight: 800; color: var(--ink); letter-spacing: -.025em; margin-bottom: 1.5rem; }
+.channels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.channel { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 1.6rem; transition: box-shadow .2s, transform .2s; }
+.channel:hover { box-shadow: 0 4px 18px rgba(30,58,138,.09); transform: translateY(-2px); }
+.ch-icon { width: 42px; height: 42px; border-radius: 9px; display: flex; align-items: center; justify-content: center; margin-bottom: .9rem; }
+.ch-icon.wa { background: #E8F9EF; color: #25D366; }
+.ch-icon.ph { background: var(--navy-l); color: var(--navy); }
+.ch-icon.em { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+.channel h3 { font-size: .92rem; font-weight: 800; color: var(--ink); margin-bottom: .3rem; }
+.channel p { font-size: .8rem; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
+.ch-btn { display: inline-flex; align-items: center; gap: .35rem; font-size: .8rem; font-weight: 700; padding: .48rem .95rem; border-radius: 6px; transition: opacity .15s; }
+.ch-btn.wa { background: #25D366; color: #fff; }
+.ch-btn.wa:hover { opacity: .9; }
+.ch-btn.outline { border: 1.5px solid var(--border); color: var(--body); }
+.ch-btn.outline:hover { border-color: var(--muted); color: var(--ink); }
+@media (max-width: 620px) { .channels { grid-template-columns: 1fr; } }
+
+footer { background: var(--ink); padding: 3rem 2rem 2rem; }
+.ft-in { max-width: 1200px; margin: 0 auto; }
+.ft-top { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 2.5rem; }
+.ft-brand { font-size: .95rem; font-weight: 800; color: #fff; margin-bottom: .3rem; display: flex; align-items: center; gap: .45rem; }
+.ft-brand-mark { width: 22px; height: 22px; background: var(--navy); border-radius: 5px; display: flex; align-items: center; justify-content: center; }
+.ft-tagline { font-size: .78rem; color: rgba(255,255,255,.35); line-height: 1.5; }
+.ft-col h5 { font-size: .65rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.25); margin-bottom: .8rem; }
+.ft-links { display: flex; flex-direction: column; gap: .3rem; }
+.ft-links a { font-size: .82rem; color: rgba(255,255,255,.45); transition: color .15s; } .ft-links a:hover { color: #fff; }
+.ft-bottom { border-top: 1px solid rgba(255,255,255,.07); padding-top: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; font-size: .74rem; color: rgba(255,255,255,.25); }
+.ft-socials { display: flex; gap: .4rem; }
+.ft-soc { width: 30px; height: 30px; border-radius: 6px; background: rgba(255,255,255,.06); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.35); transition: background .15s, color .15s; }
+.ft-soc:hover { background: rgba(255,255,255,.12); color: #fff; }
+@media (max-width: 720px) { .ft-top { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .ft-top { grid-template-columns: 1fr; } }
+
+.wa-fab { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 500; width: 52px; height: 52px; border-radius: 50%; background: #25D366; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 18px rgba(37,211,102,.45); transition: transform .2s; }
+.wa-fab:hover { transform: scale(1.08); }
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="topbar-in">
+  <div class="tb-left">
+    <div class="tb-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.9 11.71a19.79 19.79 0 01-3.07-8.67A2 2 0 012.81 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.09 8.6a16 16 0 006 6l.96-.96a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg><a href="tel:21012175">2101-2175</a> &nbsp;·&nbsp; <a href="https://wa.me/50688871415">8887-1415</a></div>
+    <div class="tb-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><a href="mailto:artetico506@gmail.com">artetico506@gmail.com</a></div>
+  </div>
+  <div class="tb-right">
+    <a href="https://www.facebook.com/mcbeesrl/" target="_blank" rel="noopener" class="tb-social"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
+    <a href="https://wa.me/50688871415" target="_blank" rel="noopener" class="tb-social"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></a>
+  </div>
+</div></div>
+
+<nav><div class="nav-in">
+  <a href="index.html" class="brand"><img src="logo.png" alt="McBee" style="height:36px;width:auto;">Imprenta McBee</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Inicio</a></li>
+    <li><a href="servicios.html">Servicios</a></li>
+    <li><a href="contacto.html" class="active">Contacto</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="contacto.html" class="btn-nav">Cómo llegar</a>
+    <a href="https://wa.me/50688871415?text=Hola%2C%20me%20gustar%C3%ADa%20cotizar." target="_blank" rel="noopener" class="btn-wa-nav"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>Cotizar</a>
+  </div>
+</div></nav>
+
+<div class="page-hd"><div class="page-hd-in">
+  <div class="breadcrumb"><a href="index.html">Inicio</a><span>/</span><span>Contacto</span></div>
+  <h1>Encuéntrenos</h1>
+  <p>Más de 50 años en San José. Visítenos o escríbanos por WhatsApp.</p>
+</div></div>
+
+<section class="contact-sec"><div class="contact-in">
+  <!-- INFO -->
+  <div class="info-stack">
+    <div class="info-card">
+      <div class="ic-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+      <div>
+        <div class="ic-label">Dirección</div>
+        <div class="ic-val">Barrio Simón Bolívar, San José</div>
+        <div class="ic-sub">San José, Costa Rica</div>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.9 11.71a19.79 19.79 0 01-3.07-8.67A2 2 0 012.81 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.09 8.6a16 16 0 006 6l.96-.96a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+      <div>
+        <div class="ic-label">Teléfonos</div>
+        <div class="ic-val"><a href="tel:21012175">2101-2175</a><br><a href="https://wa.me/50688871415">8887-1415</a> <span style="font-size:.75rem;color:var(--muted);font-weight:500">(WhatsApp)</span></div>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="ic-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+      <div>
+        <div class="ic-label">Correo electrónico</div>
+        <div class="ic-val"><a href="mailto:artetico506@gmail.com">artetico506@gmail.com</a></div>
+      </div>
+    </div>
+    <div class="hours-card">
+      <div class="hours-head">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Horario de atención</span>
+      </div>
+      <table class="hours">
+        <tr><td>Lunes – Viernes</td><td>8:00 a.m. – 6:00 p.m.</td></tr>
+        <tr><td>Sábado</td><td>8:00 a.m. – 5:00 p.m.</td></tr>
+        <tr class="closed"><td>Domingo</td><td>Cerrado</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-wrap">
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3930.0642441527084!2d-84.0770275!3d9.9286078!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8fa0e367ab2c655b%3A0x1812d526d36861b1!2sImprenta%20McBee!5e0!3m2!1ses-419!2scr!4v1785902882139!5m2!1ses-419!2scr"
+      width="600" height="450"
+      allowfullscreen=""
+      loading="lazy"
+      referrerpolicy="strict-origin-when-cross-origin"
+      title="Imprenta McBee en Google Maps">
+    </iframe>
+    <div class="map-footer">
+      <div class="map-addr">
+        <strong>Imprenta McBee</strong>
+        Barrio Simón Bolívar, San José, San José
+      </div>
+      <a href="https://maps.google.com/?q=San+Jose+Costa+Rica" target="_blank" rel="noopener" class="btn-dir">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        Abrir en Maps
+      </a>
+    </div>
+  </div>
+</div></section>
+
+<!-- CHANNELS -->
+<div class="channels-sec"><div class="channels-in">
+  <h2 class="channels-title">Contáctenos como prefiera</h2>
+  <div class="channels">
+    <div class="channel">
+      <div class="ch-icon wa"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></div>
+      <h3>WhatsApp</h3>
+      <p>La forma más rápida. Adjunte su diseño directamente y le respondemos en el día.</p>
+      <a href="https://wa.me/50688871415?text=Hola%2C%20me%20gustar%C3%ADa%20cotizar." target="_blank" rel="noopener" class="ch-btn wa">Escribir al 8887-1415</a>
+    </div>
+    <div class="channel">
+      <div class="ch-icon ph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.9 11.71a19.79 19.79 0 01-3.07-8.67A2 2 0 012.81 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.09 8.6a16 16 0 006 6l.96-.96a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></div>
+      <h3>Teléfono fijo</h3>
+      <p>Lun–Vie de 8 am a 6 pm, sábados hasta las 5 pm.</p>
+      <a href="tel:21012175" class="ch-btn outline">Llamar al 2101-2175</a>
+    </div>
+    <div class="channel">
+      <div class="ch-icon em"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+      <h3>Correo electrónico</h3>
+      <p>Para pedidos con archivos adjuntos o consultas detalladas.</p>
+      <a href="mailto:artetico506@gmail.com" class="ch-btn outline">artetico506@gmail.com</a>
+    </div>
+  </div>
+</div></div>
+
+<footer><div class="ft-in">
+  <div class="ft-top">
+    <div><div class="ft-brand"><img src="logo.png" alt="McBee" style="height:28px;width:auto;">Imprenta McBee</div><div class="ft-tagline">Más de 50 años en el mercado<br>San José, Costa Rica</div></div>
+    <div class="ft-col"><h5>Servicios</h5><div class="ft-links"><a href="servicios.html">Sublimación</a><a href="servicios.html">Litografía</a><a href="servicios.html">Banners</a><a href="servicios.html">Stickers</a><a href="servicios.html">Vinil exterior</a></div></div>
+    <div class="ft-col"><h5>Contacto</h5><div class="ft-links"><a href="tel:21012175">2101-2175</a><a href="https://wa.me/50688871415">8887-1415 WA</a><a href="mailto:artetico506@gmail.com">artetico506@gmail.com</a></div></div>
+    <div class="ft-col"><h5>Ubicación</h5><div class="ft-links"><a href="contacto.html">Simón Bolívar, San José</a><a href="contacto.html">San José, Costa Rica</a></div></div>
+  </div>
+  <div class="ft-bottom"><span>© 2025 Imprenta McBee · Todos los derechos reservados</span><div class="ft-socials"><a href="https://www.facebook.com/mcbeesrl/" target="_blank" rel="noopener" class="ft-soc"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a><a href="https://wa.me/50688871415" target="_blank" rel="noopener" class="ft-soc"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></a></div></div>
+</div></footer>
+
+<a href="https://wa.me/50688871415" class="wa-fab" aria-label="WhatsApp" target="_blank" rel="noopener"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></a>
+</body>
+</html>
