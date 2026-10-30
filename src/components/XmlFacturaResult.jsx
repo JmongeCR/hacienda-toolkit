@@ -353,35 +353,18 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
           )
         })()}
 
-        {/* ── Totales ── */}
-        <div className="xmlTotals">
-          {data.resumen.totalVenta && parseFloat(data.resumen.totalVenta) > 0 &&
-            <div className="xmlTotalRow"><span>Subtotal</span><span className="mono">{fmtM(data.resumen.totalVenta)}</span></div>}
-          {data.resumen.totalDesc && parseFloat(data.resumen.totalDesc) > 0 &&
-            <div className="xmlTotalRow"><span>Descuentos</span><span className="mono xmlTotalDisc">− {fmtM(data.resumen.totalDesc)}</span></div>}
-          {/* Desglose gravado / exento / exonerado */}
-          {data.resumen.totalGravado && parseFloat(data.resumen.totalGravado) > 0 &&
-            <div className="xmlTotalRow xmlTotalSub"><span>Base gravada</span><span className="mono">{fmtM(data.resumen.totalGravado)}</span></div>}
-          {data.resumen.totalExento && parseFloat(data.resumen.totalExento) > 0 &&
-            <div className="xmlTotalRow xmlTotalSub"><span>Exento</span><span className="mono">{fmtM(data.resumen.totalExento)}</span></div>}
-          {data.resumen.totalExonerado && parseFloat(data.resumen.totalExonerado) > 0 &&
-            <div className="xmlTotalRow xmlTotalSub"><span>Exonerado</span><span className="mono">{fmtM(data.resumen.totalExonerado)}</span></div>}
-          {data.resumen.totalImpuesto && parseFloat(data.resumen.totalImpuesto) > 0 &&
-            <div className="xmlTotalRow"><span>IVA</span><span className="mono">{fmtM(data.resumen.totalImpuesto)}</span></div>}
-          {data.resumen.total && (
-            <div className="xmlTotalRow xmlTotalFinal">
-              <span>TOTAL</span>
-              <span className="mono">{fmtM(data.resumen.total)}</span>
-            </div>
-          )}
+        {/* ── Totales + Medios de pago ── */}
+        <div className="xmlPrintBottom">
+          {/* Medios de pago con monto — visible solo en print cuando hay montos */}
           {data.medioPago && data.medioPago.some(mp => (typeof mp === "object" ? mp.monto : null)) && (
-            <div className="xmlTotalMpSection">
+            <div className="xmlPrintMpBlock">
+              <div className="xmlPrintMpTitle">Medio(s) de pago</div>
               {data.medioPago.map((mp, i) => {
                 const codigo = typeof mp === "object" ? mp.codigo : mp
                 const monto  = typeof mp === "object" ? mp.monto  : null
                 if (!monto) return null
                 return (
-                  <div key={i} className="xmlTotalRow xmlTotalMpRow">
+                  <div key={i} className="xmlPrintMpRow">
                     <span>{mpLabel(codigo)}</span>
                     <span className="mono">{fmtM(monto)}</span>
                   </div>
@@ -389,8 +372,52 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
               })}
             </div>
           )}
+          <div className="xmlTotals">
+            {data.resumen.totalVenta && parseFloat(data.resumen.totalVenta) > 0 &&
+              <div className="xmlTotalRow"><span>Subtotal</span><span className="mono">{fmtM(data.resumen.totalVenta)}</span></div>}
+            {data.resumen.totalDesc && parseFloat(data.resumen.totalDesc) > 0 &&
+              <div className="xmlTotalRow"><span>Descuentos</span><span className="mono xmlTotalDisc">− {fmtM(data.resumen.totalDesc)}</span></div>}
+            {data.resumen.totalGravado && parseFloat(data.resumen.totalGravado) > 0 &&
+              <div className="xmlTotalRow xmlTotalSub"><span>Base gravada</span><span className="mono">{fmtM(data.resumen.totalGravado)}</span></div>}
+            {data.resumen.totalExento && parseFloat(data.resumen.totalExento) > 0 &&
+              <div className="xmlTotalRow xmlTotalSub"><span>Exento</span><span className="mono">{fmtM(data.resumen.totalExento)}</span></div>}
+            {data.resumen.totalExonerado && parseFloat(data.resumen.totalExonerado) > 0 &&
+              <div className="xmlTotalRow xmlTotalSub"><span>Exonerado</span><span className="mono">{fmtM(data.resumen.totalExonerado)}</span></div>}
+            {data.resumen.totalImpuesto && parseFloat(data.resumen.totalImpuesto) > 0 &&
+              <div className="xmlTotalRow"><span>IVA</span><span className="mono">{fmtM(data.resumen.totalImpuesto)}</span></div>}
+            {data.resumen.total && (
+              <div className="xmlTotalRow xmlTotalFinal">
+                <span>TOTAL</span>
+                <span className="mono">{fmtM(data.resumen.total)}</span>
+              </div>
+            )}
+            {/* Desglose por medio de pago — visible en pantalla, oculto en print (está en xmlPrintMpBlock) */}
+            {data.medioPago && data.medioPago.some(mp => (typeof mp === "object" ? mp.monto : null)) && (
+              <div className="xmlTotalMpSection">
+                {data.medioPago.map((mp, i) => {
+                  const codigo = typeof mp === "object" ? mp.codigo : mp
+                  const monto  = typeof mp === "object" ? mp.monto  : null
+                  if (!monto) return null
+                  return (
+                    <div key={i} className="xmlTotalRow xmlTotalMpRow">
+                      <span>{mpLabel(codigo)}</span>
+                      <span className="mono">{fmtM(monto)}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* ── Footer de impresión: clave numérica ── */}
+      {data.clave && (
+        <div className="xmlPrintFooter">
+          <span className="xmlPrintFooterLbl">Clave numérica</span>
+          <span className="xmlPrintFooterVal mono">{data.clave}</span>
+        </div>
+      )}
 
       {/* ── Acciones ── */}
       <div className="xmlActions">
