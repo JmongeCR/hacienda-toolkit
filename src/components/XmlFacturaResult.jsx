@@ -140,9 +140,16 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
             <div className="xmlMetaItem">
               <span>Medio de pago</span>
               <div className="xmlMpList">
-                {data.medioPago.map((mp, i) => (
-                  <span key={i} className="xmlMpTag">{mpLabel(mp)}</span>
-                ))}
+                {data.medioPago.map((mp, i) => {
+                  const codigo = typeof mp === "object" ? mp.codigo : mp
+                  const monto  = typeof mp === "object" ? mp.monto  : null
+                  return (
+                    <span key={i} className="xmlMpTag">
+                      {mpLabel(codigo)}
+                      {monto && <span className="xmlMpMonto">{fmtM(monto)}</span>}
+                    </span>
+                  )
+                })}
               </div>
             </div>
           )}

@@ -47,11 +47,11 @@ export function parseXmlFe(xmlStr) {
     correo:   get("Receptor > CorreoElectronico"),
   }
   const medioPago = [...doc.querySelectorAll("MedioPago")].map(n => {
-    // Formato anidado: <MedioPago><TipoMedioPago>01</TipoMedioPago>...</MedioPago>
     const tipo = n.querySelector("TipoMedioPago")?.textContent?.trim()
-    // Formato plano: <MedioPago>04</MedioPago>
-    return tipo || n.textContent.trim()
-  }).filter(Boolean)
+    const monto = n.querySelector("TotalMedioPago")?.textContent?.trim()
+    const codigo = tipo || n.textContent.trim()
+    return { codigo, monto: monto || null }
+  }).filter(e => e.codigo)
   const plazoCredito = get("PlazoCredito")
   // Schema v4.4: CodigoTipoMoneda > CodigoMoneda; versiones anteriores usan Codigo
   const moneda     = get("CodigoTipoMoneda > CodigoMoneda") || get("CodigoTipoMoneda > Codigo") || get("CodigoMoneda") || "CRC"
