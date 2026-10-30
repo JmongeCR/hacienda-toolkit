@@ -409,15 +409,16 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
             )}
           </div>
         </div>
-      </div>
 
-      {/* ── Footer de impresión: clave numérica ── */}
-      {data.clave && (
-        <div className="xmlPrintFooter">
-          <span className="xmlPrintFooterLbl">Clave numérica</span>
-          <span className="xmlPrintFooterVal mono">{data.clave}</span>
-        </div>
-      )}
+        {/* ── Footer de impresión: clave numérica ── */}
+        {data.clave && (
+          <div className="xmlPrintFooter">
+            <span className="xmlPrintFooterLbl">Clave numérica</span>
+            <span className="xmlPrintFooterVal mono">{data.clave}</span>
+          </div>
+        )}
+
+      </div>
 
       {/* ── Acciones ── */}
       <div className="xmlActions">
