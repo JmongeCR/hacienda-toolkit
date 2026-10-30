@@ -2437,37 +2437,51 @@ tr:hover td { background: var(--slate-50) }
 .calcFThNum   { text-align: right; white-space: nowrap; }
 .calcFThTar   { min-width: 90px; }
 .calcFThAct   { width: 32px; }
-.calcFInput   { border: 1px solid transparent; border-radius: 6px; padding: 5px 8px; background: transparent; color: var(--fg); font-size: 13px; width: 100%; }
-.calcFInput:hover, .calcFInput:focus { border-color: var(--border); outline: none; background: var(--white); }
-.calcFInputDesc { min-width: 180px; }
-.calcFInputNum  { text-align: right; max-width: 100px; }
-.calcFTarifaSel { border: 1px solid transparent; border-radius: 6px; padding: 5px 6px; background: transparent; color: var(--fg); font-size: 13px; width: 100%; }
-.calcFTarifaSel:hover, .calcFTarifaSel:focus { border-color: var(--border); outline: none; background: var(--white); }
+.calcFInput   { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; background: var(--white); color: var(--fg); font-size: 13px; width: 100%; transition: border-color .12s, box-shadow .12s; }
+.calcFInput:focus { border-color: var(--blue-400, #60a5fa); outline: none; box-shadow: 0 0 0 3px rgba(96,165,250,.15); }
+.calcFInputNombre { min-width: 200px; }
+.calcFInputNum  { text-align: right; max-width: 90px; }
+.calcFTarifaSel { border: 1px solid var(--border); border-radius: 6px; padding: 6px 6px; background: var(--white); color: var(--fg); font-size: 13px; width: 100%; }
+.calcFTarifaSel:focus { border-color: var(--blue-400, #60a5fa); outline: none; }
 .calcFTdR      { text-align: right; white-space: nowrap; }
 .calcFTdBold   { font-weight: 600; }
+.calcFTdLine   { text-align: center; color: var(--muted); font-size: 12px; width: 28px; }
+.calcFThLine   { text-align: center; width: 28px; }
 .calcFMuted    { color: var(--muted); }
+.calcFRow      { transition: background .1s; }
+.calcFRow:hover { background: var(--slate-50); }
 .calcFRemoveBtn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px 6px; border-radius: 5px; font-size: 12px; }
 .calcFRemoveBtn:hover:not(:disabled) { color: var(--red-600); background: var(--red-50); }
 .calcFRemoveBtn:disabled { opacity: .3; cursor: default; }
-.calcFTableActions { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.calcFTableActions { display: flex; gap: 8px; margin: 12px 0 20px; flex-wrap: wrap; align-items: center; }
 .calcFAddBtn  { padding: 7px 14px; background: var(--blue-600); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .calcFAddBtn:hover { background: var(--blue-700, #1d4ed8); }
-.calcFDiscBtn { padding: 7px 14px; background: transparent; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--fg); cursor: pointer; }
+.calcFDiscBtn { padding: 7px 12px; background: transparent; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--fg); cursor: pointer; }
 .calcFDiscBtn:hover { background: var(--slate-50); }
-.calcFBottom  { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; justify-content: flex-end; }
+.calcFDiscBtnOn { background: var(--amber-50); border-color: #fcd34d; color: var(--amber-700, #b45309); }
+.calcFClearBtn { padding: 6px 12px; background: transparent; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; color: var(--muted); cursor: pointer; margin-left: 4px; }
+.calcFClearBtn:hover { color: var(--red-600); border-color: var(--red-200, #fecaca); background: var(--red-50); }
+.calcFBottom  { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; justify-content: flex-end; margin-top: 4px; }
 .calcFDesglose { flex: 1; min-width: 220px; background: var(--slate-50); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
 .calcFDesgloseTitle { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
 .calcFDesgloseRow   { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
-.calcFTotals  { min-width: 260px; background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
-.calcFTotalRow   { display: flex; justify-content: space-between; font-size: 14px; }
+.calcFDesgloseMono  { font-size: 12px; }
+.calcFTotals  { min-width: 280px; background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.calcFTotalRow   { display: flex; justify-content: space-between; font-size: 14px; gap: 16px; }
 .calcFTotalDisc  { color: var(--red-600); }
 .calcFTotalSub   { color: var(--muted); font-size: 13px; }
 .calcFTotalFinal { font-weight: 700; font-size: 1.05rem; padding-top: 10px; border-top: 2px solid var(--fg); margin-top: 4px; }
+.calcFHint { font-size: 12px; color: var(--muted); margin-top: 18px; }
+.calcFHint kbd { background: var(--slate-100); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 11px; }
 @media (prefers-color-scheme: dark) {
-  .calcFMonedaSel, .calcFInput:focus, .calcFInput:hover, .calcFTarifaSel:focus, .calcFTarifaSel:hover { background: var(--slate-700); }
-  .calcFDesglose { background: var(--slate-800); }
-  .calcFTotals   { background: var(--slate-800); }
+  .calcFMonedaSel  { background: var(--slate-700); }
+  .calcFInput      { background: var(--slate-700); }
+  .calcFTarifaSel  { background: var(--slate-700); }
+  .calcFRow:hover  { background: var(--slate-700); }
+  .calcFDesglose   { background: var(--slate-800); }
+  .calcFTotals     { background: var(--slate-800); }
   .calcFDiscBtn:hover { background: var(--slate-700); }
+  .calcFHint kbd   { background: var(--slate-700); }
 }
 
 /* ══════════════════════════════════════════════
