@@ -175,6 +175,33 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
           </div>
         )}
 
+        {/* ── Verificador de IVA aritmético ── */}
+        {data.lines.length > 0 && (() => {
+          const ivaLines = data.lines.filter(l => parseFloat(l.subtotal || 0) > 0 && parseFloat(l.ivaPct || 0) > 0)
+          if (!ivaLines.length) return null
+          const errs = ivaLines.filter(l => {
+            const calc = parseFloat(l.subtotal) * parseFloat(l.ivaPct) / 100
+            const decl = parseFloat(l.ivaMonto || 0)
+            return decl > 0 && Math.abs(calc - decl) > 0.02
+          })
+          const hasErr = errs.length > 0
+          return (
+            <div className={`xmlIvaArithBanner${hasErr ? " xmlIvaArithBannerWarn" : " xmlIvaArithBannerOk"}`}>
+              <span className="xmlIvaArithBannerTitle">Verificador de IVA aritmético</span>
+              <div className="xmlValidBannerItems">
+                {!hasErr ? (
+                  <span className="xmlCabysValidOk">✔ {ivaLines.length} línea{ivaLines.length !== 1 ? "s" : ""} con IVA — cálculo aritmético correcto</span>
+                ) : (
+                  <>
+                    {ivaLines.length - errs.length > 0 && <span className="xmlCabysValidOk">✔ {ivaLines.length - errs.length} correcta{ivaLines.length - errs.length !== 1 ? "s" : ""}</span>}
+                    <span className="xmlCabysValidNf">⚠ {errs.length} diferencia{errs.length !== 1 ? "s" : ""} aritmética{errs.length !== 1 ? "s" : ""} detectada{errs.length !== 1 ? "s" : ""}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* ── Resumen de validaciones ── */}
         {data.lines.length > 0 && Object.keys(cabysValidation).length > 0 && (() => {
           const loading = Object.values(cabysValidation).some(v => v.status === "loading")
@@ -256,9 +283,14 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
                       const cabysEsSvc = l.cabys ? cabysEsServicio(l.cabys) : null
                       const xmlEsSvc = l.unidad ? XML_SVC_UNITS.includes(l.unidad) : null
                       const tipoAviso = cvStatus === "ok" && cabysEsSvc !== null && xmlEsSvc !== null && cabysEsSvc !== xmlEsSvc
-                      const hasRowWarn = ivaMismatch || cvStatus === "nf" || tipoAviso
+                      const sub = parseFloat(l.subtotal || 0)
+                      const ivaPctN = parseFloat(l.ivaPct || 0)
+                      const ivaDeclared = parseFloat(l.ivaMonto || 0)
+                      const ivaCalc = (sub > 0 && ivaPctN > 0) ? sub * ivaPctN / 100 : null
+                      const ivaArithMismatch = ivaCalc !== null && ivaDeclared > 0 && Math.abs(ivaCalc - ivaDeclared) > 0.02
+                      const hasRowWarn = ivaMismatch || cvStatus === "nf" || tipoAviso || ivaArithMismatch
                       if (soloInconsistencias && !hasRowWarn) return null
-                      const rowClass = (ivaMismatch || cvStatus === "nf") ? "xmlRowWarn" : tipoAviso ? "xmlRowTipo" : ""
+                      const rowClass = (ivaMismatch || cvStatus === "nf" || ivaArithMismatch) ? "xmlRowWarn" : tipoAviso ? "xmlRowTipo" : ""
                       const tarifaLabel = l.ivaCodigoTarifa ? LABELS_TARIFA[l.ivaCodigoTarifa] : null
                       const isExentoExon = l.ivaCodigoTarifa === "01" || l.ivaCodigoTarifa === "02"
                       return (
@@ -342,6 +374,12 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
                                 )}
                               </div>
                             ) : <span className="xmlMuted">—</span>}
+                            {ivaArithMismatch && (
+                              <span className="xmlIvaArithErr">⚠ IVA calc.: {fmtM(ivaCalc)} · decl.: {fmtM(ivaDeclared)}</span>
+                            )}
+                            {ivaCalc !== null && !ivaArithMismatch && (
+                              <span className="xmlIvaArithOk">✔ IVA aritmético OK</span>
+                            )}
                           </td>
                         </tr>
                       )

@@ -37,6 +37,7 @@ export const IC = {
   chat:         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h14a1 1 0 011 1v9a1 1 0 01-1 1H5l-3 2V4a1 1 0 011-1z"/></svg>,
   xml:          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l-3 3 3 3M14 6l3 3-3 3M11 3L7 15"/></svg>,
   percent:      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="5.5" cy="5.5" r="2"/><circle cx="12.5" cy="12.5" r="2"/><path d="M14 4L4 14"/></svg>,
+  swap:         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h12M12 3l3 3-3 3M15 12H3M6 15l-3-3 3-3"/></svg>,
 }
 
 export const ACT_ICONS  = { cabys: IC.search, contribuyente: IC.user, factura: IC.receipt, tipocambio: IC.currency, exoneraciones: IC.shield }
