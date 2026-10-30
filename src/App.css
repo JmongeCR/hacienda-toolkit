@@ -1505,6 +1505,9 @@ tr:hover td { background: var(--slate-50) }
 .xmlTotalDisc { color:#dc2626; }
 .xmlTotalFinal { font-size:1.25rem; font-weight:800; color:var(--accent); padding-top:14px; border-top:2px solid var(--border); margin-top:4px; }
 .xmlTotalFinal span:first-child { color:var(--text); font-size:1rem; }
+.xmlTotalMpSection { margin-top:10px; padding-top:8px; border-top:1px dashed var(--border); }
+.xmlTotalMpRow { font-size:12px !important; color:var(--text-soft) !important; }
+.xmlTotalMpRow span:first-child::before { content:"• "; }
 
 /* ── Acciones ── */
 .xmlActions { display:flex; gap:8px; flex-wrap:wrap; }

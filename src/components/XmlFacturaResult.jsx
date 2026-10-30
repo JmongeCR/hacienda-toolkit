@@ -142,13 +142,7 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
               <div className="xmlMpList">
                 {data.medioPago.map((mp, i) => {
                   const codigo = typeof mp === "object" ? mp.codigo : mp
-                  const monto  = typeof mp === "object" ? mp.monto  : null
-                  return (
-                    <span key={i} className="xmlMpTag">
-                      {mpLabel(codigo)}
-                      {monto && <span className="xmlMpMonto">{fmtM(monto)}</span>}
-                    </span>
-                  )
+                  return <span key={i} className="xmlMpTag">{mpLabel(codigo)}</span>
                 })}
               </div>
             </div>
@@ -378,6 +372,21 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
             <div className="xmlTotalRow xmlTotalFinal">
               <span>TOTAL</span>
               <span className="mono">{fmtM(data.resumen.total)}</span>
+            </div>
+          )}
+          {data.medioPago && data.medioPago.some(mp => (typeof mp === "object" ? mp.monto : null)) && (
+            <div className="xmlTotalMpSection">
+              {data.medioPago.map((mp, i) => {
+                const codigo = typeof mp === "object" ? mp.codigo : mp
+                const monto  = typeof mp === "object" ? mp.monto  : null
+                if (!monto) return null
+                return (
+                  <div key={i} className="xmlTotalRow xmlTotalMpRow">
+                    <span>{mpLabel(codigo)}</span>
+                    <span className="mono">{fmtM(monto)}</span>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
