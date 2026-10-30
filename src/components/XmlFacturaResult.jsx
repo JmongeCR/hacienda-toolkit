@@ -82,6 +82,32 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
               </div>
             </div>
           )}
+          {data.clave && data.clave.length === 50 && (() => {
+            const c = data.clave
+            const TIPO_DOC_DEC = { "001":"Factura Electrónica","002":"Nota de Débito","003":"Nota de Crédito","004":"Tiquete Electrónico","008":"FE Compra","009":"FE Exportación" }
+            const SITUACION    = { "1":"Normal","2":"Contingencia","3":"Sin internet" }
+            const pais = c.slice(0,3), dia = c.slice(3,5), mes = c.slice(5,7), anio = c.slice(7,9)
+            const cedula = c.slice(9,21).replace(/^0+/,"")
+            const terminal = c.slice(21,24), consec = c.slice(24,41)
+            const tipoDoc = consec.slice(0,3)
+            const secuencial = parseInt(consec.slice(3),10)
+            const situacion = c.slice(41,42), seg = c.slice(42,50)
+            return (
+              <div className="claveDecodeWrap">
+                <div className="claveDecodeTitle">Desglose de clave</div>
+                <div className="claveDecodeGrid">
+                  <div className="claveDecodeItem"><span className="claveDecodeLbl">País</span><span className="mono">{pais}</span></div>
+                  <div className="claveDecodeItem"><span className="claveDecodeLbl">Fecha</span><span className="mono">{dia}/{mes}/20{anio}</span></div>
+                  <div className="claveDecodeItem"><span className="claveDecodeLbl">Cédula emisor</span><span className="mono">{cedula}</span></div>
+                  <div className="claveDecodeItem"><span className="claveDecodeLbl">Terminal</span><span className="mono">{terminal}</span></div>
+                  <div className="claveDecodeItem"><span className="claveDecodeLbl">Tipo doc</span><span>{TIPO_DOC_DEC[tipoDoc] || tipoDoc}</span></div>
+                  <div className="claveDecodeItem"><span className="claveDecodeLbl">Secuencial</span><span className="mono">{secuencial.toLocaleString("es-CR")}</span></div>
+                  <div className="claveDecodeItem"><span className="claveDecodeLbl">Situación</span><span>{SITUACION[situacion] || situacion}</span></div>
+                  <div className="claveDecodeItem"><span className="claveDecodeLbl">Cód. seguridad</span><span className="mono">{seg}</span></div>
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         {/* ── Emisor / Receptor ── */}
@@ -195,6 +221,33 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
                   <>
                     {ivaLines.length - errs.length > 0 && <span className="xmlCabysValidOk">✔ {ivaLines.length - errs.length} correcta{ivaLines.length - errs.length !== 1 ? "s" : ""}</span>}
                     <span className="xmlCabysValidNf">⚠ {errs.length} diferencia{errs.length !== 1 ? "s" : ""} aritmética{errs.length !== 1 ? "s" : ""} detectada{errs.length !== 1 ? "s" : ""}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* ── Verificador de totales ── */}
+        {data.lines.length > 0 && (() => {
+          const declaredTotal = parseFloat(data.resumen.total || 0)
+          const declaredIva   = parseFloat(data.resumen.totalImpuesto || 0)
+          if (declaredTotal <= 0) return null
+          const sumLineas = data.lines.reduce((s, l) => s + parseFloat(l.total || 0), 0)
+          const sumIva    = data.lines.reduce((s, l) => s + parseFloat(l.ivaMonto || 0), 0)
+          const totalErr  = Math.abs(sumLineas - declaredTotal) > 0.02
+          const ivaErr    = declaredIva > 0 && Math.abs(sumIva - declaredIva) > 0.02
+          const hasErr    = totalErr || ivaErr
+          return (
+            <div className={`xmlIvaArithBanner${hasErr ? " xmlIvaArithBannerWarn" : " xmlIvaArithBannerOk"}`}>
+              <span className="xmlIvaArithBannerTitle">Verificador de totales</span>
+              <div className="xmlValidBannerItems">
+                {!hasErr ? (
+                  <span className="xmlCabysValidOk">✔ Suma de líneas coincide con el total declarado</span>
+                ) : (
+                  <>
+                    {totalErr && <span className="xmlCabysValidNf">⚠ Total líneas: {fmtM(sumLineas)} / declarado: {fmtM(declaredTotal)}</span>}
+                    {ivaErr   && <span className="xmlCabysValidNf">⚠ IVA suma líneas: {fmtM(sumIva)} / declarado: {fmtM(declaredIva)}</span>}
                   </>
                 )}
               </div>
@@ -386,6 +439,40 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
                     })}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* ── Resumen IVA por tarifa ── */}
+        {data.lines.length > 0 && (() => {
+          const groups = {}
+          data.lines.forEach(l => {
+            const key = l.ivaCodigoTarifa || "XX"
+            const pct = parseFloat(l.ivaPct || 0)
+            const sub = parseFloat(l.subtotal || 0)
+            const iva = parseFloat(l.ivaMonto || 0)
+            if (!groups[key]) groups[key] = { codigo: key, pct, label: LABELS_TARIFA[key] || `${pct}%`, sub: 0, iva: 0, n: 0 }
+            groups[key].sub += sub
+            groups[key].iva += iva
+            groups[key].n   += 1
+          })
+          const rows = Object.values(groups).sort((a, b) => a.pct - b.pct)
+          if (rows.length <= 1) return null
+          return (
+            <div className="xmlIvaResumen xmlNoPrint">
+              <div className="xmlIvaResumenTitle">Desglose IVA por tarifa</div>
+              <div className="xmlIvaResumenGrid">
+                {rows.map(r => (
+                  <div key={r.codigo} className="xmlIvaResumenItem">
+                    <span className={`taxBadgeV2 ${r.pct === 0 ? "t0" : taxClass(r.pct)}`}>{r.label}</span>
+                    <div className="xmlIvaResumenVals">
+                      <span><span className="xmlIvaResumenLbl">Base</span> <span className="mono">{fmtM(r.sub)}</span></span>
+                      {r.iva > 0 && <span><span className="xmlIvaResumenLbl">IVA</span> <span className="mono">{fmtM(r.iva)}</span></span>}
+                      <span><span className="xmlIvaResumenLbl">{r.n} línea{r.n !== 1 ? "s" : ""}</span></span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )

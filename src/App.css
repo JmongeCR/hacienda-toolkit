@@ -2327,3 +2327,170 @@ tr:hover td { background: var(--slate-50) }
 }
 .xmlIvaArithErr { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; background: var(--red-50); color: var(--red-600); border: 1px solid var(--red-100); margin-top: 3px; }
 .xmlIvaArithOk  { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; background: var(--green-50); color: var(--green-600); border: 1px solid var(--green-100); margin-top: 3px; }
+
+/* ══════════════════════════════════════════════
+   XML — DECODIFICADOR DE CLAVE
+══════════════════════════════════════════════ */
+.claveDecodeWrap {
+  margin: 8px 0 14px; padding: 12px 16px;
+  background: var(--slate-50); border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.claveDecodeTitle {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted); margin-bottom: 8px;
+}
+.claveDecodeGrid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 6px 12px;
+}
+.claveDecodeItem { display: flex; flex-direction: column; gap: 1px; }
+.claveDecodeLbl  { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.claveDecodeVal  { font-size: 12px; font-weight: 600; color: var(--fg); font-family: var(--mono); }
+@media (prefers-color-scheme: dark) {
+  .claveDecodeWrap { background: var(--slate-800); }
+}
+
+/* ══════════════════════════════════════════════
+   XML — RESUMEN IVA POR TARIFA
+══════════════════════════════════════════════ */
+.xmlIvaResumen {
+  margin: 10px 0; padding: 12px 16px;
+  background: var(--slate-50); border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.xmlIvaResumenTitle {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted); margin-bottom: 8px;
+}
+.xmlIvaResumenGrid { display: flex; flex-wrap: wrap; gap: 8px; }
+.xmlIvaResumenItem {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 8px 12px; background: var(--white);
+  border: 1px solid var(--border); border-radius: 8px; min-width: 130px;
+}
+.xmlIvaResumenVals { display: flex; flex-direction: column; gap: 1px; }
+.xmlIvaResumenLbl  { font-size: 10px; color: var(--muted); }
+@media (prefers-color-scheme: dark) {
+  .xmlIvaResumen { background: var(--slate-800); }
+  .xmlIvaResumenItem { background: var(--slate-700); }
+}
+
+/* ══════════════════════════════════════════════
+   RETENCIONES PAGE
+══════════════════════════════════════════════ */
+.retWrap { max-width: 640px; }
+.retCard {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px; margin-bottom: 12px;
+}
+.retCardHeader { margin-bottom: 20px; }
+.retCardTitle  { font-size: 1.15rem; font-weight: 700; }
+.retCardSub    { font-size: var(--font-sm); color: var(--muted); margin-top: 2px; }
+.retFieldWrap  { margin-bottom: 18px; }
+.retLabel      { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 8px; }
+.retGrupo      { margin-bottom: 10px; }
+.retGrupoLabel { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 5px; }
+.retScenarioList { display: flex; flex-direction: column; gap: 4px; }
+.retScenarioBtn {
+  text-align: left; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: transparent; color: var(--fg); font-size: 13px; cursor: pointer; transition: background .12s;
+}
+.retScenarioBtn:hover    { background: var(--slate-50); }
+.retScenarioActive       { background: var(--blue-50)!important; border-color: var(--blue-200)!important; color: var(--blue-600); font-weight: 600; }
+.retScenarioDesc         { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+.retModoRow              { display: flex; gap: 6px; margin-bottom: 10px; }
+.retModoBtn              { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--fg); font-size: 13px; cursor: pointer; }
+.retModoActive           { background: var(--blue-50); border-color: var(--blue-200); color: var(--blue-600); font-weight: 600; }
+.retMontoRow             { display: flex; align-items: center; border: 1.5px solid var(--border); border-radius: 9px; overflow: hidden; }
+.retMontoPfx             { padding: 0 10px 0 14px; font-size: 1rem; color: var(--muted); background: var(--slate-50); height: 42px; display: flex; align-items: center; border-right: 1px solid var(--border); }
+.retMontoInput           { flex: 1; border: none; outline: none; padding: 10px 14px; font-size: 1rem; background: transparent; color: var(--fg); }
+.retResultWrap           { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px; display: flex; flex-direction: column; gap: 6px; }
+.retResultRow            { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+.retResultRet            { color: var(--red-600); }
+.retRetVal               { font-weight: 600; }
+.retResultSep            { padding-top: 6px; border-top: 1px dashed var(--border); }
+.retResultFinal          { font-weight: 700; font-size: 1rem; padding-top: 8px; border-top: 1px solid var(--border); }
+.retResultMuted          { color: var(--muted); font-size: 12px; }
+.retDisclaimer           { font-size: 12px; color: var(--muted); line-height: 1.5; padding: 10px 14px; background: var(--amber-50); border: 1px solid #fcd34d; border-radius: 8px; }
+@media (prefers-color-scheme: dark) {
+  .retCard { background: var(--slate-800); }
+  .retMontoPfx { background: var(--slate-700); }
+  .retScenarioBtn:hover { background: var(--slate-700); }
+  .retScenarioActive    { background: var(--slate-700)!important; }
+}
+
+/* ══════════════════════════════════════════════
+   CÁLCULO DE FACTURA PAGE
+══════════════════════════════════════════════ */
+.calcFWrap    { max-width: 960px; }
+.calcFHeader  { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.calcFTitle   { font-size: 1.15rem; font-weight: 700; }
+.calcFHeaderRight { display: flex; align-items: center; gap: 8px; }
+.calcFLabel   { font-size: 12px; font-weight: 600; color: var(--muted); }
+.calcFMonedaSel { padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--white); color: var(--fg); font-size: 13px; }
+.calcFTableWrap { overflow-x: auto; margin-bottom: 12px; }
+.calcFTable   { width: 100%; border-collapse: collapse; font-size: 13px; }
+.calcFTable th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.calcFTable td { padding: 5px 6px; border-bottom: 1px solid var(--border-light, var(--border)); vertical-align: middle; }
+.calcFThDesc  { min-width: 200px; }
+.calcFThNum   { text-align: right; white-space: nowrap; }
+.calcFThTar   { min-width: 90px; }
+.calcFThAct   { width: 32px; }
+.calcFInput   { border: 1px solid transparent; border-radius: 6px; padding: 5px 8px; background: transparent; color: var(--fg); font-size: 13px; width: 100%; }
+.calcFInput:hover, .calcFInput:focus { border-color: var(--border); outline: none; background: var(--white); }
+.calcFInputDesc { min-width: 180px; }
+.calcFInputNum  { text-align: right; max-width: 100px; }
+.calcFTarifaSel { border: 1px solid transparent; border-radius: 6px; padding: 5px 6px; background: transparent; color: var(--fg); font-size: 13px; width: 100%; }
+.calcFTarifaSel:hover, .calcFTarifaSel:focus { border-color: var(--border); outline: none; background: var(--white); }
+.calcFTdR      { text-align: right; white-space: nowrap; }
+.calcFTdBold   { font-weight: 600; }
+.calcFMuted    { color: var(--muted); }
+.calcFRemoveBtn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px 6px; border-radius: 5px; font-size: 12px; }
+.calcFRemoveBtn:hover:not(:disabled) { color: var(--red-600); background: var(--red-50); }
+.calcFRemoveBtn:disabled { opacity: .3; cursor: default; }
+.calcFTableActions { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.calcFAddBtn  { padding: 7px 14px; background: var(--blue-600); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.calcFAddBtn:hover { background: var(--blue-700, #1d4ed8); }
+.calcFDiscBtn { padding: 7px 14px; background: transparent; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--fg); cursor: pointer; }
+.calcFDiscBtn:hover { background: var(--slate-50); }
+.calcFBottom  { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; justify-content: flex-end; }
+.calcFDesglose { flex: 1; min-width: 220px; background: var(--slate-50); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.calcFDesgloseTitle { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
+.calcFDesgloseRow   { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+.calcFTotals  { min-width: 260px; background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.calcFTotalRow   { display: flex; justify-content: space-between; font-size: 14px; }
+.calcFTotalDisc  { color: var(--red-600); }
+.calcFTotalSub   { color: var(--muted); font-size: 13px; }
+.calcFTotalFinal { font-weight: 700; font-size: 1.05rem; padding-top: 10px; border-top: 2px solid var(--fg); margin-top: 4px; }
+@media (prefers-color-scheme: dark) {
+  .calcFMonedaSel, .calcFInput:focus, .calcFInput:hover, .calcFTarifaSel:focus, .calcFTarifaSel:hover { background: var(--slate-700); }
+  .calcFDesglose { background: var(--slate-800); }
+  .calcFTotals   { background: var(--slate-800); }
+  .calcFDiscBtn:hover { background: var(--slate-700); }
+}
+
+/* ══════════════════════════════════════════════
+   LOTE DE XMLs (en XmlValidatorPage)
+══════════════════════════════════════════════ */
+.loteHeader    { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.loteTitleText { font-size: 1.05rem; font-weight: 700; }
+.loteTableWrap { overflow-x: auto; }
+.loteTable     { width: 100%; border-collapse: collapse; font-size: 13px; }
+.loteTable th  { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.loteTable td  { padding: 8px 10px; border-bottom: 1px solid var(--border-light, var(--border)); vertical-align: middle; }
+.loteThR       { text-align: right; }
+.loteRowErr td { background: var(--red-50); }
+.loteTdNum     { text-align: right; white-space: nowrap; font-family: var(--mono); }
+.loteTdName    { max-width: 240px; word-break: break-all; }
+.loteTdLoading { color: var(--muted); font-style: italic; }
+.loteTdErr     { color: var(--red-600); font-size: 12px; }
+.loteRemoveBtn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 3px 7px; border-radius: 5px; font-size: 12px; }
+.loteRemoveBtn:hover { color: var(--red-600); background: var(--red-50); }
+.feTabBadge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  background: var(--blue-600); color: #fff;
+  border-radius: 9px; font-size: 10px; font-weight: 700;
+  margin-left: 5px; vertical-align: middle;
+}

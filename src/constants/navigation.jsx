@@ -9,6 +9,8 @@ export const NAV = [
   { id: "exoneraciones",  icon: IC.shield,    label: "Exoneraciones" },
   { id: "tipocambio",     icon: IC.currency,  label: "Tipo de Cambio" },
   { id: "iva",            icon: IC.percent,   label: "Calculadora IVA" },
+  { id: "retenciones",    icon: IC.cut,        label: "Retenciones" },
+  { id: "calcfactura",    icon: IC.calculator, label: "Cálculo de factura" },
   { id: "clientes",       icon: IC.star,      label: "Clientes" },
   { id: "acerca",         icon: IC.info,      label: "Acerca de" },
 ]
@@ -19,6 +21,6 @@ export const NAV_GROUPS = [
   { items: ["home"] },
   { label: "Comprobantes",  items: ["factura", "cabys"] },
   { label: "Consultas",     items: ["contribuyente", "exoneraciones"] },
-  { label: "Finanzas",      items: ["tipocambio", "iva"] },
+  { label: "Finanzas",      items: ["tipocambio", "iva", "retenciones", "calcfactura"] },
   { label: "Gestión",       items: ["clientes"] },
 ]

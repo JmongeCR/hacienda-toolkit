@@ -24,6 +24,8 @@ export function XmlValidatorPage({ fl, flash, cabysF_avs, toggleFav, logActivity
   const [soloInconsistencias, setSoloInconsistencias] = useState(false)
   const [savedClientId,    setSavedClientId]    = useState(null)
   const [savePickerClient, setSavePickerClient] = useState("")
+  const [loteItems, setLoteItems] = useState([])
+  const [loteDrag,  setLoteDrag]  = useState(false)
 
   const feClean = useMemo(() => onlyDigits(feKey), [feKey])
   const feValid = feClean.length === 50
@@ -113,6 +115,25 @@ export function XmlValidatorPage({ fl, flash, cabysF_avs, toggleFav, logActivity
     reader.readAsText(file, "utf-8")
   }
 
+  const handleLoteFiles = useCallback((files) => {
+    const arr = Array.from(files).filter(f => f.name.toLowerCase().endsWith(".xml") || f.type.includes("xml"))
+    if (!arr.length) return
+    arr.forEach(file => {
+      const id = `${file.name}-${Date.now()}-${Math.random()}`
+      setLoteItems(prev => [...prev, { id, name: file.name, status: "loading", data: null, error: null }])
+      const reader = new FileReader()
+      reader.onload = e => {
+        try {
+          const parsed = parseXmlFe(e.target.result)
+          setLoteItems(prev => prev.map(item => item.id === id ? { ...item, status: "ok", data: parsed } : item))
+        } catch (err) {
+          setLoteItems(prev => prev.map(item => item.id === id ? { ...item, status: "error", error: err.message } : item))
+        }
+      }
+      reader.readAsText(file, "utf-8")
+    })
+  }, [])
+
   const clearAll = () => {
     setFeData(null); setFeKey(""); setFeError(""); setFeSearched(false)
     setFeNotFound(false); setFeXmlData(null); setFeXmlError("")
@@ -146,6 +167,10 @@ export function XmlValidatorPage({ fl, flash, cabysF_avs, toggleFav, logActivity
         </button>
         <button type="button" className={`feTabBtn${feTab==="xml"?" active":""}`} onClick={() => setFeTab("xml")}>
           {IC.xml} Cargar XML
+        </button>
+        <button type="button" className={`feTabBtn${feTab==="lote"?" active":""}`} onClick={() => setFeTab("lote")}>
+          {IC.table} Lote de XMLs
+          {loteItems.length > 0 && <span className="feTabBadge">{loteItems.length}</span>}
         </button>
       </div>
 
@@ -233,6 +258,93 @@ export function XmlValidatorPage({ fl, flash, cabysF_avs, toggleFav, logActivity
             <div className="infoTitle">¿Cómo encontrar la clave?</div>
             <div className="infoText">La clave de 50 dígitos aparece en el PDF de tu factura bajo "Clave" o "Número de clave".</div>
           </div>
+        </div>
+      )}
+
+      {/* ── Tab: Lote ── */}
+      {feTab === "lote" && (
+        <div>
+          <div
+            className={`fxvDrop${loteDrag?" fxvDropOver":""}`}
+            style={{ marginBottom: 16 }}
+            onDragOver={e => { e.preventDefault(); setLoteDrag(true) }}
+            onDragLeave={() => setLoteDrag(false)}
+            onDrop={e => { e.preventDefault(); setLoteDrag(false); handleLoteFiles(e.dataTransfer.files) }}
+            onClick={() => document.getElementById("loteFileInput").click()}
+          >
+            <div className="fxvDropIco">
+              <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+                <rect width="44" height="44" rx="12" fill="var(--accent)" fillOpacity=".1"/>
+                <path d="M12 31V20l6-6h14v17H12z" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18 14v6h-6M22 22v6M19 25l3-3 3 3" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div className="fxvDropTitle">Arrastre múltiples XMLs aquí</div>
+            <div className="fxvDropSub">o haga clic para seleccionar varios archivos</div>
+            <input id="loteFileInput" type="file" accept=".xml,text/xml,application/xml" multiple style={{display:"none"}}
+              onChange={e => handleLoteFiles(e.target.files)} />
+          </div>
+
+          {loteItems.length > 0 && (
+            <>
+              <div className="loteHeader">
+                <span className="loteTitleText">{loteItems.length} XML{loteItems.length !== 1 ? "s" : ""} cargados</span>
+                <button type="button" className="btn btnGhost btnSm" onClick={() => setLoteItems([])}>Limpiar lote</button>
+              </div>
+              <div className="loteTableWrap">
+                <table className="loteTable">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Archivo</th>
+                      <th>Tipo</th>
+                      <th>Emisor</th>
+                      <th>Fecha</th>
+                      <th className="loteThR">Total</th>
+                      <th className="loteThR">Líneas</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loteItems.map((item, i) => (
+                      <tr key={item.id} className={item.status === "error" ? "loteRowErr" : ""}>
+                        <td className="loteTdNum">{i + 1}</td>
+                        <td className="loteTdName">{item.name.replace(/\.xml$/i,"")}</td>
+                        {item.status === "loading" ? (
+                          <td colSpan={5} className="loteTdLoading">Procesando…</td>
+                        ) : item.status === "error" ? (
+                          <td colSpan={5} className="loteTdErr">⚠ {item.error}</td>
+                        ) : (
+                          <>
+                            <td>{item.data.tipoDoc}</td>
+                            <td>{item.data.emisor?.nombre || <span className="xmlMuted">—</span>}</td>
+                            <td>{item.data.fecha ? item.data.fecha.slice(0,10) : "—"}</td>
+                            <td className="mono loteThR">
+                              {item.data.resumen?.total
+                                ? (item.data.resumen.moneda === "USD" ? "$" : item.data.resumen.moneda === "EUR" ? "€" : "₡") +
+                                  parseFloat(item.data.resumen.total).toLocaleString("es-CR",{minimumFractionDigits:2})
+                                : "—"}
+                            </td>
+                            <td className="loteThR">{item.data.lines?.length ?? 0}</td>
+                          </>
+                        )}
+                        <td>
+                          {item.status === "ok" && (
+                            <button type="button" className="btn btnGhost btnSm"
+                              onClick={() => { setFeXmlData(item.data); onXmlLoaded?.(item.data); setFeTab("xml") }}>
+                              Ver →
+                            </button>
+                          )}
+                          <button type="button" className="loteRemoveBtn"
+                            onClick={() => setLoteItems(prev => prev.filter(x => x.id !== item.id))}>✕</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       )}
 

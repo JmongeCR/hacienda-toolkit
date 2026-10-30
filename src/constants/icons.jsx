@@ -38,6 +38,8 @@ export const IC = {
   xml:          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l-3 3 3 3M14 6l3 3-3 3M11 3L7 15"/></svg>,
   percent:      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="5.5" cy="5.5" r="2"/><circle cx="12.5" cy="12.5" r="2"/><path d="M14 4L4 14"/></svg>,
   swap:         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h12M12 3l3 3-3 3M15 12H3M6 15l-3-3 3-3"/></svg>,
+  cut:          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="5" r="2.5"/><circle cx="5" cy="13" r="2.5"/><path d="M8 6l8 4.5M8 12L16 7.5"/></svg>,
+  calculator:   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="2" width="12" height="14" rx="2"/><path d="M6 6h6M6 10h2M10 10h2M6 13h2M10 13h2"/></svg>,
 }
 
 export const ACT_ICONS  = { cabys: IC.search, contribuyente: IC.user, factura: IC.receipt, tipocambio: IC.currency, exoneraciones: IC.shield }

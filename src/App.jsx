@@ -24,6 +24,8 @@ import { ExoneracionesPage }  from "./pages/ExoneracionesPage.jsx"
 import { TipoCambioPage }     from "./pages/TipoCambioPage.jsx"
 import { ClientesPage }       from "./pages/ClientesPage.jsx"
 import { IvaCalculatorPage }  from "./pages/IvaCalculatorPage.jsx"
+import { RetencionesPPage }   from "./pages/RetencionesPPage.jsx"
+import { CalculoFacturaPage } from "./pages/CalculoFacturaPage.jsx"
 import { AcercaPage }         from "./pages/AcercaPage.jsx"
 
 /* ─── API Status helper ─── */
@@ -376,6 +378,13 @@ export default function App() {
             <IvaCalculatorPage />
           )}
 
+          {page === "retenciones" && (
+            <RetencionesPPage />
+          )}
+
+          {page === "calcfactura" && (
+            <CalculoFacturaPage />
+          )}
 
           {page === "acerca" && (
             <AcercaPage activities={activities} />
