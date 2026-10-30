@@ -109,91 +109,94 @@ a { text-decoration: none; color: inherit }
 ═══════════════════════════════════════ */
 .sidebar {
   width: var(--sidebar-w);
-  background: #0F172A;
-  border-right: none;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   transition: width var(--t-base), transform var(--t-base);
   overflow: hidden;
-  color: rgba(255,255,255,.65);
 }
 .sideCollapsed .sidebar { width: var(--sidebar-wc) }
 
-.sideTop { padding: 14px 16px 12px; border-bottom: 1px solid rgba(255,255,255,.08) }
+.sideTop { padding: 14px 16px 12px; border-bottom: 1px solid var(--border) }
 .sideBrand { display: flex; align-items: center; gap: 10px }
 .sideLogo {
-  width: 30px; height: 30px; border-radius: 8px;
+  width: 28px; height: 28px; border-radius: 7px;
   background: var(--accent); color: white;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.sideName { font-weight: 700; font-size: var(--font-md); color: #fff; white-space: nowrap }
+.sideName { font-weight: 600; font-size: var(--font-base); color: var(--text); white-space: nowrap; letter-spacing: -.01em }
 .sideCollapsed .sideName { display: none }
 
 /* Nav groups */
-.sideNav { flex: 1; overflow-y: auto; padding: 10px 8px }
-.navGroup { margin-bottom: 4px }
+.sideNav { flex: 1; overflow-y: auto; padding: 8px 6px }
+.navGroup { margin-bottom: 2px }
 .navGroupLabel {
-  font-size: var(--font-xs); font-weight: 600; letter-spacing: .06em;
-  text-transform: uppercase; color: rgba(255,255,255,.30);
-  padding: 8px 8px 4px; white-space: nowrap;
+  font-size: 10px; font-weight: 600; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--muted);
+  padding: 10px 6px 3px; white-space: nowrap;
   transition: opacity var(--t-base);
 }
 .sideCollapsed .navGroupLabel { opacity: 0; height: 0; overflow: hidden; padding: 0 }
 
 .navItem {
-  display: flex; align-items: center; gap: 10px;
-  width: 100%; padding: 8px 10px; border-radius: var(--radius-sm);
-  color: rgba(255,255,255,.60); font-size: var(--font-base);
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 6px 8px; border-radius: 6px;
+  color: var(--text2); font-size: var(--font-sm);
   transition: background var(--t-fast), color var(--t-fast);
-  position: relative;
+  position: relative; font-weight: 450;
 }
-.navItem:hover { background: rgba(255,255,255,.07); color: #fff }
-.navActive { background: rgba(59,130,246,.18) !important; color: #93c5fd !important; font-weight: 600 }
-.navIcon { display: flex; align-items: center; flex-shrink: 0; width: 18px }
+.navItem:hover { background: var(--slate-100); color: var(--text) }
+.navActive {
+  background: var(--blue-50) !important;
+  color: var(--accent) !important;
+  font-weight: 600;
+}
+.navIcon { display: flex; align-items: center; flex-shrink: 0; width: 18px; opacity: .75 }
+.navActive .navIcon { opacity: 1 }
 .navLabel { white-space: nowrap; transition: opacity var(--t-base) }
 .sideCollapsed .navLabel { opacity: 0; width: 0; overflow: hidden }
 /* Tooltip when collapsed */
 .sideCollapsed .navItem:hover::after {
   content: attr(title);
   position: absolute; left: calc(var(--sidebar-wc) + 8px); top: 50%; transform: translateY(-50%);
-  background: #1e293b; color: white; font-size: var(--font-sm);
+  background: var(--slate-900); color: white; font-size: var(--font-sm);
   padding: 4px 10px; border-radius: var(--radius-xs); white-space: nowrap; z-index: 200;
   pointer-events: none;
 }
 
 /* Bottom of sidebar */
-.sideBottom { padding: 10px 8px; border-top: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; gap: 6px }
+.sideBottom { padding: 8px 6px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px }
 
 .cmdTriggerBtn {
   display: flex; align-items: center; gap: 8px;
-  padding: 7px 10px; border-radius: var(--radius-sm);
-  border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05);
-  color: rgba(255,255,255,.45); font-size: var(--font-sm);
+  padding: 6px 8px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--slate-50);
+  color: var(--muted); font-size: var(--font-sm);
   transition: all var(--t-fast); width: 100%;
 }
-.cmdTriggerBtn:hover { border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.10); color: #fff }
+.cmdTriggerBtn:hover { border-color: var(--border2); color: var(--text2); background: var(--slate-100) }
 .cmdTriggerLabel { flex: 1; text-align: left; white-space: nowrap }
 .sideCollapsed .cmdTriggerLabel { display: none }
 .cmdTriggerKbd {
   font-size: 10px; padding: 1px 5px; border-radius: 4px;
-  border: 1px solid var(--border2); background: var(--surface); color: var(--muted);
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
 }
 .sideCollapsed .cmdTriggerKbd { display: none }
 
 .sideCollapseBtn {
   position: relative;
   display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: var(--radius-sm);
-  color: rgba(255,255,255,.35);
+  width: 30px; height: 30px; border-radius: 6px;
+  color: var(--muted);
   transition: background var(--t-fast), color var(--t-fast);
 }
-.sideCollapseBtn:hover { background: rgba(255,255,255,.08); color: #fff }
-/* Tooltip via CSS */
+.sideCollapseBtn:hover { background: var(--slate-100); color: var(--text2) }
 .sideCollapseBtn::after {
   content: attr(data-tip);
   position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
-  background: #1e293b; color: #fff;
+  background: var(--slate-900); color: #fff;
   font-size: 11px; font-weight: 500; white-space: nowrap;
   padding: 4px 9px; border-radius: 6px;
   pointer-events: none; opacity: 0;
@@ -205,11 +208,12 @@ a { text-decoration: none; color: inherit }
 
 .apiPill {
   display: flex; align-items: center; gap: 6px;
-  padding: 5px 10px; border-radius: var(--radius-sm);
-  background: rgba(255,255,255,.06); font-size: var(--font-xs); color: rgba(255,255,255,.40);
+  padding: 4px 8px; border-radius: 6px;
+  background: var(--slate-50); border: 1px solid var(--border);
+  font-size: var(--font-xs); color: var(--muted);
 }
-.apiPillOk  { background: rgba(22,163,74,.15);  color: #86efac }
-.apiPillBad { background: rgba(220,38,38,.15);  color: #fca5a5 }
+.apiPillOk  { background: var(--green-50);  border-color: var(--green-100);  color: var(--green-600) }
+.apiPillBad { background: var(--red-50);    border-color: var(--red-100);    color: var(--red-600) }
 .apiPillText { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .sideCollapsed .apiPillText { display: none }
 
@@ -2093,37 +2097,6 @@ tr:hover td { background: var(--slate-50) }
     font-family: monospace !important; word-break: break-all !important;
   }
 }
-
-/* ═══════════════════════════════════════
-   SIDEBAR — DARK NAVY THEME
-═══════════════════════════════════════ */
-.sidebar {
-  background: #0F172A;
-  border-right: none;
-}
-.sidebar .sideTop { border-bottom: 1px solid rgba(255,255,255,.08) }
-.sidebar .sideName { color: #fff }
-.sidebar .navGroupLabel { color: rgba(255,255,255,.30) }
-.sidebar .navItem { color: rgba(255,255,255,.60) }
-.sidebar .navItem:hover { background: rgba(255,255,255,.07); color: #fff }
-.sidebar .navActive { background: rgba(59,130,246,.18) !important; color: #93c5fd !important; font-weight: 600 }
-.sidebar .sideBottom { border-top: 1px solid rgba(255,255,255,.08) }
-.sidebar .cmdTriggerBtn {
-  border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.05); color: rgba(255,255,255,.45);
-}
-.sidebar .cmdTriggerBtn:hover {
-  border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.10); color: #fff;
-}
-.sidebar .sideCollapseBtn { color: rgba(255,255,255,.35) }
-.sidebar .sideCollapseBtn:hover { background: rgba(255,255,255,.08); color: #fff }
-.sidebar .sideCollapseBtn::after { background: #1e293b; color: #fff }
-.sidebar .apiPill { background: rgba(255,255,255,.06); color: rgba(255,255,255,.40) }
-.sidebar .apiPillOk  { background: rgba(22,163,74,.15);  color: #86efac }
-.sidebar .apiPillBad { background: rgba(220,38,38,.15);  color: #fca5a5 }
-.sidebar .apiPillText { color: inherit }
-.sideCollapsed .sidebar .navItem:hover::after { background: #1e293b; color: #fff }
-/* Ensure dot icons stay visible on dark sidebar */
-.sidebar .dot { flex-shrink: 0 }
 
 /* ═══════════════════════════════════════
    TOPBAR — IMPROVED
