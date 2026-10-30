@@ -23,6 +23,7 @@ import { ContribuyentesPage } from "./pages/ContribuyentesPage.jsx"
 import { ExoneracionesPage }  from "./pages/ExoneracionesPage.jsx"
 import { TipoCambioPage }     from "./pages/TipoCambioPage.jsx"
 import { ClientesPage }       from "./pages/ClientesPage.jsx"
+import { IvaCalculatorPage }  from "./pages/IvaCalculatorPage.jsx"
 import { AcercaPage }         from "./pages/AcercaPage.jsx"
 
 /* ─── API Status helper ─── */
@@ -305,6 +306,9 @@ export default function App() {
               setActivities={setActivities}
               navigateToCabys={navigateToCabys}
               navigateToContribuyente={navigateToContribuyente}
+              apiStatus={apiStatus}
+              fx={fx}
+              fxEur={fxEur}
             />
           )}
 
@@ -366,6 +370,10 @@ export default function App() {
               onUpdateClients={updateClients}
               lastXmlData={lastXmlData}
             />
+          )}
+
+          {page === "iva" && (
+            <IvaCalculatorPage />
           )}
 
           {page === "acerca" && (

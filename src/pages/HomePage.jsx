@@ -3,7 +3,7 @@ import { IC, ACT_ICONS, ACT_LABELS } from "../constants/icons.jsx"
 import { HOME_FAVS_DEFAULT, ACT_KEY, loadHomeFavs, saveHomeFavs } from "../constants/storage.js"
 import { saludo, relTime } from "../utils/formatters.js"
 
-export function HomePage({ navigate, activities, setActivities, navigateToCabys, navigateToContribuyente }) {
+export function HomePage({ navigate, activities, setActivities, navigateToCabys, navigateToContribuyente, apiStatus, fx, fxEur }) {
   const [homeSearch,    setHomeSearch]    = useState("")
   const [homeFavs,      setHomeFavs]      = useState(() => loadHomeFavs())
 
@@ -38,6 +38,8 @@ export function HomePage({ navigate, activities, setActivities, navigateToCabys,
       label:"Contribuyentes",      desc:"Estado fiscal y actividades",   color:"#f0fdf4", iconColor:"#16a34a" },
     { id:"tipocambio",    icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 8h12M13 5l3 3-3 3M16 12H4M7 15l-3-3 3-3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>,
       label:"Tipo de Cambio",      desc:"USD y EUR en tiempo real",      color:"#fdf4ff", iconColor:"#9333ea" },
+    { id:"iva",           icon: <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><circle cx="6" cy="6" r="2.2"/><circle cx="14" cy="14" r="2.2"/><path d="M15 5L5 15"/></svg>,
+      label:"Calculadora IVA",     desc:"Desglose de tarifas 0–13%",     color:"#fff7ed", iconColor:"#ea580c" },
   ]
 
   return (
@@ -47,6 +49,29 @@ export function HomePage({ navigate, activities, setActivities, navigateToCabys,
         <div className="homeGreeting">{saludo()}</div>
         <h1 className="homeTitle">Revisión de comprobantes XML</h1>
         <p className="homeSub">Cargá un XML de Hacienda para validar CABYS, IVA y detectar inconsistencias. También consultá contribuyentes, exoneraciones y tipo de cambio.</p>
+      </div>
+
+      {/* Stats strip */}
+      <div className="homeStatsRow">
+        <div className={`homeStatChip homeStatApi${apiStatus?.ok ? " homeStatApiOk" : apiStatus == null ? "" : " homeStatApiBad"}`}>
+          <span className={`dot${apiStatus?.ok ? " ok" : apiStatus == null ? " loading" : " bad"}`} />
+          <span>{apiStatus == null ? "Verificando API…" : apiStatus.ok ? `API Hacienda · ${apiStatus.ms}ms` : "API sin respuesta"}</span>
+        </div>
+        {fx && (
+          <button type="button" className="homeStatChip homeStatFx" onClick={() => navigate("tipocambio")}>
+            <span className="homeStatFxLbl">USD</span>
+            <span className="homeStatFxVal">₡{fx.venta.toLocaleString("es-CR")}</span>
+            <span className="homeStatFxSep" />
+            <span className="homeStatFxLbl">compra</span>
+            <span className="homeStatFxVal">₡{fx.compra.toLocaleString("es-CR")}</span>
+          </button>
+        )}
+        {fxEur && (
+          <button type="button" className="homeStatChip homeStatFx" onClick={() => navigate("tipocambio")}>
+            <span className="homeStatFxLbl">EUR</span>
+            <span className="homeStatFxVal">₡{fxEur.colones.toLocaleString("es-CR")}</span>
+          </button>
+        )}
       </div>
 
       {/* Buscador inteligente */}

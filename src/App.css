@@ -109,24 +109,25 @@ a { text-decoration: none; color: inherit }
 ═══════════════════════════════════════ */
 .sidebar {
   width: var(--sidebar-w);
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  background: #0F172A;
+  border-right: none;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   transition: width var(--t-base), transform var(--t-base);
   overflow: hidden;
+  color: rgba(255,255,255,.65);
 }
 .sideCollapsed .sidebar { width: var(--sidebar-wc) }
 
-.sideTop { padding: 14px 16px 12px; border-bottom: 1px solid var(--border) }
+.sideTop { padding: 14px 16px 12px; border-bottom: 1px solid rgba(255,255,255,.08) }
 .sideBrand { display: flex; align-items: center; gap: 10px }
 .sideLogo {
   width: 30px; height: 30px; border-radius: 8px;
   background: var(--accent); color: white;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.sideName { font-weight: 700; font-size: var(--font-md); color: var(--text); white-space: nowrap }
+.sideName { font-weight: 700; font-size: var(--font-md); color: #fff; white-space: nowrap }
 .sideCollapsed .sideName { display: none }
 
 /* Nav groups */
@@ -134,7 +135,7 @@ a { text-decoration: none; color: inherit }
 .navGroup { margin-bottom: 4px }
 .navGroupLabel {
   font-size: var(--font-xs); font-weight: 600; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--muted);
+  text-transform: uppercase; color: rgba(255,255,255,.30);
   padding: 8px 8px 4px; white-space: nowrap;
   transition: opacity var(--t-base);
 }
@@ -143,12 +144,12 @@ a { text-decoration: none; color: inherit }
 .navItem {
   display: flex; align-items: center; gap: 10px;
   width: 100%; padding: 8px 10px; border-radius: var(--radius-sm);
-  color: var(--text2); font-size: var(--font-base);
+  color: rgba(255,255,255,.60); font-size: var(--font-base);
   transition: background var(--t-fast), color var(--t-fast);
   position: relative;
 }
-.navItem:hover { background: var(--slate-100); color: var(--text) }
-.navActive { background: var(--blue-50) !important; color: var(--accent) !important; font-weight: 600 }
+.navItem:hover { background: rgba(255,255,255,.07); color: #fff }
+.navActive { background: rgba(59,130,246,.18) !important; color: #93c5fd !important; font-weight: 600 }
 .navIcon { display: flex; align-items: center; flex-shrink: 0; width: 18px }
 .navLabel { white-space: nowrap; transition: opacity var(--t-base) }
 .sideCollapsed .navLabel { opacity: 0; width: 0; overflow: hidden }
@@ -156,22 +157,22 @@ a { text-decoration: none; color: inherit }
 .sideCollapsed .navItem:hover::after {
   content: attr(title);
   position: absolute; left: calc(var(--sidebar-wc) + 8px); top: 50%; transform: translateY(-50%);
-  background: var(--slate-800); color: white; font-size: var(--font-sm);
+  background: #1e293b; color: white; font-size: var(--font-sm);
   padding: 4px 10px; border-radius: var(--radius-xs); white-space: nowrap; z-index: 200;
   pointer-events: none;
 }
 
 /* Bottom of sidebar */
-.sideBottom { padding: 10px 8px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px }
+.sideBottom { padding: 10px 8px; border-top: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; gap: 6px }
 
 .cmdTriggerBtn {
   display: flex; align-items: center; gap: 8px;
   padding: 7px 10px; border-radius: var(--radius-sm);
-  border: 1px solid var(--border); background: var(--slate-50);
-  color: var(--muted); font-size: var(--font-sm);
+  border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.45); font-size: var(--font-sm);
   transition: all var(--t-fast); width: 100%;
 }
-.cmdTriggerBtn:hover { border-color: var(--accent); color: var(--accent); background: var(--blue-50) }
+.cmdTriggerBtn:hover { border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.10); color: #fff }
 .cmdTriggerLabel { flex: 1; text-align: left; white-space: nowrap }
 .sideCollapsed .cmdTriggerLabel { display: none }
 .cmdTriggerKbd {
@@ -184,15 +185,15 @@ a { text-decoration: none; color: inherit }
   position: relative;
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: var(--radius-sm);
-  color: var(--muted);
+  color: rgba(255,255,255,.35);
   transition: background var(--t-fast), color var(--t-fast);
 }
-.sideCollapseBtn:hover { background: var(--slate-100); color: var(--text) }
+.sideCollapseBtn:hover { background: rgba(255,255,255,.08); color: #fff }
 /* Tooltip via CSS */
 .sideCollapseBtn::after {
   content: attr(data-tip);
   position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
-  background: var(--text); color: #fff;
+  background: #1e293b; color: #fff;
   font-size: 11px; font-weight: 500; white-space: nowrap;
   padding: 4px 9px; border-radius: 6px;
   pointer-events: none; opacity: 0;
@@ -205,10 +206,10 @@ a { text-decoration: none; color: inherit }
 .apiPill {
   display: flex; align-items: center; gap: 6px;
   padding: 5px 10px; border-radius: var(--radius-sm);
-  background: var(--slate-100); font-size: var(--font-xs); color: var(--muted);
+  background: rgba(255,255,255,.06); font-size: var(--font-xs); color: rgba(255,255,255,.40);
 }
-.apiPillOk { background: var(--green-50); color: var(--green-600) }
-.apiPillBad { background: var(--red-50); color: var(--red-600) }
+.apiPillOk  { background: rgba(22,163,74,.15);  color: #86efac }
+.apiPillBad { background: rgba(220,38,38,.15);  color: #fca5a5 }
 .apiPillText { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .sideCollapsed .apiPillText { display: none }
 
@@ -2092,3 +2093,192 @@ tr:hover td { background: var(--slate-50) }
     font-family: monospace !important; word-break: break-all !important;
   }
 }
+
+/* ═══════════════════════════════════════
+   SIDEBAR — DARK NAVY THEME
+═══════════════════════════════════════ */
+.sidebar {
+  background: #0F172A;
+  border-right: none;
+}
+.sidebar .sideTop { border-bottom: 1px solid rgba(255,255,255,.08) }
+.sidebar .sideName { color: #fff }
+.sidebar .navGroupLabel { color: rgba(255,255,255,.30) }
+.sidebar .navItem { color: rgba(255,255,255,.60) }
+.sidebar .navItem:hover { background: rgba(255,255,255,.07); color: #fff }
+.sidebar .navActive { background: rgba(59,130,246,.18) !important; color: #93c5fd !important; font-weight: 600 }
+.sidebar .sideBottom { border-top: 1px solid rgba(255,255,255,.08) }
+.sidebar .cmdTriggerBtn {
+  border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.05); color: rgba(255,255,255,.45);
+}
+.sidebar .cmdTriggerBtn:hover {
+  border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.10); color: #fff;
+}
+.sidebar .sideCollapseBtn { color: rgba(255,255,255,.35) }
+.sidebar .sideCollapseBtn:hover { background: rgba(255,255,255,.08); color: #fff }
+.sidebar .sideCollapseBtn::after { background: #1e293b; color: #fff }
+.sidebar .apiPill { background: rgba(255,255,255,.06); color: rgba(255,255,255,.40) }
+.sidebar .apiPillOk  { background: rgba(22,163,74,.15);  color: #86efac }
+.sidebar .apiPillBad { background: rgba(220,38,38,.15);  color: #fca5a5 }
+.sidebar .apiPillText { color: inherit }
+.sideCollapsed .sidebar .navItem:hover::after { background: #1e293b; color: #fff }
+/* Ensure dot icons stay visible on dark sidebar */
+.sidebar .dot { flex-shrink: 0 }
+
+/* ═══════════════════════════════════════
+   TOPBAR — IMPROVED
+═══════════════════════════════════════ */
+.topbar {
+  box-shadow: 0 1px 0 var(--border), 0 2px 10px rgba(15,23,42,.04);
+}
+
+/* ═══════════════════════════════════════
+   HOME — STATS STRIP
+═══════════════════════════════════════ */
+.homeStatsRow {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 20px;
+}
+.homeStatChip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 99px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  font-size: var(--font-xs); font-weight: 500; color: var(--text2);
+  transition: all var(--t-fast);
+}
+.homeStatChip.homeStatApi.homeStatApiOk  { background: var(--green-50); border-color: var(--green-100); color: var(--green-600) }
+.homeStatChip.homeStatApi.homeStatApiBad { background: var(--red-50);   border-color: var(--red-100);   color: var(--red-600) }
+.homeStatFx { cursor: pointer }
+.homeStatFx:hover { border-color: var(--accent); color: var(--accent); background: var(--blue-50) }
+.homeStatFxLbl { font-weight: 700; color: var(--muted); font-size: 10px }
+.homeStatFxVal { font-weight: 700; color: var(--text) }
+.homeStatFxSep { width: 1px; height: 12px; background: var(--border2); margin: 0 2px }
+
+/* ═══════════════════════════════════════
+   HOME — QUICK CARDS (improved)
+═══════════════════════════════════════ */
+.homeQuickGrid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) }
+.homeQuickCard {
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: all 180ms ease;
+}
+.homeQuickCard:hover {
+  box-shadow: 0 6px 20px rgba(15,23,42,.11), 0 2px 6px rgba(15,23,42,.07);
+  transform: translateY(-3px);
+}
+.homeQuickIcon { width: 42px; height: 42px; border-radius: 12px; font-size: 20px }
+.homeQuickLabel { font-size: var(--font-base); font-weight: 700 }
+
+/* ═══════════════════════════════════════
+   IVA CALCULATOR
+═══════════════════════════════════════ */
+.ivaWrap { max-width: 640px; display: flex; flex-direction: column; gap: 16px }
+
+.ivaCard {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 28px 28px 24px;
+  box-shadow: var(--shadow-md);
+}
+.ivaCardHeader { margin-bottom: 22px }
+.ivaCardTitle { font-size: var(--font-xl); font-weight: 800; color: var(--text) }
+.ivaCardSub { font-size: var(--font-sm); color: var(--muted); margin-top: 2px }
+
+.ivaModoRow {
+  display: flex; gap: 0; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 22px;
+}
+.ivaModoBtn {
+  flex: 1; padding: 9px 14px; font-size: var(--font-sm); font-weight: 500;
+  color: var(--text2); background: var(--surface);
+  transition: all var(--t-fast); border: none; cursor: pointer;
+}
+.ivaModoBtn + .ivaModoBtn { border-left: 1.5px solid var(--border) }
+.ivaModoActive { background: var(--blue-600) !important; color: #fff !important; font-weight: 600 }
+
+.ivaFieldWrap { margin-bottom: 20px }
+.ivaLabel { display: block; font-size: var(--font-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 8px }
+
+.ivaInputRow {
+  display: flex; align-items: center;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); overflow: hidden;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.ivaInputRow:focus-within {
+  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1)
+}
+.ivaInputPrefix {
+  padding: 0 12px; font-size: var(--font-lg); font-weight: 700;
+  color: var(--muted); background: var(--slate-50); border-right: 1.5px solid var(--border);
+  height: 48px; display: flex; align-items: center; flex-shrink: 0;
+}
+.ivaInput {
+  flex: 1; height: 48px; padding: 0 14px; border: none; background: transparent;
+  font-size: var(--font-xl); font-weight: 700; color: var(--text);
+}
+.ivaInput::placeholder { color: var(--border2); font-weight: 400 }
+.ivaInput::-webkit-inner-spin-button, .ivaInput::-webkit-outer-spin-button { -webkit-appearance: none }
+
+.ivaTarifaGrid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.ivaTarifaBtn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 8px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--surface);
+  cursor: pointer; transition: all var(--t-fast); text-align: center;
+}
+.ivaTarifaBtn:hover { border-color: var(--accent); background: var(--blue-50) }
+.ivaTarifaActive { border-color: var(--blue-600) !important; background: var(--blue-600) !important; color: #fff !important }
+.ivaTarifaPct { font-size: var(--font-lg); font-weight: 800; line-height: 1 }
+.ivaTarifaDesc { font-size: 10px; color: var(--muted); line-height: 1.3 }
+.ivaTarifaActive .ivaTarifaDesc { color: rgba(255,255,255,.75) }
+
+.ivaResultWrap {
+  margin-top: 4px; border-top: 1.5px solid var(--border); padding-top: 18px;
+  display: flex; flex-direction: column; gap: 0;
+}
+.ivaResultRow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-radius: var(--radius-xs);
+}
+.ivaResultRow:hover { background: var(--slate-50) }
+.ivaResultLbl { font-size: var(--font-sm); color: var(--text2) }
+.ivaResultVal { font-size: var(--font-md); font-weight: 600; color: var(--text) }
+.ivaResultIvaVal { color: var(--amber-600) }
+.ivaResultTotalRow {
+  background: var(--blue-50); border-radius: var(--radius-sm);
+  border: 1.5px solid var(--blue-100); margin-top: 6px;
+}
+.ivaResultTotalRow:hover { background: var(--blue-100) }
+.ivaResultTotalRow .ivaResultLbl { font-weight: 700; color: var(--accent) }
+.ivaResultTotalVal { font-size: var(--font-xl) !important; font-weight: 800 !important; color: var(--blue-600) !important }
+
+.ivaEmptyHint {
+  margin-top: 18px; padding: 14px; text-align: center;
+  color: var(--muted); font-size: var(--font-sm); border-top: 1.5px solid var(--border);
+  font-style: italic;
+}
+
+.ivaRefCard {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 20px 24px; box-shadow: var(--shadow-sm);
+}
+.ivaRefTitle {
+  font-size: var(--font-xs); font-weight: 800; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted); margin-bottom: 14px;
+}
+.ivaRefTable { width: 100%; border-collapse: collapse; font-size: var(--font-sm) }
+.ivaRefTable th {
+  text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted); padding: 0 0 8px;
+  border-bottom: 1.5px solid var(--border);
+}
+.ivaRefTable th:first-child { width: 60px }
+.ivaRefTable td {
+  padding: 8px 0; border-bottom: 1px solid var(--border); color: var(--text2);
+  vertical-align: top;
+}
+.ivaRefTable td:first-child { font-weight: 700; color: var(--accent); padding-right: 16px }
+.ivaRefTable tr:last-child td { border-bottom: none }
