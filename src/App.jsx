@@ -24,7 +24,6 @@ import { ExoneracionesPage }  from "./pages/ExoneracionesPage.jsx"
 import { TipoCambioPage }     from "./pages/TipoCambioPage.jsx"
 import { ClientesPage }       from "./pages/ClientesPage.jsx"
 import { IvaCalculatorPage }  from "./pages/IvaCalculatorPage.jsx"
-import { ConversorPage }      from "./pages/ConversorPage.jsx"
 import { AcercaPage }         from "./pages/AcercaPage.jsx"
 
 /* ─── API Status helper ─── */
@@ -377,9 +376,6 @@ export default function App() {
             <IvaCalculatorPage />
           )}
 
-          {page === "conversor" && (
-            <ConversorPage fx={fx} fxEur={fxEur} />
-          )}
 
           {page === "acerca" && (
             <AcercaPage activities={activities} />
