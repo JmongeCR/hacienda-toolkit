@@ -132,7 +132,7 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
               <span>Medio de pago</span>
               <div className="xmlMpList">
                 {data.medioPago.map((mp, i) => (
-                  <span key={i} className="xmlMpTag">{MEDIOS_PAGO[mp] || mp}</span>
+                  <span key={i} className="xmlMpTag">{MEDIOS_PAGO[mp] || MEDIOS_PAGO[mp.padStart(2,"0")] || mp}</span>
                 ))}
               </div>
             </div>

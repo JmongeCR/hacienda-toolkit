@@ -1830,113 +1830,171 @@ tr:hover td { background: var(--slate-50) }
    IMPRESIÓN @media print — Visor XML
 ══════════════════════════════════════════════ */
 @media print {
-  /* Ocultar todo salvo el área de factura */
-  body * { visibility: hidden; }
-  #xmlPrintArea, #xmlPrintArea * { visibility: visible; }
+  @page { size: A4; margin: 14mm 16mm 16mm; }
 
-  /* Posicionar el área de impresión en el origen */
+  /* ── Ocultar todo salvo el área de impresión ── */
+  body * { visibility: hidden !important; }
+  #xmlPrintArea, #xmlPrintArea * { visibility: visible !important; }
+
   #xmlPrintArea {
     position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
+    top: 0 !important; left: 0 !important;
     width: 100% !important;
     border: none !important;
     border-radius: 0 !important;
     padding: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
+    background: #fff !important;
+    font-family: "Helvetica Neue", Arial, sans-serif !important;
+    color: #111 !important;
   }
-
-  /* Ocultar botones y elementos interactivos dentro del área */
-  #xmlPrintArea button,
-  #xmlPrintArea .xmlCopyBtn,
-  #xmlPrintArea .xmlActions,
-  #xmlPrintArea .favBtn { visibility: hidden !important; display: none !important; }
 
   body, html { background: #fff !important; margin: 0; padding: 0; }
 
-  /* Encabezado */
+  /* ── Ocultar botones / interactivos ── */
+  #xmlPrintArea button,
+  #xmlPrintArea .xmlCopyBtn,
+  #xmlPrintArea .xmlCabysCodeBtn { display: none !important; visibility: hidden !important; }
+  .xmlCedTipo { border: none !important; background: none !important; padding: 0 !important; color: #555 !important; font-size: 7.5pt !important; margin-right: 4px !important; }
+  .xmlMpTag { border: none !important; background: none !important; padding: 0 !important; font-size: 9pt !important; font-weight: 600 !important; color: #111 !important; }
+  .xmlMpList { gap: 0 !important; }
+  .xmlMpList .xmlMpTag::after { content: ", "; }
+  .xmlMpList .xmlMpTag:last-child::after { content: ""; }
+
+  /* ── ENCABEZADO ── */
   .xmlResultHead {
-    padding-bottom: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding-bottom: 10px !important;
     margin-bottom: 14px !important;
-    border-bottom: 2px solid #000 !important;
+    border-bottom: 2.5px solid #111 !important;
   }
   .xmlDocType {
-    font-size: 18pt !important;
+    font-size: 20pt !important;
     font-weight: 900 !important;
-    color: #000 !important;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    margin-bottom: 8px !important;
+    color: #111 !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    letter-spacing: .06em !important;
+    margin-bottom: 10px !important;
   }
-  .xmlHeadLbl { font-size: 7pt !important; color: #666 !important; }
-  .xmlConsec, .xmlClave { font-size: 8.5pt !important; font-family: monospace; color: #000 !important; }
-  .xmlCopyBtn { display: none !important; }
+  .xmlHeadLbl {
+    font-size: 6.5pt !important;
+    color: #777 !important;
+    text-transform: uppercase !important;
+    letter-spacing: .07em !important;
+    margin-bottom: 2px !important;
+  }
+  .xmlConsec { font-size: 11pt !important; font-family: monospace !important; font-weight: 700 !important; color: #111 !important; letter-spacing: .04em !important; }
+  .xmlClave  { font-size: 7.5pt !important; font-family: monospace !important; color: #444 !important; word-break: break-all !important; line-height: 1.5 !important; }
 
-  /* Partes: emisor/receptor */
+  /* ── EMISOR / RECEPTOR ── */
   .xmlParties {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
-    gap: 16px !important;
-    margin-bottom: 14px !important;
-    page-break-inside: avoid;
+    gap: 12px !important;
+    margin-bottom: 12px !important;
+    page-break-inside: avoid !important;
   }
   .xmlParty {
-    background: #f8f8f8 !important;
-    border: 1px solid #ddd !important;
-    border-radius: 6px !important;
-    padding: 10px 12px !important;
+    background: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+    border-radius: 4px !important;
+    padding: 9px 11px !important;
   }
-  .xmlPartyLabel { font-size: 7pt !important; color: #666 !important; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px !important; }
-  .xmlPartyName { font-size: 11pt !important; font-weight: 700 !important; color: #000 !important; }
-  .xmlPartyCed, .xmlPartyComm, .xmlPartySub { font-size: 8pt !important; color: #444 !important; }
+  .xmlPartyLabel { font-size: 6.5pt !important; color: #777 !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: .07em !important; margin-bottom: 4px !important; }
+  .xmlPartyName  { font-size: 11pt !important; font-weight: 800 !important; color: #111 !important; margin-bottom: 2px !important; line-height: 1.3 !important; }
+  .xmlPartyComm  { font-size: 8pt !important; color: #555 !important; margin-bottom: 2px !important; }
+  .xmlPartyCed   { font-size: 8.5pt !important; font-family: monospace !important; font-weight: 600 !important; color: #111 !important; margin-top: 4px !important; }
+  .xmlPartySub   { font-size: 7.5pt !important; color: #666 !important; margin-top: 2px !important; }
 
-  /* Meta */
+  /* ── META (fecha · moneda · condición · plazo · medio de pago) ── */
   .xmlMeta {
-    border: none !important;
-    padding: 8px 0 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 20px !important;
+    padding: 8px 11px !important;
     margin-bottom: 12px !important;
-    gap: 18px !important;
+    background: #f9f9f9 !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
   }
-  .xmlMetaItem > span:first-child { font-size: 7pt !important; color: #666 !important; }
-  .xmlMetaItem > span:last-child { font-size: 9pt !important; color: #000 !important; }
-  .xmlMonTag { background: none !important; border: none !important; padding: 0 !important; font-size: 9pt !important; color: #000 !important; font-weight: 700 !important; }
+  .xmlMetaItem > span:first-child,
+  .xmlMetaItem > div + span { font-size: 6.5pt !important; color: #777 !important; display: block !important; margin-bottom: 2px !important; }
+  .xmlMetaItem > span:last-child { font-size: 9pt !important; font-weight: 600 !important; color: #111 !important; }
+  .xmlMonTag { background: none !important; border: none !important; padding: 0 !important; font-size: 9pt !important; font-weight: 700 !important; color: #111 !important; }
 
-  /* Documento relacionado */
-  .xmlRef { margin-bottom: 14px !important; page-break-inside: avoid; }
-  .xmlRefCard { background: #f8f8f8 !important; border: 1px solid #ddd !important; border-radius: 6px !important; padding: 10px 12px !important; }
-  .xmlRefLbl { font-size: 7pt !important; color: #666 !important; }
-  .xmlRefVal { font-size: 9pt !important; color: #000 !important; }
+  /* ── DOCUMENTO RELACIONADO ── */
+  .xmlRef { margin-bottom: 12px !important; page-break-inside: avoid !important; }
+  .xmlRefBanner { background: #f5f5f5 !important; border: 1px solid #ccc !important; border-radius: 4px !important; padding: 9px 11px !important; }
+  .xmlRefBannerHead { margin-bottom: 6px !important; }
+  .xmlRefBannerType { font-size: 6.5pt !important; color: #777 !important; font-weight: 700 !important; text-transform: uppercase !important; }
+  .xmlRefBannerBadge { font-size: 7.5pt !important; font-weight: 700 !important; background: none !important; border: none !important; padding: 0 !important; margin-left: 8px !important; color: #333 !important; }
+  .xmlRefLbl { font-size: 6.5pt !important; color: #777 !important; }
+  .xmlRefVal { font-size: 8.5pt !important; color: #111 !important; font-weight: 500 !important; }
 
-  /* Tabla de líneas */
-  .xmlLines { margin-bottom: 14px !important; }
-  .xmlLinesTitle { font-size: 8pt !important; font-weight: 700 !important; color: #444 !important; margin-bottom: 6px !important; text-transform: uppercase; letter-spacing: .05em; }
-  .xmlTableWrap { border: 1px solid #ccc !important; border-radius: 4px !important; overflow: visible !important; }
-  .xmlLinesTable { font-size: 8pt !important; min-width: 0 !important; width: 100% !important; }
-  .xmlLinesTable thead th { background: #f2f2f2 !important; color: #444 !important; padding: 6px 8px !important; font-size: 7pt !important; border-bottom: 1px solid #ccc !important; }
-  .xmlLinesTable tbody tr { border-bottom: 1px solid #eee !important; }
-  .xmlLinesTable tbody tr:hover { background: none !important; }
-  .xmlLinesTable td { padding: 7px 8px !important; color: #000 !important; }
-  .xmlTdDesc { font-size: 8.5pt !important; max-width: none !important; }
+  /* ── TABLA DE LÍNEAS ── */
+  .xmlLines { margin-bottom: 14px !important; page-break-inside: auto !important; }
+  .xmlLinesTitle { font-size: 7pt !important; font-weight: 700 !important; color: #666 !important; text-transform: uppercase !important; letter-spacing: .07em !important; margin-bottom: 5px !important; }
+  .xmlTableWrap { border: 1px solid #bbb !important; border-radius: 3px !important; overflow: visible !important; }
+  .xmlLinesTable { font-size: 8pt !important; min-width: 0 !important; width: 100% !important; border-collapse: collapse !important; }
+  .xmlLinesTable thead th {
+    background: #ececec !important;
+    color: #444 !important;
+    padding: 5px 8px !important;
+    font-size: 6.5pt !important;
+    font-weight: 700 !important;
+    border-bottom: 1.5px solid #bbb !important;
+    text-transform: uppercase !important;
+    letter-spacing: .05em !important;
+  }
+  .xmlLinesTable tbody tr { border-bottom: 1px solid #e0e0e0 !important; }
+  .xmlLinesTable tbody tr:nth-child(even) { background: #fafafa !important; }
+  .xmlLinesTable tbody tr:hover { background: inherit !important; }
+  .xmlLinesTable td { padding: 6px 8px !important; color: #111 !important; vertical-align: top !important; }
+  .xmlTdNum  { color: #777 !important; font-size: 7.5pt !important; }
+  .xmlTdDesc { font-size: 8.5pt !important; font-weight: 600 !important; max-width: none !important; }
+  .xmlTdQty  { font-size: 8pt !important; }
+  .xmlUnt    { font-size: 7pt !important; color: #666 !important; }
+  .xmlTdR    { text-align: right !important; }
+  .xmlTdBold { font-weight: 700 !important; }
   .xmlTdCabys { font-size: 7pt !important; }
-  .taxBadgeV2 { background: none !important; border: none !important; padding: 0 !important; font-size: 8pt !important; font-weight: 700 !important; color: #000 !important; }
-  .xmlTdAct { display: none !important; }
+  .xmlTdCabysVal { display: none !important; }
+  .xmlThCabysVal { display: none !important; }
+  .xmlRowWarn td, .xmlRowTipo td { background: none !important; }
+  .xmlRowWarn td:first-child, .xmlRowTipo td:first-child { border-left: none !important; padding-left: 8px !important; }
+  /* IVA en tabla */
+  .xmlIvaCell { flex-direction: row !important; gap: 4px !important; align-items: baseline !important; }
+  .taxBadgeV2 { background: none !important; border: none !important; padding: 0 !important; font-size: 8pt !important; font-weight: 700 !important; color: #111 !important; }
+  .xmlIvaMonto { font-size: 7pt !important; color: #555 !important; }
+  /* Descuento en tabla */
+  .xmlDiscMonto { color: #c00 !important; font-size: 8pt !important; }
+  .xmlDiscNat   { color: #666 !important; font-size: 6.5pt !important; }
 
-  /* Totales */
+  /* ── TOTALES ── */
   .xmlTotals {
-    background: #f8f8f8 !important;
-    border: 1.5px solid #ccc !important;
-    border-radius: 6px !important;
-    padding: 12px 14px !important;
-    page-break-inside: avoid;
+    margin-left: auto !important;
+    width: 52% !important;
+    background: #f5f5f5 !important;
+    border: 1.5px solid #bbb !important;
+    border-radius: 4px !important;
+    padding: 10px 14px !important;
+    page-break-inside: avoid !important;
   }
-  .xmlTotalRow { font-size: 9pt !important; color: #000 !important; }
-  .xmlTotalFinal { font-size: 13pt !important; font-weight: 900 !important; color: #000 !important; padding-top: 8px !important; border-top: 2px solid #000 !important; }
-  .xmlTotalDisc { color: #cc0000 !important; }
-
-  /* Márgenes de página */
-  @page {
-    size: A4;
-    margin: 18mm 16mm;
+  .xmlTotalRow { font-size: 9pt !important; color: #111 !important; padding: 2px 0 !important; }
+  .xmlTotalRow span:first-child { color: #555 !important; font-weight: 400 !important; }
+  .xmlTotalSub { font-size: 7.5pt !important; opacity: 1 !important; color: #666 !important; }
+  .xmlTotalSub span:first-child { color: #888 !important; }
+  .xmlTotalDisc { color: #c00 !important; font-weight: 600 !important; }
+  .xmlTotalFinal {
+    font-size: 13pt !important;
+    font-weight: 900 !important;
+    color: #111 !important;
+    padding-top: 8px !important;
+    margin-top: 4px !important;
+    border-top: 2px solid #111 !important;
   }
+  .xmlTotalFinal span:first-child { color: #111 !important; font-size: 11pt !important; }
 }
