@@ -31,6 +31,7 @@ export function parseXmlFe(xmlStr) {
   const clave          = get("Clave")
   const numConsecutivo = get("NumeroConsecutivo")
   const fecha          = get("FechaEmision")
+  const codigoActividad = get("CodigoActividad")
   const emisor = {
     nombre:    get("Emisor > Nombre"),
     comercial: get("Emisor > NombreComercial"),
@@ -39,32 +40,46 @@ export function parseXmlFe(xmlStr) {
     correo:    get("Emisor > CorreoElectronico"),
   }
   const receptor = {
-    nombre: get("Receptor > Nombre"),
-    cedula: get("Receptor > Identificacion > Numero"),
-    correo: get("Receptor > CorreoElectronico"),
+    nombre:   get("Receptor > Nombre"),
+    comercial: get("Receptor > NombreComercial"),
+    cedula:   get("Receptor > Identificacion > Numero"),
+    tipoCed:  get("Receptor > Identificacion > Tipo"),
+    correo:   get("Receptor > CorreoElectronico"),
   }
+  const medioPago = [...doc.querySelectorAll("MedioPago")].map(n => n.textContent.trim()).filter(Boolean)
+  const plazoCredito = get("PlazoCredito")
   // Schema v4.4: CodigoTipoMoneda > CodigoMoneda; versiones anteriores usan Codigo
   const moneda     = get("CodigoTipoMoneda > CodigoMoneda") || get("CodigoTipoMoneda > Codigo") || get("CodigoMoneda") || "CRC"
   const tipoCambio = get("CodigoTipoMoneda > TipoCambio") || get("TipoCambio") || ""
   const resumen = {
-    total:         get("TotalComprobante"),
-    totalImpuesto: get("TotalImpuesto") || get("TotalImpuestoVenta"),
-    totalVenta:    get("TotalVentaNeta") || get("TotalVenta"),
-    totalDesc:     get("TotalDescuentos"),
+    total:              get("TotalComprobante"),
+    totalImpuesto:      get("TotalImpuesto") || get("TotalImpuestoVenta"),
+    totalVenta:         get("TotalVentaNeta") || get("TotalVenta"),
+    totalDesc:          get("TotalDescuentos"),
+    totalGravado:       get("TotalGravado"),
+    totalExento:        get("TotalExento"),
+    totalExonerado:     get("TotalExonerado"),
+    totalServGravados:  get("TotalServGravados"),
+    totalServExentos:   get("TotalServExentos"),
+    totalMercGravadas:  get("TotalMercanciasGravadas"),
+    totalMercExentas:   get("TotalMercanciasExentas"),
     moneda, tipoCambio,
   }
   const lines = [...doc.querySelectorAll("LineaDetalle")].map(el => {
     const g = sel => el.querySelector(sel)?.textContent?.trim() || ""
     return {
-      descripcion: g("Detalle") || g("Descripcion"),
-      cantidad:    g("Cantidad"),
-      unidad:      g("UnidadMedida"),
-      precio:      g("PrecioUnitario"),
-      subtotal:    g("SubTotal"),
-      cabys:       g("CodigoCABYS") || g("CodigoComercial > Codigo") || g("Codigo"),
-      ivaPct:      g("Impuesto > Tarifa") || g("Tarifa"),
-      ivaMoneto:   g("Impuesto > Monto"),
-      total:       g("MontoTotalLinea"),
+      descripcion:         g("Detalle") || g("Descripcion"),
+      cantidad:            g("Cantidad"),
+      unidad:              g("UnidadMedida"),
+      precio:              g("PrecioUnitario"),
+      subtotal:            g("SubTotal"),
+      cabys:               g("CodigoCABYS") || g("CodigoComercial > Codigo") || g("Codigo"),
+      ivaPct:              g("Impuesto > Tarifa") || g("Tarifa"),
+      ivaMonto:            g("Impuesto > Monto"),
+      ivaCodigoTarifa:     g("Impuesto > CodigoTarifa"),
+      montoDescuento:      g("Descuento > MontoDescuento"),
+      naturalezaDescuento: g("Descuento > NaturalezaDescuento"),
+      total:               g("MontoTotalLinea"),
     }
   })
   const condicionVenta = get("CondicionVenta") || ""
@@ -94,5 +109,5 @@ export function parseXmlFe(xmlStr) {
     "01":"Anula doc ref","02":"Corrige texto","03":"Corrige monto",
     "04":"Referencia a otro doc","05":"Sustituye doc provisional","06":"Otros",
   }
-  return { rootTag, tipoDoc: tiposDoc[rootTag] || rootTag, clave, numConsecutivo, fecha, emisor, receptor, resumen, lines, condicionVenta, referencias, tiposRefDoc, codigosRef }
+  return { rootTag, tipoDoc: tiposDoc[rootTag] || rootTag, clave, numConsecutivo, fecha, codigoActividad, medioPago, plazoCredito, emisor, receptor, resumen, lines, condicionVenta, referencias, tiposRefDoc, codigosRef }
 }

@@ -7,6 +7,11 @@ import { CopyIco } from "./CopyIco.jsx"
 // IC needed for xml tag — suppress unused lint
 void IC
 
+const MEDIOS_PAGO = { "01":"Efectivo","02":"Tarjeta","03":"Cheque","04":"Transferencia","05":"Recaudado x terceros","99":"Otro" }
+const TIPOS_CED  = { "01":"Física","02":"Jurídica","03":"DIMEX","04":"NITE" }
+const LABELS_TARIFA = { "01":"Exento","02":"Exonerado","03":"1%","04":"2%","05":"4%","06":"8%","07":"13%" }
+const CONDICION_VENTA = { "01":"Contado","02":"Crédito","03":"Consignación","04":"Apartado","99":"Otros" }
+
 export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloInconsistencias = false, setSoloInconsistencias, onCabysClick, onPrint, onReset, onExcelDownload }) {
   const mon = data.resumen.moneda || "CRC"
   const tc  = data.resumen.tipoCambio ? parseFloat(data.resumen.tipoCambio) : null
@@ -76,14 +81,26 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
             <div className="xmlPartyLabel">Emisor</div>
             <div className="xmlPartyName">{data.emisor.nombre || "—"}</div>
             {data.emisor.comercial && <div className="xmlPartyComm">{data.emisor.comercial}</div>}
-            {data.emisor.cedula && <div className="xmlPartyCed mono">{data.emisor.cedula}</div>}
+            {data.emisor.cedula && (
+              <div className="xmlPartyCed mono">
+                {data.emisor.tipoCed && <span className="xmlCedTipo">{TIPOS_CED[data.emisor.tipoCed] || data.emisor.tipoCed}</span>}
+                {data.emisor.cedula}
+              </div>
+            )}
+            {data.codigoActividad && <div className="xmlPartySub">Act. Económica: <span className="mono">{data.codigoActividad}</span></div>}
             {data.emisor.correo && <div className="xmlPartySub">{data.emisor.correo}</div>}
           </div>
           {(data.receptor.nombre || data.receptor.cedula) && (
             <div className="xmlParty">
               <div className="xmlPartyLabel">Receptor</div>
               <div className="xmlPartyName">{data.receptor.nombre || "—"}</div>
-              {data.receptor.cedula && <div className="xmlPartyCed mono">{data.receptor.cedula}</div>}
+              {data.receptor.comercial && <div className="xmlPartyComm">{data.receptor.comercial}</div>}
+              {data.receptor.cedula && (
+                <div className="xmlPartyCed mono">
+                  {data.receptor.tipoCed && <span className="xmlCedTipo">{TIPOS_CED[data.receptor.tipoCed] || data.receptor.tipoCed}</span>}
+                  {data.receptor.cedula}
+                </div>
+              )}
               {data.receptor.correo && <div className="xmlPartySub">{data.receptor.correo}</div>}
             </div>
           )}
@@ -104,7 +121,20 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
           {data.condicionVenta && (
             <div className="xmlMetaItem">
               <span>Condición de venta</span>
-              <span>{{"01":"Contado","02":"Crédito","03":"Consignación","04":"Apartado","99":"Otros"}[data.condicionVenta] || data.condicionVenta}</span>
+              <span>{CONDICION_VENTA[data.condicionVenta] || data.condicionVenta}</span>
+            </div>
+          )}
+          {data.plazoCredito && data.condicionVenta === "02" && (
+            <div className="xmlMetaItem"><span>Plazo crédito</span><span>{data.plazoCredito} días</span></div>
+          )}
+          {data.medioPago && data.medioPago.length > 0 && (
+            <div className="xmlMetaItem">
+              <span>Medio de pago</span>
+              <div className="xmlMpList">
+                {data.medioPago.map((mp, i) => (
+                  <span key={i} className="xmlMpTag">{MEDIOS_PAGO[mp] || mp}</span>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -184,109 +214,134 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
         })()}
 
         {/* ── Líneas de detalle ── */}
-        {data.lines.length > 0 && (
-          <div className="xmlLines">
-            <div className="xmlLinesTitle">Detalle de líneas ({data.lines.length})</div>
-            <div className="xmlTableWrap">
-              <table className="xmlLinesTable">
-                <thead>
-                  <tr>
-                    <th className="xmlThNum">#</th>
-                    <th>Descripción</th>
-                    <th>Cantidad</th>
-                    <th className="xmlThR">Precio unitario</th>
-                    <th>IVA</th>
-                    <th className="xmlThR">Total línea</th>
-                    <th>CABYS</th>
-                    <th className="xmlThCabysVal">Validaciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.lines.map((l, i) => {
-                    const pct = fmtPct(l.ivaPct)
-                    const cid = `xml-c-${i}`
-                    const cv = l.cabys ? cabysValidation[l.cabys] : null
-                    const cvStatus = cv?.status
-                    const ivaMismatch = cvStatus === "ok" && cv.impuesto !== null && l.ivaPct !== undefined && l.ivaPct !== ""
-                      ? parseFloat(l.ivaPct) !== cv.impuesto : false
-                    const XML_SVC_UNITS = ["Sp","Al","Os","Spe","m2e"]
-                    const cabysEsSvc = l.cabys ? cabysEsServicio(l.cabys) : null
-                    const xmlEsSvc = l.unidad ? XML_SVC_UNITS.includes(l.unidad) : null
-                    const tipoAviso = cvStatus === "ok" && cabysEsSvc !== null && xmlEsSvc !== null && cabysEsSvc !== xmlEsSvc
-                    const hasRowWarn = ivaMismatch || cvStatus === "nf" || tipoAviso
-                    if (soloInconsistencias && !hasRowWarn) return null
-                    const rowClass = (ivaMismatch || cvStatus === "nf") ? "xmlRowWarn" : tipoAviso ? "xmlRowTipo" : ""
-                    return (
-                      <tr key={i} className={rowClass}>
-                        <td className="xmlTdNum">{i + 1}</td>
-                        <td className="xmlTdDesc">{l.descripcion}</td>
-                        <td className="mono xmlTdQty">{fmtQty(l.cantidad)} <span className="xmlUnt">{l.unidad}</span></td>
-                        <td className="mono xmlTdR">{l.precio ? fmtM(l.precio) : "—"}</td>
-                        <td>{pct ? <span className={`taxBadgeV2 ${taxClass(parseFloat(l.ivaPct))}`}>{pct}</span> : <span className="xmlMuted">—</span>}</td>
-                        <td className="mono xmlTdR xmlTdBold">{l.total ? fmtM(l.total) : "—"}</td>
-                        <td className="mono xmlTdCabys">
-                          {l.cabys ? (
-                            <div className="xmlCabysCell">
-                              {cvStatus === "ok" && onCabysClick ? (
-                                <button
-                                  className="xmlCabysCodeBtn"
-                                  type="button"
-                                  title="Ver detalle CABYS"
-                                  onClick={() => onCabysClick({
-                                    codigo: l.cabys,
-                                    descripcion: cv.descripcion || l.descripcion,
-                                    impuesto: cv.impuesto ?? 0,
-                                    categorias: cv.categorias || []
-                                  })}
-                                >
-                                  {l.cabys}
+        {data.lines.length > 0 && (() => {
+          const hasDiscount = data.lines.some(l => l.montoDescuento && parseFloat(l.montoDescuento) > 0)
+          return (
+            <div className="xmlLines">
+              <div className="xmlLinesTitle">Detalle de líneas ({data.lines.length})</div>
+              <div className="xmlTableWrap">
+                <table className="xmlLinesTable">
+                  <thead>
+                    <tr>
+                      <th className="xmlThNum">#</th>
+                      <th>Descripción</th>
+                      <th>Cantidad</th>
+                      <th className="xmlThR">Precio unit.</th>
+                      {hasDiscount && <th className="xmlThR">Descuento</th>}
+                      <th>IVA</th>
+                      <th className="xmlThR">Total línea</th>
+                      <th>CABYS</th>
+                      <th className="xmlThCabysVal">Validaciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.lines.map((l, i) => {
+                      const pct = fmtPct(l.ivaPct)
+                      const cid = `xml-c-${i}`
+                      const cv = l.cabys ? cabysValidation[l.cabys] : null
+                      const cvStatus = cv?.status
+                      const ivaMismatch = cvStatus === "ok" && cv.impuesto !== null && l.ivaPct !== undefined && l.ivaPct !== ""
+                        ? parseFloat(l.ivaPct) !== cv.impuesto : false
+                      const XML_SVC_UNITS = ["Sp","Al","Os","Spe","m2e"]
+                      const cabysEsSvc = l.cabys ? cabysEsServicio(l.cabys) : null
+                      const xmlEsSvc = l.unidad ? XML_SVC_UNITS.includes(l.unidad) : null
+                      const tipoAviso = cvStatus === "ok" && cabysEsSvc !== null && xmlEsSvc !== null && cabysEsSvc !== xmlEsSvc
+                      const hasRowWarn = ivaMismatch || cvStatus === "nf" || tipoAviso
+                      if (soloInconsistencias && !hasRowWarn) return null
+                      const rowClass = (ivaMismatch || cvStatus === "nf") ? "xmlRowWarn" : tipoAviso ? "xmlRowTipo" : ""
+                      const tarifaLabel = l.ivaCodigoTarifa ? LABELS_TARIFA[l.ivaCodigoTarifa] : null
+                      const isExentoExon = l.ivaCodigoTarifa === "01" || l.ivaCodigoTarifa === "02"
+                      return (
+                        <tr key={i} className={rowClass}>
+                          <td className="xmlTdNum">{i + 1}</td>
+                          <td className="xmlTdDesc">{l.descripcion}</td>
+                          <td className="mono xmlTdQty">{fmtQty(l.cantidad)} <span className="xmlUnt">{l.unidad}</span></td>
+                          <td className="mono xmlTdR">{l.precio ? fmtM(l.precio) : "—"}</td>
+                          {hasDiscount && (
+                            <td className="mono xmlTdR xmlTdDisc">
+                              {l.montoDescuento && parseFloat(l.montoDescuento) > 0
+                                ? <><span className="xmlDiscMonto">− {fmtM(l.montoDescuento)}</span>{l.naturalezaDescuento && <span className="xmlDiscNat">{l.naturalezaDescuento}</span>}</>
+                                : <span className="xmlMuted">—</span>}
+                            </td>
+                          )}
+                          <td>
+                            {tarifaLabel ? (
+                              <div className="xmlIvaCell">
+                                <span className={`taxBadgeV2 ${isExentoExon ? "t0" : taxClass(parseFloat(l.ivaPct))}`}>{tarifaLabel}</span>
+                                {l.ivaMonto && !isExentoExon && <span className="xmlIvaMonto mono">{fmtM(l.ivaMonto)}</span>}
+                              </div>
+                            ) : pct ? (
+                              <div className="xmlIvaCell">
+                                <span className={`taxBadgeV2 ${taxClass(parseFloat(l.ivaPct))}`}>{pct}</span>
+                                {l.ivaMonto && <span className="xmlIvaMonto mono">{fmtM(l.ivaMonto)}</span>}
+                              </div>
+                            ) : <span className="xmlMuted">—</span>}
+                          </td>
+                          <td className="mono xmlTdR xmlTdBold">{l.total ? fmtM(l.total) : "—"}</td>
+                          <td className="mono xmlTdCabys">
+                            {l.cabys ? (
+                              <div className="xmlCabysCell">
+                                {cvStatus === "ok" && onCabysClick ? (
+                                  <button
+                                    className="xmlCabysCodeBtn"
+                                    type="button"
+                                    title="Ver detalle CABYS"
+                                    onClick={() => onCabysClick({
+                                      codigo: l.cabys,
+                                      descripcion: cv.descripcion || l.descripcion,
+                                      impuesto: cv.impuesto ?? 0,
+                                      categorias: cv.categorias || []
+                                    })}
+                                  >
+                                    {l.cabys}
+                                  </button>
+                                ) : (
+                                  <span className="xmlCabysCode">{l.cabys}</span>
+                                )}
+                                <button className={`xmlCopyBtn${fl===cid?" xmlCopyBtnOk":""}`} type="button"
+                                  onClick={() => flash(cid, l.cabys)} title="Copiar CABYS">
+                                  {fl===cid ? "✓" : <CopyIco/>}
                                 </button>
-                              ) : (
-                                <span className="xmlCabysCode">{l.cabys}</span>
-                              )}
-                              <button className={`xmlCopyBtn${fl===cid?" xmlCopyBtnOk":""}`} type="button"
-                                onClick={() => flash(cid, l.cabys)} title="Copiar CABYS">
-                                {fl===cid ? "✓" : <CopyIco/>}
-                              </button>
-                            </div>
-                          ) : <span className="xmlMuted">—</span>}
-                        </td>
-                        <td className="xmlTdCabysVal">
-                          {!l.cabys ? (
-                            <span className="xmlMuted">—</span>
-                          ) : cvStatus === "loading" ? (
-                            <span className="xmlCabysValLoading">···</span>
-                          ) : cvStatus === "nf" ? (
-                            <span className="xmlCabysValNf">⚠ No encontrado en CABYS</span>
-                          ) : cvStatus === "err" ? (
-                            <span className="xmlCabysValErr">⚠ Sin verificar</span>
-                          ) : cvStatus === "ok" ? (
-                            <div className="xmlCabysValGroup">
-                              <span className="xmlCabysValOk">✔ CABYS válido</span>
-                              {ivaMismatch ? (
-                                <span className="xmlCabysValMismatch">⚠ IVA XML: {parseFloat(l.ivaPct)}% / esperado: {cv.impuesto}%</span>
-                              ) : (
-                                <span className="xmlCabysValOk">✔ IVA correcto</span>
-                              )}
-                              <span className={`cabysTypeBadge${cabysEsSvc ? " cabysTypeSvc" : " cabysTypeArt"}`}>
-                                🏷 {cabysEsSvc ? "Servicio" : "Artículo"}
-                              </span>
-                              {tipoAviso && (
-                                <span className="xmlCabysValTipoAviso" title={`CABYS clasifica como ${cabysEsSvc ? "Servicio" : "Artículo"} pero la unidad XML es "${l.unidad}"`}>
-                                  Verificar tipo
+                              </div>
+                            ) : <span className="xmlMuted">—</span>}
+                          </td>
+                          <td className="xmlTdCabysVal">
+                            {!l.cabys ? (
+                              <span className="xmlMuted">—</span>
+                            ) : cvStatus === "loading" ? (
+                              <span className="xmlCabysValLoading">···</span>
+                            ) : cvStatus === "nf" ? (
+                              <span className="xmlCabysValNf">⚠ No encontrado en CABYS</span>
+                            ) : cvStatus === "err" ? (
+                              <span className="xmlCabysValErr">⚠ Sin verificar</span>
+                            ) : cvStatus === "ok" ? (
+                              <div className="xmlCabysValGroup">
+                                <span className="xmlCabysValOk">✔ CABYS válido</span>
+                                {ivaMismatch ? (
+                                  <span className="xmlCabysValMismatch">⚠ IVA XML: {parseFloat(l.ivaPct)}% / esperado: {cv.impuesto}%</span>
+                                ) : (
+                                  <span className="xmlCabysValOk">✔ IVA correcto</span>
+                                )}
+                                <span className={`cabysTypeBadge${cabysEsSvc ? " cabysTypeSvc" : " cabysTypeArt"}`}>
+                                  🏷 {cabysEsSvc ? "Servicio" : "Artículo"}
                                 </span>
-                              )}
-                            </div>
-                          ) : <span className="xmlMuted">—</span>}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                                {tipoAviso && (
+                                  <span className="xmlCabysValTipoAviso" title={`CABYS clasifica como ${cabysEsSvc ? "Servicio" : "Artículo"} pero la unidad XML es "${l.unidad}"`}>
+                                    Verificar tipo
+                                  </span>
+                                )}
+                              </div>
+                            ) : <span className="xmlMuted">—</span>}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* ── Totales ── */}
         <div className="xmlTotals">
@@ -294,6 +349,13 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
             <div className="xmlTotalRow"><span>Subtotal</span><span className="mono">{fmtM(data.resumen.totalVenta)}</span></div>}
           {data.resumen.totalDesc && parseFloat(data.resumen.totalDesc) > 0 &&
             <div className="xmlTotalRow"><span>Descuentos</span><span className="mono xmlTotalDisc">− {fmtM(data.resumen.totalDesc)}</span></div>}
+          {/* Desglose gravado / exento / exonerado */}
+          {data.resumen.totalGravado && parseFloat(data.resumen.totalGravado) > 0 &&
+            <div className="xmlTotalRow xmlTotalSub"><span>Base gravada</span><span className="mono">{fmtM(data.resumen.totalGravado)}</span></div>}
+          {data.resumen.totalExento && parseFloat(data.resumen.totalExento) > 0 &&
+            <div className="xmlTotalRow xmlTotalSub"><span>Exento</span><span className="mono">{fmtM(data.resumen.totalExento)}</span></div>}
+          {data.resumen.totalExonerado && parseFloat(data.resumen.totalExonerado) > 0 &&
+            <div className="xmlTotalRow xmlTotalSub"><span>Exonerado</span><span className="mono">{fmtM(data.resumen.totalExonerado)}</span></div>}
           {data.resumen.totalImpuesto && parseFloat(data.resumen.totalImpuesto) > 0 &&
             <div className="xmlTotalRow"><span>IVA</span><span className="mono">{fmtM(data.resumen.totalImpuesto)}</span></div>}
           {data.resumen.total && (
