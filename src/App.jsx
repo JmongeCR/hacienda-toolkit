@@ -4,7 +4,7 @@ import "./App.css"
 /* ─── Constants ─── */
 import { IC } from "./constants/icons.jsx"
 import { NAV, NAV_MAP, NAV_GROUPS } from "./constants/navigation.jsx"
-import { loadActs, appendAct, loadFavs, saveFavs } from "./constants/storage.js"
+import { loadActs, appendAct, loadFavs, saveFavs, loadClients, saveClients } from "./constants/storage.js"
 
 /* ─── Utils ─── */
 import { fetchJsonSafe } from "./utils/xmlHelpers.js"
@@ -86,6 +86,25 @@ export default function App() {
   const logActivity = useCallback((type, q) => {
     appendAct(type, q)
     setActivities(loadActs())
+  }, [])
+
+  /* ─── Clientes (lifted state) ─── */
+  const [clients, setClients] = useState(() => loadClients())
+  const [lastXmlData, setLastXmlData] = useState(null)
+
+  const updateClients = useCallback((list) => {
+    setClients(list); saveClients(list)
+  }, [])
+
+  const saveToClient = useCallback((clientId, factura) => {
+    setClients(prev => {
+      const next = prev.map(c => {
+        if (c.id !== clientId) return c
+        const facturas = [factura, ...(c.facturas || []).filter(f => f.clave !== factura.clave)]
+        return { ...c, facturas }
+      })
+      saveClients(next); return next
+    })
   }, [])
 
   /* ─── CABYS favorites ─── */
@@ -297,6 +316,9 @@ export default function App() {
               logActivity={logActivity}
               navigate={navigate}
               prefillKey={facturaPrefill?.key || ""}
+              clients={clients}
+              onSaveToClient={saveToClient}
+              onXmlLoaded={setLastXmlData}
             />
           )}
 
@@ -339,6 +361,10 @@ export default function App() {
             <ClientesPage
               navigate={navigate}
               navigateToCabys={navigateToCabys}
+              navigateToContribuyente={navigateToContribuyente}
+              clients={clients}
+              onUpdateClients={updateClients}
+              lastXmlData={lastXmlData}
             />
           )}
 

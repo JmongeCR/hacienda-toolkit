@@ -8,7 +8,7 @@ import { CopyBtn } from "../components/CopyBtn.jsx"
 import { PageHeader } from "../components/PageHeader.jsx"
 import { XmlFacturaResult } from "../components/XmlFacturaResult.jsx"
 import { CabysDrawer } from "../components/CabysDrawer.jsx"
-export function XmlValidatorPage({ fl, flash, cabysF_avs, toggleFav, logActivity, navigate, setAeIdExternal, consultarAEExternal, prefillKey }) {
+export function XmlValidatorPage({ fl, flash, cabysF_avs, toggleFav, logActivity, navigate, setAeIdExternal, consultarAEExternal, prefillKey, clients, onSaveToClient, onXmlLoaded }) {
   const [feTab,      setFeTab]      = useState("xml")
   const [feKey,      setFeKey]      = useState(prefillKey || "")
   const [feData,     setFeData]     = useState(null)
@@ -22,6 +22,8 @@ export function XmlValidatorPage({ fl, flash, cabysF_avs, toggleFav, logActivity
   const [cabysValidation, setCabysValidation] = useState({})
   const [xmlDrawerItem,   setXmlDrawerItem]   = useState(null)
   const [soloInconsistencias, setSoloInconsistencias] = useState(false)
+  const [savedClientId,    setSavedClientId]    = useState(null)
+  const [savePickerClient, setSavePickerClient] = useState("")
 
   const feClean = useMemo(() => onlyDigits(feKey), [feKey])
   const feValid = feClean.length === 50
@@ -98,8 +100,15 @@ export function XmlValidatorPage({ fl, flash, cabysF_avs, toggleFav, logActivity
     setFeXmlError(""); setFeXmlData(null)
     const reader = new FileReader()
     reader.onload = e => {
-      try { setFeXmlData(parseXmlFe(e.target.result)) }
-      catch (err) { setFeXmlError(err.message) }
+      try {
+        const data = parseXmlFe(e.target.result)
+        setFeXmlData(data)
+        onXmlLoaded?.(data)
+        setSavedClientId(null)
+        const cedulas = [data.emisor?.cedula, data.receptor?.cedula].filter(Boolean)
+        const matched = clients?.find(c => c.identificacion && cedulas.includes(c.identificacion.replace(/\D/g, "")))
+        setSavePickerClient(matched?.id || clients?.[0]?.id || "")
+      } catch (err) { setFeXmlError(err.message) }
     }
     reader.readAsText(file, "utf-8")
   }
@@ -107,7 +116,22 @@ export function XmlValidatorPage({ fl, flash, cabysF_avs, toggleFav, logActivity
   const clearAll = () => {
     setFeData(null); setFeKey(""); setFeError(""); setFeSearched(false)
     setFeNotFound(false); setFeXmlData(null); setFeXmlError("")
+    setSavedClientId(null); setSavePickerClient("")
   }
+
+  const buildFactura = (data) => ({
+    clave: data.clave,
+    fecha: data.fecha,
+    tipo: data.tipoDoc,
+    rootTag: data.rootTag,
+    emisorNombre: data.emisor?.nombre || "",
+    emisorCedula: data.emisor?.cedula || "",
+    receptorNombre: data.receptor?.nombre || "",
+    receptorCedula: data.receptor?.cedula || "",
+    total: data.resumen?.total || "0",
+    moneda: data.resumen?.moneda || "CRC",
+    savedAt: new Date().toISOString(),
+  })
 
   return (
     <div className="pageWrap pageCentered">
@@ -267,6 +291,31 @@ export function XmlValidatorPage({ fl, flash, cabysF_avs, toggleFav, logActivity
                 onClose={() => setXmlDrawerItem(null)}
                 onSelectRelated={() => {}}
               />
+
+              {/* ── Guardar en cliente ── */}
+              {clients?.length > 0 && (
+                <div className="xmlSaveClientBanner">
+                  {savedClientId ? (
+                    <>
+                      <span className="xmlSaveClientDone">✓ Guardado en <strong>{clients.find(c => c.id === savedClientId)?.nombre}</strong></span>
+                      <button type="button" className="btn btnGhost btnSm" onClick={() => navigate("clientes")}>Ver cliente →</button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="xmlSaveClientLbl">Guardar en cliente:</span>
+                      <select className="xmlSaveClientSelect" value={savePickerClient} onChange={e => setSavePickerClient(e.target.value)}>
+                        <option value="">Seleccionar…</option>
+                        {clients.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                      </select>
+                      <button type="button" className="btn btnPrimary btnSm"
+                        disabled={!savePickerClient}
+                        onClick={() => { onSaveToClient(savePickerClient, buildFactura(feXmlData)); setSavedClientId(savePickerClient) }}>
+                        Guardar
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

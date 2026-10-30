@@ -1573,6 +1573,47 @@ tr:hover td { background: var(--slate-50) }
 .clienteFormTextarea { resize:vertical; min-height:72px; line-height:1.5; }
 .clienteModalBtns { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
 .clienteCardActions { display:flex; gap:6px; margin-top:8px; }
+.clienteCardTotal { font-size:14px; font-weight:700; color:var(--accent); font-family:monospace; margin-top:4px; }
+.clienteBtnDanger { color:#dc2626 !important; }
+/* Ficha head */
+.clienteFichaHead { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.clienteFichaHeadActions { display:flex; gap:6px; flex-wrap:wrap; }
+.clienteFichaSectionHeader { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+.clienteFichaSectionHeader .clienteFichaSectionTitle { margin-bottom:0; }
+/* Resumen financiero */
+.clienteResumen { display:flex; gap:0; border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-top:16px; }
+.clienteResumenItem { flex:1; display:flex; flex-direction:column; gap:4px; padding:14px 16px; border-right:1px solid var(--border); }
+.clienteResumenItem:last-child { border-right:none; }
+.clienteResumenLbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); }
+.clienteResumenVal { font-size:16px; font-weight:800; color:var(--text); }
+/* Facturas table */
+.clienteFacturasWrap { overflow-x:auto; border-radius:10px; border:1px solid var(--border); }
+.clienteFacturasTable { width:100%; border-collapse:collapse; font-size:13px; }
+.clienteFacturasTable thead th { padding:8px 12px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); border-bottom:1px solid var(--border); background:var(--bg-alt); }
+.clienteFacturasTable tbody tr { border-bottom:1px solid var(--border); transition:background var(--t-fast); }
+.clienteFacturasTable tbody tr:last-child { border-bottom:none; }
+.clienteFacturasTable tbody tr:hover { background:var(--bg-alt); }
+.clienteFacturasTable td { padding:9px 12px; color:var(--text); }
+.clienteFactFecha { font-size:12px; color:var(--muted); white-space:nowrap; }
+.clienteFactTipo { font-size:11px; padding:2px 8px; border-radius:99px; background:var(--blue-50); color:var(--blue-700); font-weight:600; white-space:nowrap; }
+.clienteFactEmisor { font-size:12px; color:var(--text2); }
+.clienteFactTotal { font-weight:700; color:var(--text); text-align:right; white-space:nowrap; }
+.clienteFactDel { background:none; border:none; cursor:pointer; color:var(--muted); font-size:13px; padding:2px 6px; border-radius:4px; }
+.clienteFactDel:hover { color:#dc2626; }
+/* Busqueda */
+.clienteSearchWrap { position:relative; margin-bottom:20px; }
+.clienteSearchInput { width:100%; padding:10px 36px 10px 14px; border:1.5px solid var(--border); border-radius:10px; font-size:14px; background:var(--surface); color:var(--text); outline:none; transition:border-color var(--t-fast); box-sizing:border-box; }
+.clienteSearchInput:focus { border-color:var(--accent); }
+.clienteSearchClear { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--muted); font-size:14px; padding:2px; }
+/* Importar desde XML */
+.clienteImportBtn { display:block; width:100%; padding:8px 14px; margin-bottom:16px; font-size:12px; font-weight:600; color:var(--accent); background:var(--blue-50); border:1.5px dashed var(--blue-500); border-radius:9px; cursor:pointer; text-align:left; transition:background var(--t-fast); }
+.clienteImportBtn:hover { background:var(--blue-100); }
+/* Banner guardar en cliente */
+.xmlSaveClientBanner { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 16px; margin-top:12px; background:var(--blue-50); border:1.5px solid var(--blue-100); border-radius:10px; }
+.xmlSaveClientLbl { font-size:13px; font-weight:600; color:var(--text2); white-space:nowrap; }
+.xmlSaveClientSelect { flex:1; min-width:160px; padding:7px 10px; border:1.5px solid var(--border); border-radius:8px; font-size:13px; background:var(--surface); color:var(--text); outline:none; }
+.xmlSaveClientSelect:focus { border-color:var(--accent); }
+.xmlSaveClientDone { font-size:13px; font-weight:600; color:var(--good); flex:1; }
 
 /* ══════════════════════════════════════════════
    CABYS DRAWER
