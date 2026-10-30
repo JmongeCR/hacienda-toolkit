@@ -8,9 +8,18 @@ import { CopyIco } from "./CopyIco.jsx"
 void IC
 
 const MEDIOS_PAGO = { "01":"Efectivo","02":"Tarjeta","03":"Cheque","04":"Transferencia","05":"Recaudado x terceros","99":"Otro" }
-const TIPOS_CED  = { "01":"Física","02":"Jurídica","03":"DIMEX","04":"NITE" }
+const TIPOS_CED   = { "01":"Física","02":"Jurídica","03":"DIMEX","04":"NITE" }
 const LABELS_TARIFA = { "01":"Exento","02":"Exonerado","03":"1%","04":"2%","05":"4%","06":"8%","07":"13%" }
 const CONDICION_VENTA = { "01":"Contado","02":"Crédito","03":"Consignación","04":"Apartado","99":"Otros" }
+const CONSEC_LABEL = {
+  FacturaElectronica: "N° Factura",
+  TiqueteElectronico: "N° Tiquete",
+  NotaCreditoElectronica: "N° Nota de Crédito",
+  NotaDebitoElectronica:  "N° Nota de Débito",
+  FacturaElectronicaCompra: "N° FE Compra",
+  FacturaElectronicaExportacion: "N° FE Exportación",
+}
+const mpLabel = (mp) => MEDIOS_PAGO[mp] || MEDIOS_PAGO[String(parseInt(mp,10)).padStart(2,"0")] || mp
 
 export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloInconsistencias = false, setSoloInconsistencias, onCabysClick, onPrint, onReset, onExcelDownload }) {
   const mon = data.resumen.moneda || "CRC"
@@ -51,7 +60,7 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
           <div className={`xmlDocType${data.rootTag==="NotaCreditoElectronica"?" xmlDocType-nc":data.rootTag==="NotaDebitoElectronica"?" xmlDocType-nd":data.rootTag==="TiqueteElectronico"?" xmlDocType-tiquete":data.rootTag==="FacturaElectronicaCompra"?" xmlDocType-compra":""}`}>{data.tipoDoc}</div>
           {data.numConsecutivo && (
             <div className="xmlHeadField">
-              <span className="xmlHeadLbl">Consecutivo</span>
+              <span className="xmlHeadLbl" data-print={CONSEC_LABEL[data.rootTag] || "Consecutivo"}>Consecutivo</span>
               <div className="xmlHeadRow">
                 <span className="xmlConsec mono">{data.numConsecutivo}</span>
                 <button className={`xmlCopyBtn${fl==="xml-consec"?" xmlCopyBtnOk":""}`} type="button"
@@ -132,7 +141,7 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
               <span>Medio de pago</span>
               <div className="xmlMpList">
                 {data.medioPago.map((mp, i) => (
-                  <span key={i} className="xmlMpTag">{MEDIOS_PAGO[mp] || MEDIOS_PAGO[mp.padStart(2,"0")] || mp}</span>
+                  <span key={i} className="xmlMpTag">{mpLabel(mp)}</span>
                 ))}
               </div>
             </div>
@@ -230,7 +239,7 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
                       {hasDiscount && <th className="xmlThR">Descuento</th>}
                       <th>IVA</th>
                       <th className="xmlThR">Total línea</th>
-                      <th>CABYS</th>
+                      <th className="xmlThCabys">CABYS</th>
                       <th className="xmlThCabysVal">Validaciones</th>
                     </tr>
                   </thead>
@@ -268,12 +277,12 @@ export function XmlFacturaResult({ data, fl, flash, cabysValidation = {}, soloIn
                             {tarifaLabel ? (
                               <div className="xmlIvaCell">
                                 <span className={`taxBadgeV2 ${isExentoExon ? "t0" : taxClass(parseFloat(l.ivaPct))}`}>{tarifaLabel}</span>
-                                {l.ivaMonto && !isExentoExon && <span className="xmlIvaMonto mono">{fmtM(l.ivaMonto)}</span>}
+                                {l.ivaMonto && !isExentoExon && <span className="xmlIvaMonto mono xmlNoPrint">{fmtM(l.ivaMonto)}</span>}
                               </div>
                             ) : pct ? (
                               <div className="xmlIvaCell">
                                 <span className={`taxBadgeV2 ${taxClass(parseFloat(l.ivaPct))}`}>{pct}</span>
-                                {l.ivaMonto && <span className="xmlIvaMonto mono">{fmtM(l.ivaMonto)}</span>}
+                                {l.ivaMonto && <span className="xmlIvaMonto mono xmlNoPrint">{fmtM(l.ivaMonto)}</span>}
                               </div>
                             ) : <span className="xmlMuted">—</span>}
                           </td>
