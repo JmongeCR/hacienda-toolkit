@@ -2442,13 +2442,31 @@ tr:hover td { background: var(--slate-50) }
 .invPrintBtn    { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--blue-600); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .invPrintBtn:hover { background: var(--blue-700, #1d4ed8); }
 
-/* Paper */
+/* Paper — siempre fondo blanco, independiente del modo oscuro */
 .invPaper {
-  background: var(--white);
-  border: 1px solid var(--border);
+  background: #fff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 32px 36px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  box-shadow: 0 4px 20px rgba(0,0,0,.10);
+  /* redefinir tokens para que los hijos usen valores light */
+  --fg:        #0f172a;
+  --muted:     #64748b;
+  --border:    #e2e8f0;
+  --white:     #fff;
+  --slate-50:  #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-700: #334155;
+  --blue-50:   #eff6ff;
+  --blue-300:  #93c5fd;
+  --blue-400:  #60a5fa;
+  --red-50:    #fef2f2;
+  --red-600:   #dc2626;
+  --amber-50:  #fffbeb;
+  --green-50:  #f0fdf4;
+  --green-100: #dcfce7;
+  --green-600: #16a34a;
 }
 
 /* Head: emisor + meta */
@@ -2549,16 +2567,9 @@ tr:hover td { background: var(--slate-50) }
 /* Pie */
 .invFooter { margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border); text-align: center; font-size: 11px; color: var(--muted); }
 
-/* Dark mode */
+/* Dark mode — solo la barra de herramientas cambia; el papel siempre es blanco */
 @media (prefers-color-scheme: dark) {
-  .invPaper          { background: var(--slate-800); box-shadow: 0 2px 12px rgba(0,0,0,.3); }
   .invSel, .invInline, .invMetaInput { background: var(--slate-700); }
-  .invEmisorName:hover, .invEmisorName:focus { background: var(--slate-700); }
-  .invEmisorFields   { background: var(--slate-700); }
-  .invRow:hover td   { background: var(--slate-700); }
-  .invLInput:focus   { background: rgba(96,165,250,.08); }
-  .invRecInput:focus { background: rgba(96,165,250,.08); }
-  .invAddLineBtn:hover { background: var(--slate-700); }
   .invToolBtn:hover  { background: var(--slate-700); }
 }
 
