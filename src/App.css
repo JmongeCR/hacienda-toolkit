@@ -2421,67 +2421,165 @@ tr:hover td { background: var(--slate-50) }
 }
 
 /* ══════════════════════════════════════════════
-   CÁLCULO DE FACTURA PAGE
+   CALCULADORA DE FACTURA — INVOICE BUILDER
 ══════════════════════════════════════════════ */
-.calcFWrap    { max-width: 960px; }
-.calcFHeader  { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-.calcFTitle   { font-size: 1.15rem; font-weight: 700; }
-.calcFHeaderRight { display: flex; align-items: center; gap: 8px; }
-.calcFLabel   { font-size: 12px; font-weight: 600; color: var(--muted); }
-.calcFMonedaSel { padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--white); color: var(--fg); font-size: 13px; }
-.calcFTableWrap { overflow-x: auto; margin-bottom: 12px; }
-.calcFTable   { width: 100%; border-collapse: collapse; font-size: 13px; }
-.calcFTable th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--border); }
-.calcFTable td { padding: 5px 6px; border-bottom: 1px solid var(--border-light, var(--border)); vertical-align: middle; }
-.calcFThDesc  { min-width: 200px; }
-.calcFThNum   { text-align: right; white-space: nowrap; }
-.calcFThTar   { min-width: 90px; }
-.calcFThAct   { width: 32px; }
-.calcFInput   { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; background: var(--white); color: var(--fg); font-size: 13px; width: 100%; transition: border-color .12s, box-shadow .12s; }
-.calcFInput:focus { border-color: var(--blue-400, #60a5fa); outline: none; box-shadow: 0 0 0 3px rgba(96,165,250,.15); }
-.calcFInputNombre { min-width: 200px; }
-.calcFInputNum  { text-align: right; max-width: 90px; }
-.calcFTarifaSel { border: 1px solid var(--border); border-radius: 6px; padding: 6px 6px; background: var(--white); color: var(--fg); font-size: 13px; width: 100%; }
-.calcFTarifaSel:focus { border-color: var(--blue-400, #60a5fa); outline: none; }
-.calcFTdR      { text-align: right; white-space: nowrap; }
-.calcFTdBold   { font-weight: 600; }
-.calcFTdLine   { text-align: center; color: var(--muted); font-size: 12px; width: 28px; }
-.calcFThLine   { text-align: center; width: 28px; }
-.calcFMuted    { color: var(--muted); }
-.calcFRow      { transition: background .1s; }
-.calcFRow:hover { background: var(--slate-50); }
-.calcFRemoveBtn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px 6px; border-radius: 5px; font-size: 12px; }
-.calcFRemoveBtn:hover:not(:disabled) { color: var(--red-600); background: var(--red-50); }
-.calcFRemoveBtn:disabled { opacity: .3; cursor: default; }
-.calcFTableActions { display: flex; gap: 8px; margin: 12px 0 20px; flex-wrap: wrap; align-items: center; }
-.calcFAddBtn  { padding: 7px 14px; background: var(--blue-600); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.calcFAddBtn:hover { background: var(--blue-700, #1d4ed8); }
-.calcFDiscBtn { padding: 7px 12px; background: transparent; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--fg); cursor: pointer; }
-.calcFDiscBtn:hover { background: var(--slate-50); }
-.calcFDiscBtnOn { background: var(--amber-50); border-color: #fcd34d; color: var(--amber-700, #b45309); }
-.calcFClearBtn { padding: 6px 12px; background: transparent; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; color: var(--muted); cursor: pointer; margin-left: 4px; }
-.calcFClearBtn:hover { color: var(--red-600); border-color: var(--red-200, #fecaca); background: var(--red-50); }
-.calcFBottom  { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; justify-content: flex-end; margin-top: 4px; }
-.calcFDesglose { flex: 1; min-width: 220px; background: var(--slate-50); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
-.calcFDesgloseTitle { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
-.calcFDesgloseRow   { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
-.calcFDesgloseMono  { font-size: 12px; }
-.calcFTotals  { min-width: 280px; background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
-.calcFTotalRow   { display: flex; justify-content: space-between; font-size: 14px; gap: 16px; }
-.calcFTotalDisc  { color: var(--red-600); }
-.calcFTotalSub   { color: var(--muted); font-size: 13px; }
-.calcFTotalFinal { font-weight: 700; font-size: 1.05rem; padding-top: 10px; border-top: 2px solid var(--fg); margin-top: 4px; }
-.calcFHint { font-size: 12px; color: var(--muted); margin-top: 18px; }
-.calcFHint kbd { background: var(--slate-100); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 11px; }
+
+/* Page shell */
+.invPage { max-width: 960px; }
+
+/* Toolbar */
+.invToolbar     { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.invToolbarLeft { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.invToolbarLabel{ font-size: 12px; font-weight: 600; color: var(--muted); }
+.invToolbarRight{ display: flex; align-items: center; gap: 8px; }
+.invSel         { padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--white); color: var(--fg); font-size: 13px; }
+.invSelSmall    { padding: 5px 8px; font-size: 12px; }
+.invToolBtn     { padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--fg); font-size: 13px; cursor: pointer; }
+.invToolBtn:hover { background: var(--slate-50); }
+.invToolBtnOn   { background: var(--amber-50) !important; border-color: #fcd34d !important; color: var(--amber-700, #b45309) !important; }
+.invToolBtnGhost{ padding: 6px 12px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); font-size: 12px; cursor: pointer; }
+.invToolBtnGhost:hover { color: var(--red-600); background: var(--red-50); border-color: var(--red-200, #fecaca); }
+.invPrintBtn    { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--blue-600); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.invPrintBtn:hover { background: var(--blue-700, #1d4ed8); }
+
+/* Paper */
+.invPaper {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px 36px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+
+/* Head: emisor + meta */
+.invHead    { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: start; }
+.invEmisor  { min-width: 0; }
+.invEmisorNameRow  { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.invEmisorName     {
+  font-size: 1.35rem; font-weight: 800; color: var(--fg);
+  background: none; border: none; outline: none; width: 100%;
+  border-bottom: 2px dashed transparent;
+}
+.invEmisorName:hover, .invEmisorName:focus { border-bottom-color: var(--blue-300, #93c5fd); background: var(--slate-50); border-radius: 4px 4px 0 0; }
+.invEditHint { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 2px 5px; border-radius: 4px; flex-shrink: 0; }
+.invEditHint:hover { background: var(--slate-100); }
+.invEmisorFields   { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; padding: 10px; background: var(--slate-50); border-radius: 8px; border: 1px dashed var(--border); }
+.invFieldRow       { display: flex; gap: 6px; align-items: center; }
+.invInline         { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 13px; color: var(--fg); }
+.invInlineFull     { width: 100%; }
+.invEmisorInfo     { display: flex; flex-direction: column; gap: 1px; }
+.invEmisorInfo span{ font-size: 13px; color: var(--muted); }
+.invPlaceholder    { font-size: 12px; color: var(--muted); font-style: italic; }
+
+.invMeta           { text-align: right; flex-shrink: 0; min-width: 220px; }
+.invMetaType       { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 2px; }
+.invMetaConsec     { font-size: 1.1rem; font-weight: 700; font-family: var(--mono); color: var(--fg); margin-bottom: 10px; }
+.invMetaGrid       { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; text-align: left; }
+.invMetaLbl        { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); white-space: nowrap; }
+.invMetaInput      { padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: var(--white); color: var(--fg); width: 100%; }
+.invConsecBtn      { margin-top: 8px; padding: 5px 10px; background: transparent; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; color: var(--muted); cursor: pointer; }
+.invConsecBtn:hover{ background: var(--slate-50); color: var(--fg); }
+
+/* Divider */
+.invDivider { height: 1px; background: var(--border); margin: 20px 0; }
+
+/* Receptor */
+.invReceptorRow     { }
+.invReceptorSection { }
+.invSectionLabel    { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 8px; }
+.invReceptorGrid    { display: grid; grid-template-columns: 80px 1fr; gap: 5px 12px; align-items: center; max-width: 560px; }
+.invRecLbl          { font-size: 12px; color: var(--muted); font-weight: 600; }
+.invRecInput        { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--border); padding: 3px 4px; font-size: 13px; color: var(--fg); outline: none; }
+.invRecInput:focus  { border-bottom-color: var(--blue-400, #60a5fa); background: var(--blue-50); border-radius: 3px 3px 0 0; }
+.invRecInputFull    { grid-column: 1 / -1; margin-top: 2px; }
+
+/* Tabla de líneas */
+.invLinesWrap { overflow-x: auto; }
+.invTable     { width: 100%; border-collapse: collapse; font-size: 13px; }
+.invThead tr  { border-bottom: 2px solid var(--fg); }
+.invThead th  { padding: 6px 6px 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); text-align: left; }
+.invThN       { width: 28px; text-align: center; }
+.invThDesc    { min-width: 220px; }
+.invThSm      { white-space: nowrap; }
+.invThR       { text-align: right; }
+.invThBold    { font-weight: 800; color: var(--fg) !important; }
+.invThAct     { width: 28px; }
+.invRow td    { padding: 5px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.invRow:hover td { background: var(--slate-50); }
+.invTdN       { text-align: center; color: var(--muted); font-size: 12px; }
+.invTdR       { text-align: right; white-space: nowrap; }
+.invTdBold    { font-weight: 700; }
+.invDash      { color: var(--muted); }
+
+/* Inputs de líneas */
+.invLInput     { background: transparent; border: none; border-bottom: 1px solid transparent; padding: 4px 4px; font-size: 13px; color: var(--fg); outline: none; width: 100%; transition: border-color .12s; }
+.invLInput:hover { border-bottom-color: var(--border); }
+.invLInput:focus { border-bottom-color: var(--blue-400, #60a5fa); background: var(--blue-50); border-radius: 3px 3px 0 0; }
+.invLInputDesc { min-width: 200px; }
+.invLInputSm   { max-width: 60px; }
+.invLInputNum  { text-align: right; max-width: 80px; }
+.invTarifaSel  { background: transparent; border: none; border-bottom: 1px solid var(--border); padding: 4px 2px; font-size: 13px; color: var(--fg); outline: none; cursor: pointer; }
+.invTarifaSel:focus { border-bottom-color: var(--blue-400, #60a5fa); }
+.invRemoveBtn  { background: none; border: none; color: transparent; cursor: pointer; padding: 3px 6px; border-radius: 4px; font-size: 11px; }
+.invRow:hover .invRemoveBtn { color: var(--muted); }
+.invRemoveBtn:hover:not(:disabled) { color: var(--red-600) !important; background: var(--red-50); }
+.invRemoveBtn:disabled { opacity: 0; cursor: default; }
+
+.invAddLineRow { padding: 10px 0; }
+.invAddLineBtn { padding: 6px 14px; background: transparent; border: 1px dashed var(--border); border-radius: 7px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.invAddLineBtn:hover { background: var(--slate-50); color: var(--fg); border-color: var(--blue-400, #60a5fa); }
+
+/* Totales */
+.invTotalsSection { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
+.invTarifaBlock   { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+.invTarifaRow     { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.invTarifaMono    { font-size: 12px; font-family: var(--mono); color: var(--muted); }
+.invTotalsPanel   { min-width: 260px; display: flex; flex-direction: column; gap: 5px; }
+.invTotalRow      { display: flex; justify-content: space-between; align-items: center; font-size: 14px; gap: 24px; padding: 2px 0; }
+.invTotalNeg      { color: var(--red-600); }
+.invTotalSub      { color: var(--muted); font-size: 13px; }
+.invTotalFinal    { font-weight: 800; font-size: 1.05rem; margin-top: 6px; padding-top: 10px; border-top: 2px solid var(--fg); }
+
+/* Notas */
+.invNotasRow   { margin-top: 20px; }
+.invNotasLabel { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 6px; }
+.invNotas      { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--fg); background: transparent; resize: vertical; font-family: inherit; outline: none; box-sizing: border-box; }
+.invNotas:focus{ border-color: var(--blue-400, #60a5fa); }
+
+/* Pie */
+.invFooter { margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border); text-align: center; font-size: 11px; color: var(--muted); }
+
+/* Dark mode */
 @media (prefers-color-scheme: dark) {
-  .calcFMonedaSel  { background: var(--slate-700); }
-  .calcFInput      { background: var(--slate-700); }
-  .calcFTarifaSel  { background: var(--slate-700); }
-  .calcFRow:hover  { background: var(--slate-700); }
-  .calcFDesglose   { background: var(--slate-800); }
-  .calcFTotals     { background: var(--slate-800); }
-  .calcFDiscBtn:hover { background: var(--slate-700); }
-  .calcFHint kbd   { background: var(--slate-700); }
+  .invPaper          { background: var(--slate-800); box-shadow: 0 2px 12px rgba(0,0,0,.3); }
+  .invSel, .invInline, .invMetaInput { background: var(--slate-700); }
+  .invEmisorName:hover, .invEmisorName:focus { background: var(--slate-700); }
+  .invEmisorFields   { background: var(--slate-700); }
+  .invRow:hover td   { background: var(--slate-700); }
+  .invLInput:focus   { background: rgba(96,165,250,.08); }
+  .invRecInput:focus { background: rgba(96,165,250,.08); }
+  .invAddLineBtn:hover { background: var(--slate-700); }
+  .invToolBtn:hover  { background: var(--slate-700); }
+}
+
+/* ── PRINT / PDF ─────────────────────────── */
+@media print {
+  .noPrint, .sidebar, .sideOverlay, .topbar { display: none !important; }
+  .mainArea  { margin-left: 0 !important; padding: 0 !important; }
+  .content   { padding: 0 !important; max-width: 100% !important; }
+  .pageWrap  { padding: 0 !important; }
+  .invPage   { max-width: 100% !important; }
+  .invPaper  {
+    box-shadow: none !important; border: none !important;
+    border-radius: 0 !important; padding: 20px 28px !important;
+  }
+  .invPaper * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .invLInput, .invTarifaSel, .invRecInput, .invEmisorName, .invNotas {
+    border-color: transparent !important; background: transparent !important;
+  }
+  .invRow td { border-bottom-color: #e5e7eb !important; }
+  .invDivider { background: #e5e7eb !important; }
+  body { background: white !important; }
 }
 
 /* ══════════════════════════════════════════════
