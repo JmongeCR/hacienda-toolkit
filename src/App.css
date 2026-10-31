@@ -2444,20 +2444,21 @@ tr:hover td { background: var(--slate-50) }
 
 /* Paper — siempre fondo blanco, independiente del modo oscuro */
 .invPaper {
+  color-scheme: light;            /* controles nativos (date, select) en modo claro */
   background: #fff !important;
   color: #0f172a !important;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 32px 36px;
   box-shadow: 0 4px 20px rgba(0,0,0,.10);
-  /* redefinir tokens para que los hijos usen valores light */
+  /* redefinir tokens CSS para todos los hijos */
   --fg:        #0f172a;
   --muted:     #64748b;
   --border:    #e2e8f0;
   --white:     #fff;
   --slate-50:  #f8fafc;
   --slate-100: #f1f5f9;
-  --slate-700: #334155;
+  --slate-700: #fff;              /* clave: sobreescribir slate-700 a blanco */
   --blue-50:   #eff6ff;
   --blue-300:  #93c5fd;
   --blue-400:  #60a5fa;
@@ -2467,6 +2468,21 @@ tr:hover td { background: var(--slate-50) }
   --green-50:  #f0fdf4;
   --green-100: #dcfce7;
   --green-600: #16a34a;
+}
+/* Forzar todos los inputs/selects dentro del papel a blanco */
+.invPaper input,
+.invPaper select,
+.invPaper textarea {
+  background: #fff;
+  color: #0f172a;
+}
+/* Excepciones: los que deben ser transparentes */
+.invPaper .invLInput,
+.invPaper .invRecInput,
+.invPaper .invTarifaSel,
+.invPaper .invEmisorName,
+.invPaper .invNotas {
+  background: transparent;
 }
 
 /* Head: emisor + meta */
@@ -2569,8 +2585,17 @@ tr:hover td { background: var(--slate-50) }
 
 /* Dark mode — solo la barra de herramientas cambia; el papel siempre es blanco */
 @media (prefers-color-scheme: dark) {
-  .invSel, .invInline, .invMetaInput { background: var(--slate-700); }
-  .invToolBtn:hover  { background: var(--slate-700); }
+  .invToolbar .invSel { background: var(--slate-700); color: var(--fg); }
+  .invToolBtn:hover   { background: var(--slate-700); }
+  /* paper: asegurar blanco explícito (gana a cualquier regla global) */
+  .invPaper input,
+  .invPaper select,
+  .invPaper textarea { background: #fff !important; color: #0f172a !important; }
+  .invPaper .invLInput,
+  .invPaper .invRecInput,
+  .invPaper .invTarifaSel,
+  .invPaper .invEmisorName,
+  .invPaper .invNotas  { background: transparent !important; }
 }
 
 /* ── PRINT / PDF ─────────────────────────── */
@@ -2579,7 +2604,9 @@ tr:hover td { background: var(--slate-50) }
   .mainArea  { margin-left: 0 !important; padding: 0 !important; }
   .content   { padding: 0 !important; max-width: 100% !important; }
   .pageWrap  { padding: 0 !important; }
-  .invPage   { max-width: 100% !important; }
+  /* Contrarrestar el body*{visibility:hidden} del bloque XML */
+  .invPage, .invPage * { visibility: visible !important; }
+  .invPage   { max-width: 100% !important; position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; }
   .invPaper  {
     box-shadow: none !important; border: none !important;
     border-radius: 0 !important; padding: 20px 28px !important;
